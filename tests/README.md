@@ -12,6 +12,22 @@ Pure validation and XML render checks for `config.uc`.
   rejected value (including control-byte and trailing-newline regressions), and
   the exact default XML for both engines.
 
+## parity
+
+Frontend/backend validation parity. `cases.json` is the hand-maintained
+contract; both runners must agree with it.
+
+- Backend: `~/.local/opt/ucode-host/bin/ucode -L ~/.local/opt/ucode-host/lib/ucode tests/parity/run.uc`
+- Frontend: `node tests/parity/check-frontend.mjs`
+- Covers: every row of the interface/latency/max_volume/media_volume/name/log_level
+  mismatch table plus its boundary values (0/1/100/101, `1.5`, `0999:1`,
+  `10000:10000`, 63/64-byte names, whitespace-only names, `.` and `..`), in both
+  the `main` section and a device override. The backend runner decides each case
+  with the real `normalizeConfig`; the node runner loads
+  `airconnect-manager/rules.js` in a shim, asks the ucode runner for the backend
+  verdicts and fails when the two disagree. It also proves `rules.js` loads
+  without LuCI's `_()` and returns message strings, not `false`.
+
 ## discovery
 
 Bounded SSDP and XML parser checks for `discovery.uc`.
