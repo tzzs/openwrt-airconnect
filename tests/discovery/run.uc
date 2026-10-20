@@ -94,3 +94,16 @@ let deep = description();
 for (let i = 0; i < 40; i++) deep = replace(deep, '<device>', '<device><extra>');
 check(parseDescription(deep, candidate, 1) == null, 'depth bounded');
 printf('Discovery parser: %d checks passed\n', checks);
+
+// Regression: the control-byte scan must reject NUL/0x01/0x7f in the raw
+// response and description, while a legitimate tab/LF inside an XML comment
+// (which is skipped) is still accepted.
+check(parseSsdp(response(url) + chr(0), peer) == null, 'NUL in SSDP response rejected');
+check(parseSsdp(response(url) + chr(1), peer) == null, '0x01 in SSDP response rejected');
+check(parseSsdp(response(url) + chr(127), peer) == null, '0x7f in SSDP response rejected');
+check(parseDescription(description('<friendlyName>N' + chr(0) + '</friendlyName>'), candidate, 1) == null, 'NUL in description rejected');
+check(parseDescription(description('<friendlyName>N' + chr(1) + '</friendlyName>'), candidate, 1) == null, '0x01 in description rejected');
+check(parseDescription(description('<friendlyName>N' + chr(127) + '</friendlyName>'), candidate, 1) == null, '0x7f in description rejected');
+let tabLfComment = replace(description(), '<device>', '<!--\tindented\nsecond line-->\t<device>');
+check(parseDescription(tabLfComment, candidate, 1) != null, 'tab/LF inside XML comment accepted');
+printf('Discovery parser: %d checks passed\n', checks);

@@ -219,5 +219,31 @@ rejects('renderer revalidates name limits', () => renderXml(deviceConfig('name',
 for (let value in ['', 'airupnp', 'upnp;id', null])
 	rejects('reject render engine ' + sprintf('%J', value), () => renderXml(defaults(), value), 'engine');
 
+// Regression: anchored patterns must reject trailing whitespace/control bytes,
+// because ucode's `$` also matches before a trailing newline. interface is a
+// main-only field, so its trailing-byte cases are not repeated per device.
+for (let key in ['interface']) {
+	for (let suffix in ['\n', '\r', '\t', '\n\n']) {
+		let value = 'eth0' + suffix;
+		rejects('reject main ' + key + ' trailing ' + hexenc(suffix), () => normalizeConfig(mainConfig(key, value)), 'main.' + key);
+	}
+}
+for (let key in ['latency', 'codec']) {
+	for (let suffix in ['\n', '\r', '\t', '\n\n']) {
+		let value = '0:0' + suffix;
+		if (key == 'codec') value = 'flac:1' + suffix;
+		rejects('reject main ' + key + ' trailing ' + hexenc(suffix), () => normalizeConfig(mainConfig(key, value)), 'main.' + key);
+		rejects('reject device ' + key + ' trailing ' + hexenc(suffix), () => normalizeConfig(deviceConfig(key, value)), 'devices[0].' + key);
+	}
+}
+for (let key in ['max_volume', 'media_volume']) {
+	for (let suffix in ['\n', '\r', '\t', '\n\n']) {
+		let value = '100' + suffix;
+		if (key == 'media_volume') value = '1' + suffix;
+		rejects('reject main ' + key + ' trailing ' + hexenc(suffix), () => normalizeConfig(mainConfig(key, value)), 'main.' + key);
+		rejects('reject device ' + key + ' trailing ' + hexenc(suffix), () => normalizeConfig(deviceConfig(key, value)), 'devices[0].' + key);
+	}
+}
+
 print('1..', passed + failed, '\n', passed, ' passed; ', failed, ' failed\n');
 exit(failed ? 1 : 0);
