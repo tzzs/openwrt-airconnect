@@ -104,7 +104,8 @@ sh /path/to/scripts/migrate-legacy.sh --apply
 
 1. 在 `/etc/airconnect-manager-backup/<UTC 时间戳>/` 建备份，`manifest.txt` 记录每个原文件的
    路径与权限位，并记录旧服务与容器状态；已存在的备份目录**拒绝覆盖**；
-2. 用临时文件 + rename 写新的 `/etc/config/airconnect-manager`（不会留下半写文件）；
+2. 用临时文件 + rename 写新的 `/etc/config/airconnect-manager`（不会留下半写文件）；文件权限沿用
+   原有配置文件的权限位，`--dry-run` 会提前打印出来；
 3. `stop` 并 `disable` 旧 `/etc/init.d/airconnect`；
 4. 对匹配 `airconnect` 的 Docker 容器执行 `docker stop`（**不删除**）。
 
@@ -138,9 +139,11 @@ Docker 现场不需要卸载任何包，但容器要保持 `stopped`（脚本已
 
 `enable` 与 `start` 分开执行，是为了让“开机自启”和“本次运行”两个状态都能单独观察。
 
-### 6. 验证（见下一节）
+### 6. 验证并保留备份
 
-验证通过后再保留备份至少 N 天（建议 7 天，覆盖一次完整重启与一次正常使用周期）。
+先完成下一节的四条验证，再保留备份 **N = 7 天**（至少覆盖一次路由器重启和一次完整使用周期）。
+备份目录 `/etc/airconnect-manager-backup/<UTC 时间戳>/` 在 7 天内不要删除：这是回退的唯一依据。
+7 天后确认稳定，再手工删除（脚本不自动清理，见“已知限制”）。
 
 ## 三、验证步骤
 
@@ -150,15 +153,25 @@ Docker 现场不需要卸载任何包，但容器要保持 `stopped`（脚本已
 ### 1. 服务确实在运行（按引擎分别看）
 
 ```sh
-/etc/init.d/airconnect-manager running; echo "running=$?"
+# 1a. procd 报告的实例集合（每个引擎一条）
 ubus call service list '{"name":"airconnect-manager"}'
+
+# 1b. 运行时 XML 确实生成了，且与持久配置一致
+#     只对启用的引擎执行；例如只启用了 UPnP 就只看 upnp
 ls -l /var/etc/airconnect-manager/
+/usr/share/airconnect-manager/runtime.uc show upnp
+
+# 1c. 旧实例确实不在了
+/etc/init.d/airconnect running; echo "old-running=$?"
+docker ps --format '{{.Names}}|{{.Image}}'
 ```
 
-期望：`running=0`；`ubus` 输出里启用的每个引擎各有一个实例，`running` 为 `true`；运行时目录里
-存在对应引擎的 XML（`airupnp.xml` / `aircast.xml`），内容与 `/etc/config/airconnect-manager` 一致。
+期望：`ubus` 输出里启用的每个引擎各有一个实例且 `running` 为 `true`；`runtime.uc show <engine>`
+的 `<binding>` 与配置里的 `interface` 一致、`<max_volume>`/`<media_volume>` 与配置一致；旧服务
+`old-running` 非 0（未运行）；`docker ps` 里没有 `airconnect` 容器。
 
-只启用了 aircast 时，UPnP 实例不应出现；反之亦然。两个都启用时，两个实例都要在。
+只启用了 aircast 时，UPnP 实例不应出现；反之亦然。两个都启用时，两个实例都要在。注意 `running`
+只说明 procd 里有一个进程，不说明它已经成功绑定接口或注册到网络。
 
 ### 2. 扫描能找到预期的音箱
 
