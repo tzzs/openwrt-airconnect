@@ -1,0 +1,13 @@
+{
+  "luci-app-airconnect-manager": {
+    "description": "Manage AirConnect devices and settings",
+    "read": {
+      "ubus": { "airconnect.manager": [ "status", "logs" ] },
+      "uci": [ "airconnect-manager" ]
+    },
+    "write": {
+      "ubus": { "airconnect.manager": [ "scan", "validate", "action" ] },
+      "uci": [ "airconnect-manager" ]
+    }
+  }
+}

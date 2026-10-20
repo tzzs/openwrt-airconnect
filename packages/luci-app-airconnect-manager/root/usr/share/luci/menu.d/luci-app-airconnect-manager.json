@@ -1,0 +1,8 @@
+{
+  "admin/services/airconnect-manager": {
+    "title": "AirConnect",
+    "order": 60,
+    "action": { "type": "view", "path": "airconnect-manager/overview" },
+    "depends": { "acl": [ "luci-app-airconnect-manager" ], "uci": { "airconnect-manager": true } }
+  }
+}
