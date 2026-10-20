@@ -47,6 +47,8 @@ work=$(mktemp -d "${TMPDIR:-/tmp}/airconnect-migration.XXXXXX") || {
 	printf 'cannot create a temporary directory\n' >&2
 	exit 1
 }
+# Invoked indirectly through the trap below.
+# shellcheck disable=SC2329
 cleanup() {
 	rm -rf "${work}"
 }
@@ -751,7 +753,6 @@ if [ -x "${SB}/etc/init.d/airconnect" ]; then
 else
 	no 'the old init script is not removed' 'it disappeared'
 fi
-apply_output="${output}"
 apply_backup_dir="${backup_dir}"
 
 # --- (4) --rollback restores the original bytes ---------------------------

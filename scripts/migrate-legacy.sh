@@ -301,7 +301,7 @@ detect() {
 						continue
 						;;
 				esac
-				dd_lower=$(printf '%s %s' "${dd_name}" "${dd_image}" | tr 'A-Z' 'a-z')
+				dd_lower=$(printf '%s %s' "${dd_name}" "${dd_image}" | tr '[:upper:]' '[:lower:]')
 				case "${dd_lower}" in
 					*airconnect*)
 						dd_matches='1'
