@@ -40,17 +40,15 @@ jobs:
           node-version: 20
 
       - name: Install build dependencies for ucode
-        # json-c is a hard build requirement of ucode itself. cmake, make and
-        # gcc are already present on ubuntu-latest.
+        # json-c is a hard build requirement of ucode itself. libmd provides the
+        # pkg-config file ucode's optional digest module requires; keeping it
+        # enabled makes CI build the same interpreter the suites are developed
+        # against locally (runtime.uc falls back to its own digest without it).
+        # cmake, make and gcc are already present on ubuntu-latest.
         run: |
           set -eu
           sudo apt-get update
-          sudo apt-get install --no-install-recommends --yes libjson-c-dev
-          # libmd only enables ucode's optional digest module; runtime.uc falls
-          # back to its own digest when the module is absent, so a missing
-          # package must not fail the job.
-          sudo apt-get install --no-install-recommends --yes libmd-dev ||
-            echo 'libmd-dev unavailable; ucode digest module will be skipped'
+          sudo apt-get install --no-install-recommends --yes libjson-c-dev libmd-dev
 
       - name: Cache the ucode build
         id: ucode-cache
