@@ -8,6 +8,18 @@ const RESPONSE_LIMIT = 64;
 const DESCRIPTION_LIMIT = 32;
 const SEARCH_TARGET = 'urn:schemas-upnp-org:device:MediaRenderer:1';
 
+// ucode cannot express NUL in a regex bracket class, and `$` accepts a trailing
+// newline, so reject control bytes with an explicit scan. Tab, LF and CR are
+// permitted; everything else in 0x00-0x1f plus 0x7f is rejected.
+function hasControl(value) {
+	for (let i = 0; i < length(value); i++) {
+		let c = ord(value, i);
+		if (c == 0 || (c < 0x20 && c != 0x09 && c != 0x0a && c != 0x0d) || c == 0x7f)
+			return true;
+	}
+	return false;
+}
+
 function now() {
 	let t = clock(true);
 	return t[0] + t[1] / 1000000;
@@ -46,7 +58,7 @@ export function parseSsdp(response, peer) {
 	if (type(peer) == 'object')
 		peer = peer.address;
 	if (type(response) != 'string' || length(response) > 8192 ||
-		match(response, /[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]/))
+		hasControl(response))
 		return null;
 	let lines = split(replace(response, '\r\n', '\n'), '\n');
 	if (!length(lines) || !match(lines[0], /^HTTP\/1\.[01] 200([ \t].*)?$/))
@@ -103,7 +115,7 @@ function decodeText(value) {
 // namespace tricks in extracted fields, nested field markup or external loads.
 export function parseDescription(xml, candidate, seen) {
 	if (type(xml) != 'string' || length(xml) > BODY_LIMIT || !length(xml) ||
-		match(xml, /[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]/) ||
+		hasControl(xml) ||
 		type(candidate) != 'object' || !privateAddress(candidate.address))
 		return null;
 	if (substr(xml, 0, 3) == chr(239, 187, 191)) xml = substr(xml, 3);
