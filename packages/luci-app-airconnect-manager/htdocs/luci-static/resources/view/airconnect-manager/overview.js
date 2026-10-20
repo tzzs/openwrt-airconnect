@@ -5,6 +5,7 @@
 'require rpc';
 'require ui';
 'require poll';
+'require airconnect-manager.rules as rules';
 
 var configName = 'airconnect-manager';
 var callStatus = rpc.declare({ object: 'airconnect.manager', method: 'status', expect: {} });
@@ -25,16 +26,20 @@ function time(value) {
 function badge(label, tone) { return E('span', { 'class': 'ac-badge ac-' + (tone || 'neutral') }, label); }
 function replace(node, children) { node.replaceChildren.apply(node, Array.isArray(children) ? children : [children]); }
 function errorMessage(error) { return error && error.message ? error.message : String(error); }
-function safeName(section, value) {
-	if (!value) return true;
-	if (new TextEncoder().encode(value).length > 63) return _('Use at most 63 UTF-8 bytes for the AirPlay name.');
-	return /[\x00-\x1f\x7f]/.test(value) ? _('Control characters are not allowed.') : true;
-}
-function latency(section, value) {
-	return !value || /^(?:\d{1,4}|10000):(?:\d{1,4}|10000)$/.test(value) || _('Use two values from 0 to 10000, separated by a colon.');
-}
-function volume(section, value) {
-	return !value || (/^(?:0(?:\.\d+)?|1(?:\.0+)?)$/.test(value)) || _('Enter a number from 0 to 1.');
+// LuCI calls validate(section_id, value) and treats anything but `true` as a
+// rejection message. The shared rules take the value alone, so every option is
+// wired through this adapter rather than assigned the rule directly.
+//
+// `allowEmpty` is the form semantic, not a rule: on a device override an empty
+// field means "inherit the global value" (config.uc's inherited()), so the form
+// must let it through. The global fields are never empty - they have
+// rmempty = false and config.uc rejects an explicit empty string - so they use
+// the rule as-is and get a proper message instead of a backend round trip.
+function validated(rule, allowEmpty) {
+	return function(section, value) {
+		if (allowEmpty && (value == null || value === '')) return true;
+		return rule(value);
+	};
 }
 function option(section, type, name, label, description) {
 	var o = section.option(type, name, label, description);
@@ -85,19 +90,20 @@ return view.extend({
 		o.rmempty = false;
 		o = option(s, form.Value, 'interface', _('LAN interface'), _('Bind discovery and AirPlay to your local network interface.'));
 		o.rmempty = false;
-		o.validate = function(sid, value) { return /^[a-zA-Z0-9_.:-]{1,15}$/.test(value) || _('Enter an interface name of at most 15 characters.'); };
+		o.validate = validated(rules.interfaceValue);
 		o = option(s, form.Flag, 'airupnp', _('UPnP / DLNA speakers')); o.rmempty = false;
 		o = option(s, form.Flag, 'aircast', _('Chromecast speakers')); o.rmempty = false;
 		o = option(s, form.Value, 'max_volume', _('UPnP volume limit'), _('Default maximum volume, from 1 to 100.'));
-		o.datatype = 'range(1,100)'; o.rmempty = false;
+		o.validate = validated(rules.upnpVolume); o.rmempty = false;
 		o = option(s, form.Value, 'media_volume', _('Chromecast media volume'), _('Default media volume, from 0 to 1. This is not a volume limit.'));
-		o.validate = volume; o.rmempty = false;
+		o.validate = validated(rules.castVolume); o.rmempty = false;
 		this.maps.push(m);
 		var advanced = new form.Map(configName), a = advanced.section(form.NamedSection, 'main', 'main');
 		codecs(a, false).rmempty = false;
-		o = option(a, form.Value, 'latency', _('Buffer and latency'), _('Format: 1000:2000. Lower values may cause audio dropouts.')); o.validate = latency; o.rmempty = false;
+		o = option(a, form.Value, 'latency', _('Buffer and latency'), _('Format: 1000:2000. Lower values may cause audio dropouts.')); o.validate = validated(rules.latency); o.rmempty = false;
 		o = option(a, form.ListValue, 'log_level', _('Log detail'));
-		['error', 'warn', 'info', 'debug'].forEach(function(v) { o.value(v, v); }); o.rmempty = false;
+		['error', 'warn', 'info', 'debug'].forEach(function(v) { o.value(v, v); });
+		o.validate = validated(rules.logLevel); o.rmempty = false;
 		this.maps.push(advanced);
 		return Promise.all([m.render(), advanced.render()]).then(function(nodes) {
 			return E('div', {}, [nodes[0], E('details', { 'class': 'ac-advanced' }, [E('summary', {}, _('Advanced settings')), nodes[1]])]);
@@ -108,18 +114,18 @@ return view.extend({
 		s.addremove = false;
 		var o = option(s, form.Flag, 'enabled', _('Enable bridging')); o.rmempty = false;
 		o = option(s, form.Value, 'name', _('AirPlay name'), _('Changes only the virtual AirPlay receiver name. Leave empty to use the original name.'));
-		o.placeholder = device.original_name || _('Original name'); o.validate = safeName;
+		o.placeholder = device.original_name || _('Original name'); o.validate = validated(rules.airplayName);
 		if (device.engine === 'upnp') {
 			o = option(s, form.Value, 'max_volume', _('Volume limit'), _('Leave empty to inherit the global UPnP limit.'));
-			o.datatype = 'range(1,100)'; o.placeholder = uci.get(configName, 'main', 'max_volume') || '100';
+			o.validate = validated(rules.upnpVolume, true); o.placeholder = uci.get(configName, 'main', 'max_volume') || '100';
 		} else {
 			o = option(s, form.Value, 'media_volume', _('Media volume'), _('Leave empty to inherit the global Chromecast volume.'));
-			o.validate = volume; o.placeholder = uci.get(configName, 'main', 'media_volume') || '0.5';
+			o.validate = validated(rules.castVolume, true); o.placeholder = uci.get(configName, 'main', 'media_volume') || '0.5';
 		}
 		this.maps.push(m);
 		var adv = new form.Map(configName), a = adv.section(form.NamedSection, sectionId, 'device');
 		codecs(a, true);
-		o = option(a, form.Value, 'latency', _('Buffer and latency'), _('Leave empty to inherit the global setting.')); o.validate = latency;
+		o = option(a, form.Value, 'latency', _('Buffer and latency'), _('Leave empty to inherit the global setting.')); o.validate = validated(rules.latency, true);
 		this.maps.push(adv);
 		return Promise.all([m.render(), adv.render()]).then(function(nodes) {
 			return E('div', {}, [nodes[0], E('details', { 'class': 'ac-advanced' }, [E('summary', {}, _('Advanced audio settings')), nodes[1]])]);
