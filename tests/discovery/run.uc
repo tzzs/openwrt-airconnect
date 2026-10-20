@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 // Run: ucode tests/discovery/run.uc (imports resolve relative to this file).
-import { parseSsdp, parseDescription, privateAddress, validateLocation, deduplicate } from '../../packages/airconnect-manager/files/usr/share/airconnect-manager/discovery.uc';
+import { parseSsdp, parseDescription, privateAddress, validateLocation, deduplicate, discover } from '../../packages/airconnect-manager/files/usr/share/airconnect-manager/discovery.uc';
 
 let checks = 0;
 function check(ok, name) { checks++; assert(ok, name); }
@@ -93,7 +93,6 @@ check(length(deduplicate([normal, normal, null, missing])) == 1, 'duplicate UDN 
 let deep = description();
 for (let i = 0; i < 40; i++) deep = replace(deep, '<device>', '<device><extra>');
 check(parseDescription(deep, candidate, 1) == null, 'depth bounded');
-printf('Discovery parser: %d checks passed\n', checks);
 
 // Regression: the control-byte scan must reject NUL/0x01/0x7f in the raw
 // response and description, while a legitimate tab/LF inside an XML comment
@@ -106,4 +105,27 @@ check(parseDescription(description('<friendlyName>N' + chr(1) + '</friendlyName>
 check(parseDescription(description('<friendlyName>N' + chr(127) + '</friendlyName>'), candidate, 1) == null, '0x7f in description rejected');
 let tabLfComment = replace(description(), '<device>', '<!--\tindented\nsecond line-->\t<device>');
 check(parseDescription(tabLfComment, candidate, 1) != null, 'tab/LF inside XML comment accepted');
+
+// The interface allowlist is config.uc's, re-checked here because this module is
+// imported and called directly: a value discover() accepts but the backend
+// rejects would only surface after the SSDP socket exists. The die() is caught
+// and compared, since reaching the socket is not observable on a host.
+function discoveredInterface(interfaceName) {
+	try {
+		discover('192.168.20.10', interfaceName);
+		return 'accepted';
+	}
+	catch (error) {
+		let message = error != null && error.message != null ? error.message : '';
+		return message != 'Discovery requires a private IPv4 address and a valid network interface'
+			? 'accepted' : 'rejected';
+	}
+}
+for (let bad in ['eth0:1', '-bad', '.x', '.', '..', '', 'aaaaaaaaaaaaaaaa', 'br lan', 'eth0\n'])
+	check(discoveredInterface(bad) == 'rejected', 'interface rejected: ' + sprintf('%J', bad));
+for (let good in ['br-lan', 'wlan0', 'eth0.100', 'demo_01'])
+	check(discoveredInterface(good) == 'accepted', 'interface accepted: ' + sprintf('%J', good));
+
+// One summary, after every check above: printing the running total twice made
+// CI report two different numbers.
 printf('Discovery parser: %d checks passed\n', checks);

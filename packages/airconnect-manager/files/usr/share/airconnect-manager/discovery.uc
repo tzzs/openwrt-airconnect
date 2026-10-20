@@ -228,9 +228,21 @@ function fetchDescription(candidate, address, budget) {
 	return body;
 }
 
+// The interface is bound with SO_BINDTODEVICE, so only a bare Linux interface
+// token is accepted. This is deliberately the same rule config.uc enforces for
+// main.interface - first character [A-Za-z0-9_], the rest [A-Za-z0-9_.-], 1..15
+// bytes, and neither '.' nor '..' - because a value allowed here and refused
+// there could only fail after a socket had been created. `$` also matches a
+// trailing newline in ucode, so the match must span the whole value.
+function validInterface(value) {
+	if (length(value) > 15 || value == '.' || value == '..')
+		return false;
+	let m = match(value, /^[A-Za-z0-9_][A-Za-z0-9_.-]*$/);
+	return m != null && length(m[0]) == length(value);
+}
+
 export function discover(address, interfaceName) {
-	if (!privateAddress(address) || type(interfaceName) != 'string' ||
-		length(interfaceName) > 15 || !match(interfaceName, /^[A-Za-z0-9_.:-]+$/))
+	if (!privateAddress(address) || type(interfaceName) != 'string' || !validInterface(interfaceName))
 		die('Discovery requires a private IPv4 address and a valid network interface');
 	let deadline = now() + 8;
 	let sock = socket.create(socket.AF_INET, socket.SOCK_DGRAM | socket.SOCK_NONBLOCK | socket.SOCK_CLOEXEC, 0);
