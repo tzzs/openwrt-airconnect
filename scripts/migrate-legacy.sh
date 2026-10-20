@@ -711,11 +711,11 @@ write_target_config() {
 	} > "${WT_TMP}"
 	) || {
 		rm -f "${WT_TMP}"
-		fail "cannot write ${WT_TMP}"
+		fail "cannot write ${WT_TMP}; nothing outside ${BK_DIR} was changed, so a later --apply is still allowed"
 	}
 	chmod "${TARGET_MODE}" "${WT_TMP}" || {
 		rm -f "${WT_TMP}"
-		fail "cannot set mode ${TARGET_MODE} on ${WT_TMP}"
+		fail "cannot set mode ${TARGET_MODE} on ${WT_TMP}; nothing outside ${BK_DIR} was changed"
 	}
 }
 
@@ -734,9 +734,14 @@ dry_run() {
 		return 0
 	fi
 
+	DR_PLANNED_MODE="${TARGET_MODE}"
+	if [ -f "${TARGET_CONFIG}" ]; then
+		DR_EXISTING_MODE=$(file_mode "${TARGET_CONFIG}") || DR_EXISTING_MODE=''
+		[ -z "${DR_EXISTING_MODE}" ] || DR_PLANNED_MODE="${DR_EXISTING_MODE}"
+	fi
 	if [ "${LEGACY_CONFIG_FOUND}" = '1' ]; then
 		say "  - back up ${LEGACY_CONFIG} and ${TARGET_CONFIG} to ${BACKUP_ROOT}/<UTC timestamp>/ with a manifest"
-		say "  - write ${TARGET_CONFIG} with the values above (mode ${TARGET_MODE})"
+		say "  - write ${TARGET_CONFIG} with the values above (mode ${DR_PLANNED_MODE})"
 	else
 		say "  - back up the pre-migration state to ${BACKUP_ROOT}/<UTC timestamp>/ with a manifest"
 		say '  - no legacy UCI configuration: the airconnect-manager configuration is left unchanged'
@@ -843,6 +848,9 @@ apply_migration() {
 
 	if [ "${LEGACY_CONFIG_FOUND}" = '1' ]; then
 		print_result
+		# A failure inside write_target_config changes nothing outside the backup
+		# directory, and that backup has no `applied` marker yet, so a later
+		# --apply is still allowed.
 		write_target_config
 		# The marker is written before the rename: a failure after this point
 		# still leaves a rollback path, and a failure before it changes nothing.
@@ -922,7 +930,9 @@ restore_file() {
 	RF_TMP="${RF_DIR}/.${RF_DST##*/}.rollback.$$"
 	[ -f "${RF_SRC}" ] || return 1
 	[ -d "${RF_DIR}" ] || return 1
-	cp "${RF_SRC}" "${RF_TMP}" || return 1
+	# The temp file must never be more readable than the file it replaces, so it
+	# is copied under a restrictive umask and chmod'd afterwards.
+	(umask 077 && cp "${RF_SRC}" "${RF_TMP}") || return 1
 	if [ -n "${RF_MODE}" ]; then
 		chmod "${RF_MODE}" "${RF_TMP}" || {
 			rm -f "${RF_TMP}"

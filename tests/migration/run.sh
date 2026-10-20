@@ -384,6 +384,36 @@ else
 	ok '--dry-run creates no backup directory'
 fi
 
+section '--dry-run reports the mode --apply would use'
+make_sandbox drymode
+chmod 0640 "${SB}/etc/config/airconnect-manager"
+output=$(run_script "${SB}" --dry-run)
+status=$?
+check 'the dry-run mode fixture exits 0' "${status}"
+if printf '%s' "${output}" | grep -q 'write .*airconnect-manager with the values above (mode 640)'; then
+	ok '--dry-run names the existing file mode'
+else
+	no '--dry-run names the existing file mode' "$(printf '%s' "${output}" | grep 'with the values above')"
+fi
+output=$(run_script "${SB}" --apply)
+status=$?
+check 'the dry-run mode fixture applies' "${status}"
+mode=$(file_mode "${SB}/etc/config/airconnect-manager")
+if [ "${mode}" = '640' ]; then
+	ok '--apply keeps the existing file mode instead of inventing one'
+else
+	no '--apply keeps the existing file mode instead of inventing one' "mode is ${mode}"
+fi
+output=$(run_script "${SB}" --rollback)
+status=$?
+check 'the dry-run mode fixture rolls back' "${status}"
+mode=$(file_mode "${SB}/etc/config/airconnect-manager")
+if [ "${mode}" = '640' ]; then
+	ok '--rollback restores the original file mode'
+else
+	no '--rollback restores the original file mode' "mode is ${mode}"
+fi
+
 # --- (2b) skipped values are reported, never guessed ----------------------
 
 section 'invalid legacy values are skipped, not guessed'
