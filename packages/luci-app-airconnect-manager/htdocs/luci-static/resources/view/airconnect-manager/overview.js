@@ -41,6 +41,9 @@ function validated(rule, allowEmpty) {
 		return rule(value);
 	};
 }
+// AirPlay names are compared after trailing whitespace is removed: the engine
+// strips it, so "Demo " and "Demo" are the same receiver.
+function trimmed(value) { return value == null ? '' : String(value).replace(/\s+$/, ''); }
 function option(section, type, name, label, description) {
 	var o = section.option(type, name, label, description);
 	o.rmempty = true;
@@ -127,6 +130,9 @@ return view.extend({
 		codecs(a, true);
 		o = option(a, form.Value, 'latency', _('Buffer and latency'), _('Leave empty to inherit the global setting.')); o.validate = validated(rules.latency, true);
 		this.maps.push(adv);
+		// Remembered separately so a committed edit can be re-staged without
+		// re-parsing the global settings, which have nothing to do with names.
+		this.deviceMaps.push(m); this.deviceMaps.push(adv);
 		return Promise.all([m.render(), adv.render()]).then(function(nodes) {
 			return E('div', {}, [nodes[0], E('details', { 'class': 'ac-advanced' }, [E('summary', {}, _('Advanced audio settings')), nodes[1]])]);
 		});
@@ -135,6 +141,62 @@ return view.extend({
 		var match;
 		uci.sections(configName, 'device', function(s) { if (s.engine === device.engine && s.udn === device.udn) match = s['.name']; });
 		return match;
+	},
+	// The effective AirPlay name is what the receiver will broadcast: an explicit
+	// override, otherwise the name discovery reported. A device with neither has
+	// nothing to collide on and is skipped. Trailing whitespace is ignored
+	// because the engines trim it before publishing the name.
+	effectiveNames: function() {
+		var discovered = Object.create(null), names = [];
+		((this.snapshot || {}).devices || []).forEach(function(device) {
+			if (device && device.udn) discovered[device.engine + '\n' + device.udn] = device.original_name;
+		});
+		uci.sections(configName, 'device', function(s) {
+			var name = trimmed(s.name) || trimmed(discovered[s.engine + '\n' + s.udn]);
+			if (name !== '') names.push(name);
+		});
+		return names;
+	},
+	// Re-stage the device forms so a rename the user just committed reaches
+	// uci.sections before the collision check reads it. A rejected parse stages
+	// nothing and is ignored here: save reports the invalid field with the
+	// rule's own message. A map that is still rendering has no widgets yet and
+	// simply stages nothing.
+	restageDevices: function() {
+		return Promise.all((this.deviceMaps || []).map(function(m) {
+			return Promise.resolve().then(function() { return m.parse(); }).catch(function() {});
+		}));
+	},
+	// Names used by more than one device, in the order they were first seen.
+	// Object.create(null) keeps a speaker named "constructor" or "__proto__" an
+	// ordinary key instead of a prototype lookup.
+	duplicateNames: function() {
+		var counts = Object.create(null), order = [], duplicates = [];
+		this.effectiveNames().forEach(function(name) {
+			if (counts[name] === undefined) { counts[name] = 1; order.push(name); }
+			else counts[name] = counts[name] + 1;
+		});
+		order.forEach(function(name) { if (counts[name] > 1) duplicates.push(name); });
+		return duplicates;
+	},
+	// A warning, never a block: two receivers with one name are confusing but
+	// still a configuration the engines accept, so saving must go on.
+	//
+	// LuCI stages form values into uci only inside Map.parse(), so this runs
+	// after the device forms are parsed (on `change`, and again on save) and on
+	// every status refresh, which is when discovery can change an inherited
+	// name. It is never derived from the DOM: staged uci.sections and the last
+	// status snapshot are the only inputs.
+	updateNameWarning: function() {
+		if (!this.nameWarning) return;
+		var duplicates = this.duplicateNames();
+		this.nameWarning.hidden = duplicates.length === 0;
+		if (duplicates.length === 0) { replace(this.nameWarning, []); return; }
+		replace(this.nameWarning, [
+			E('strong', {}, _('More than one speaker uses the same AirPlay name.')),
+			E('p', {}, duplicates.join('\n')),
+			E('p', {}, _('AirPlay lists these receivers under one name. Give each speaker its own name.'))
+		]);
 	},
 	makeDeviceCard: function(device) {
 		var self = this, sectionId = this.findSection(device);
@@ -207,6 +269,9 @@ return view.extend({
 		});
 		this.empty.hidden = Object.keys(this.cards).length !== 0;
 		this.deviceCount.textContent = String(Object.keys(this.cards).length);
+		// Discovered names can appear or change between polls, which changes what
+		// a device with no override collides with.
+		this.updateNameWarning();
 		var scan = data.scan || {};
 		this.scanButton.disabled = !!scan.running || !(services.upnp && services.upnp.enabled || services.cast && services.cast.enabled);
 		this.scanButton.textContent = scan.running ? _('Scanning…') : _('Scan for speakers');
@@ -237,7 +302,7 @@ return view.extend({
 	},
 	render: function(results) {
 		var self = this;
-		this.maps = []; this.cards = {}; this.dirty = false;
+		this.maps = []; this.deviceMaps = []; this.cards = {}; this.dirty = false;
 		this.saveState = E('span', { 'class': 'ac-save-state', role: 'status', 'aria-live': 'polite' }, _('No unsaved changes'));
 		this.serviceStatus = E('div', { 'class': 'ac-status-badges' });
 		this.statusNote = E('p', { 'class': 'ac-muted' });
@@ -248,8 +313,9 @@ return view.extend({
 		this.scanStatus = E('p', { 'class': 'ac-muted', role: 'status' });
 		this.empty = E('div', { 'class': 'ac-empty' }, [E('h3', {}, _('Find your speakers')), E('p', {}, _('Turn on a discovery engine in Settings, then scan. Keep your speaker online on the same LAN and enable DLNA when required.'))]);
 		this.deviceList = E('div', { 'class': 'ac-device-list' }, this.empty);
+		this.nameWarning = E('div', { 'class': 'ac-alert ac-warning', role: 'status', hidden: true });
 		var devicesPanel = E('section', { id: 'ac-panel-devices', role: 'tabpanel', 'aria-labelledby': 'ac-tab-devices' }, [
-			E('div', { 'class': 'ac-section-heading' }, [E('div', {}, [E('h2', {}, [_('Speakers'), this.deviceCount]), E('p', { 'class': 'ac-muted' }, _('Set the AirPlay name and volume for each speaker.'))]), this.scanButton]), this.scanStatus, this.deviceList
+			E('div', { 'class': 'ac-section-heading' }, [E('div', {}, [E('h2', {}, [_('Speakers'), this.deviceCount]), E('p', { 'class': 'ac-muted' }, _('Set the AirPlay name and volume for each speaker.'))]), this.scanButton]), this.scanStatus, this.nameWarning, this.deviceList
 		]);
 		var settingsBody = E('div', { 'class': 'ac-settings-body' }, _('Loading settings…'));
 		var settingsPanel = E('section', { id: 'ac-panel-settings', role: 'tabpanel', hidden: true, 'aria-labelledby': 'ac-tab-settings' }, [E('h2', {}, _('Settings')), E('p', { 'class': 'ac-muted' }, _('Global defaults apply unless a speaker has its own override.')), settingsBody]);
@@ -286,7 +352,10 @@ return view.extend({
 				if (next != null) { event.preventDefault(); tabs.children[next].click(); tabs.children[next].focus(); }
 			}}, labels[index]); tabs.appendChild(tab);
 		});
-		var root = E('div', { 'class': 'ac-manager', input: function() { self.markDirty(); }, change: function() { self.markDirty(); } }, [
+		var root = E('div', { 'class': 'ac-manager', input: function() { self.markDirty(); }, change: function() {
+			self.markDirty();
+			self.restageDevices().then(function() { self.updateNameWarning(); });
+		} }, [
 			E('link', { rel: 'stylesheet', href: L.resource('airconnect-manager/manager.css') }),
 			E('header', { 'class': 'ac-page-heading' }, [E('div', {}, [E('h1', {}, 'AirConnect'), E('p', { 'class': 'ac-muted' }, _('Bring your network speakers to AirPlay.'))]), this.saveState]),
 			E('section', { 'class': 'ac-service-summary', 'aria-label': _('Service status') }, [this.serviceStatus, this.statusNote]), this.statusError, this.conflict,
@@ -304,6 +373,10 @@ return view.extend({
 		var self = this;
 		this.saveState.textContent = _('Validating…');
 		return Promise.all(this.maps.map(function(m) { return m.parse(); })).then(function() {
+			// Parsed forms have staged their values in uci.sections, so the
+			// collision check runs on the configuration that is about to be sent,
+			// not on whatever the DOM shows.
+			self.updateNameWarning();
 			return callValidate(canonicalConfig());
 		}).then(function(result) {
 			if (!result.ok) throw new Error((result.errors || [_('Configuration validation failed.')]).join('\n'));
