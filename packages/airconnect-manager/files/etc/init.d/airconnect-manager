@@ -54,11 +54,20 @@ log_err() {
 # The interface only reaches the engine as <binding> inside the generated XML,
 # never as an argument of this script, but refuse anything that is not a bare
 # Linux interface token anyway so a corrupt value can never be mistaken for a
-# path or an option. runtime.uc performs the authoritative validation.
+# path or an option. runtime.uc performs the authoritative validation, so this
+# allowlist is that one: first character [A-Za-z0-9_], the rest [A-Za-z0-9_.-],
+# 1..15 bytes, and neither '.' nor '..'. A value that shell accepts and the
+# backend rejects would only produce a misleading warning here and a rejected
+# configuration there.
 valid_interface() {
 	case "$1" in
 		''|.|..) return 1 ;;
-		*[!A-Za-z0-9_.:-]*) return 1 ;;
+	esac
+	case "$1" in
+		[!A-Za-z0-9_]*) return 1 ;;
+	esac
+	case "$1" in
+		*[!A-Za-z0-9_.-]*) return 1 ;;
 	esac
 	[ "${#1}" -le 15 ]
 }

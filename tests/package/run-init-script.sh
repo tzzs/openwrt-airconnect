@@ -369,6 +369,43 @@ else
 fi
 cleanup
 
+# --- case 9c: the interface allowlist matches config.uc exactly ---------------
+# A value the shell accepts and the backend rejects would silently rewrite the
+# configured interface to the default, so what this script rewrites has to be
+# exactly the set config.uc refuses. The real function is exercised through a
+# subshell that sources the init script, so no copy of the rule can drift.
+init_valid_interface() {
+	(
+		# shellcheck disable=SC2034  # used by the sourced init script
+		AIRCONNECT_MANAGER_ROOT="${sandbox}"
+		. "${initscript}"
+		if valid_interface "$1"; then exit 0; else exit 1; fi
+	)
+}
+
+for good in 'br-lan' 'wlan0' 'eth0.100' 'demo_01'; do
+	if init_valid_interface "${good}"; then
+		pass "allowlist accepts '${good}'"
+	else
+		fail "allowlist rejected '${good}'"
+	fi
+done
+for bad in 'eth0:1' '-bad' '.' '..' '' 'aaaaaaaaaaaaaaaa' 'br lan' 'br/lan'; do
+	if init_valid_interface "${bad}"; then
+		fail "allowlist accepted '${bad}'"
+	else
+		pass "allowlist rejects '${bad}'"
+	fi
+done
+sandbox=$(make_sandbox ok)
+set_config 1 1 0 'eth0:1'
+run_action start_service
+# Rewritten to the default, so the engine still starts; what matters is that the
+# script said so instead of passing ':' through to the backend.
+expect_instances "interface 'eth0:1'" 'airupnp'
+expect_log "interface 'eth0:1'" 'not a bare interface name'
+cleanup
+
 # --- case 10: reload publishes the set through rc_procd --------------------
 sandbox=$(make_sandbox ok)
 set_config 1 1 0
