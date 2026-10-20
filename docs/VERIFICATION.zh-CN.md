@@ -36,14 +36,14 @@
 | 套件 | 命令 | 结果 |
 | --- | --- | --- |
 | config | `ucode tests/config/run.uc` | 402 通过，0 失败 |
-| discovery | `ucode tests/discovery/run.uc` | 90 项检查通过 |
+| discovery | `ucode tests/discovery/run.uc` | 103 项检查通过 |
 | parity（后端） | `ucode tests/parity/run.uc` | 893 通过，0 失败 |
 | parity（前端） | `node tests/parity/check-frontend.mjs` | 577 通过，0 失败 |
 | runtime | `ucode tests/runtime/run.uc` | 35 通过，0 失败 |
-| state | `ucode tests/state/run.uc` | 72 通过，0 失败 |
+| state | `ucode tests/state/run.uc` | 70 通过，0 失败 |
 | state 插件 | `bash tests/state/check-plugin.sh` | 43 通过，0 失败 |
 | package 静态 | `bash tests/package/check-package.sh` | 67 通过，0 失败 |
-| init 脚本 | `bash tests/package/run-init-script.sh` | 134 项检查，0 失败 |
+| init 脚本 | `bash tests/package/run-init-script.sh` | 148 项检查，0 失败 |
 | engine 配方 | `bash tests/engine/check-recipe.sh` | 30 通过，0 失败 |
 | migration | `bash tests/migration/run.sh` | 122 通过，0 失败 |
 
