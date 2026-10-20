@@ -73,7 +73,9 @@ function backendVerdicts() {
 		});
 	}
 	catch (error) {
-		const detail = (error.stderr || error.stdout || error.message || '').toString().trim();
+		// stdout may hold the (now untrusted) verdict array, so only the TAP
+		// failures on stderr are useful here.
+		const detail = (error.stderr || error.message || '').toString().trim();
 		throw new Error('ucode tests/parity/run.uc failed; the backend does not honour cases.json' +
 			(detail ? '\n' + detail : ''));
 	}
