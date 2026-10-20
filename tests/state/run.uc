@@ -8,7 +8,7 @@
 import * as fs from 'fs';
 import {
 	mergeConfigured, buildStatus, freshCache, parsePsOutput, tailLines,
-	clampErrors, actionSatisfied, stripControl, dropPartialLine
+	clampErrors, actionSatisfied, stripControl
 } from '../../packages/airconnect-manager/files/usr/share/airconnect-manager/state.uc';
 import {
 	ensureDir, writeAtomic, readTail, commandTail, readText, readJson, pathExists
@@ -730,19 +730,6 @@ test('stripControl bounds the output and tolerates non-strings', () => {
 	deepEqual(stripControl(42, 100), '');
 	// A missing cap falls back to the documented line cap.
 	assert(length(stripControl(repeated('y', 2000), null)) == 512, 'default cap not applied');
-});
-
-// --- dropPartialLine --------------------------------------------------------
-
-test('dropPartialLine removes the fragment before the first newline', () => {
-	deepEqual(dropPartialLine('partial line\ncomplete line\n'), { text: 'complete line\n', dropped: true });
-	deepEqual(dropPartialLine('\nfirst complete\n'), { text: 'first complete\n', dropped: true });
-});
-
-test('dropPartialLine drops everything when no newline survives', () => {
-	deepEqual(dropPartialLine('no newline at all'), { text: '', dropped: true });
-	deepEqual(dropPartialLine(''), { text: '', dropped: true });
-	deepEqual(dropPartialLine(null), { text: '', dropped: true });
 });
 
 print('1..', passed + failed, '\n', passed, ' passed; ', failed, ' failed\n');

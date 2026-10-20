@@ -34,7 +34,7 @@ import * as fs from 'fs';
 import { normalizeConfig, renderXml } from '../../airconnect-manager/config.uc';
 import {
 	buildStatus, parsePsOutput, tailLines, clampErrors, actionSatisfied,
-	stripControl, dropPartialLine
+	stripControl
 } from '../../airconnect-manager/state.uc';
 import * as discovery from '../../airconnect-manager/discovery.uc';
 import {

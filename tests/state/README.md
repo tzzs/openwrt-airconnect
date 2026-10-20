@@ -52,8 +52,7 @@ file access. Both are imported directly; neither has a runtime module dependency
 - **`actionSatisfied`** — compares procd's reported state with the state the
   action was supposed to reach, and returns `null` (not `true`) when the answer
   is unknowable.
-- **`stripControl` / `dropPartialLine`** — the cleaning and mid-file trimming
-  used by the reply text and by the tail reader.
+- **`stripControl`** — the cleaning used for a value shown in the page.
 - **`files.uc`** — real temporary directories: atomic writes keep the exact
   bytes and mode and leave no temporary behind, a failed write never touches the
   destination, `readTail` seeks and drops a partial first line, `readText` and

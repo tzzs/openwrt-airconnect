@@ -318,19 +318,6 @@ export function stripControl(value, maxBytes) {
 	return out;
 }
 
-// A read that starts in the middle of a file begins in the middle of a line.
-// That fragment is not a log line, so it is dropped rather than shown as one.
-// The return value reports whether anything was dropped, so the caller can set
-// `truncated` without inspecting the text again.
-export function dropPartialLine(text) {
-	if (type(text) != 'string')
-		return { text: '', dropped: true };
-	let newline = index(text, '\n');
-	if (newline < 0)
-		return { text: '', dropped: true };
-	return { text: substr(text, newline + 1), dropped: true };
-}
-
 // tailLines(text, maxLines, maxBytes) keeps the newest lines, strips control
 // bytes, and respects both caps. `truncated` is true when anything was dropped.
 export function tailLines(text, maxLines, maxBytes) {
