@@ -8,3 +8,4 @@ __pycache__/
 .env.*
 sdk/
 artifacts/
+uc.out
