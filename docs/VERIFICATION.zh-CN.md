@@ -40,6 +40,34 @@
   （版本/摘要/源路径/架构限制/Prepare 引用 `AIRCONNECT_ARCH`/`unzip -l` 诊断/
   POSIX 脚本/shebang/无 init 脚本或配置/`PKG_LICENSE:=MIT`）。
 
+### `airconnect.manager` rpcd 后端（T3，2026）
+
+#### 已验证（主机 ucode）
+
+- **签名契约**：`ucode -c` 编译通过且无输出；顶层 `return` 是签名对象，只注册
+  `airconnect.manager` 与 `status`/`logs`/`scan`/`validate`/`action` 五个方法；
+  `validate` 参数为 `{ config: {} }`，`action` 为 `{ action: "start" }`，其余三个无参数。
+- **永不 NO_DATA**：在没有 uci、没有 ubus 的最坏情况下，五个方法都返回普通对象，
+  形状符合 LuCI 视图的预期。
+- **校验复用**：`validate` 调用 `config.uc` 的 `normalizeConfig`，并对启用的引擎执行
+  `renderXml`，因此 Cast 的 PCM 限制在保存前就作为校验错误返回，而不是应用时 500。
+- **纯逻辑与有界 I/O**：`state.uc`（合并、去重、64 条上限、24 小时缓存过期、
+  `ps` 解析、日志裁剪、错误钳制）与 `files.uc`（原子写、seek 到文件尾、
+  丢弃半行、体积上限）由 `tests/state/run.uc` 覆盖。
+- **插件 I/O 路径**：`tests/state/plugin.uc` 用沙箱根目录与假 uci/ubus 模块运行真实插件，
+  覆盖 status、缓存过期、VERSION、冲突检测、action 拒绝与 procd 结果核对、
+  scan 拒绝、`scan-worker` 分支以及日志裁剪。
+- **静态安全**：请求值不进入 shell；`action` 从固定表取命令；插件内没有
+  `killall`/`rm -rf`/`uci delete` 等破坏性命令；`uci`/`ubus` 不是静态 import。
+
+#### 未验证
+
+- **真实 rpcd 注册**：只在主机上校验了签名对象的结构，未在运行中的 rpcd 上确认注册成功。
+- **procd / netifd**：`service list`、`network.device status`、`network.interface dump`
+  的返回形状来自文档与源码，未在真实 ubusd 上核对。
+- **SSDP 与设备发现**：只覆盖了工作进程的失败路径，未在真实接口上完成发现。
+- **init 脚本调用**：`/etc/init.d/airconnect-manager <action>` 在设备上的实际行为未验证。
+
 ### 未验证
 
 - **归档内容**：95 MB 的 `AirConnect-1.12.4.zip` 在本环境中始终未能完成下载

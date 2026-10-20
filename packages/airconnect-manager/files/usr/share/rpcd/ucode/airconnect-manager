@@ -679,13 +679,15 @@ return {
 		validate: {
 			args: { config: {} },
 			call: function(request) {
-				return validate(request.args.config);
+				// rpcd always passes a dictionary, but `?.` keeps a malformed call
+				// an ordinary validation error instead of an exception.
+				return validate(request?.args?.config);
 			}
 		},
 		action: {
 			args: { action: 'start' },
 			call: function(request) {
-				return action(request.args.action);
+				return action(request?.args?.action);
 			}
 		}
 	}

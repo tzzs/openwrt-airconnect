@@ -8,7 +8,8 @@
 
 - 已迁入界面、设备管理、原生能力审计和性能需求。
 - 已添加独立 `airconnect-engine` 包配方：固定官方 1.12.4 发布包及 SHA256，安装到独立的 libexec 路径，不注册服务。
-- 管理适配层、新版 LuCI、SDK 构建和真实设备验收尚未完成，不是可部署的增强版发行包。
+- 管理适配层（UCI 校验、原子 XML、procd、`airconnect.manager` rpcd 后端）已在主机测试下完成；
+  新版 LuCI、SDK 构建和真实设备验收尚未完成，不是可部署的增强版发行包。
 - 本地开发不会替换路由器现有服务。首次切换需要备份、停用旧实例、迁移配置、验证并提供回退。
 
 ## 三层结构
@@ -16,7 +17,7 @@
 | 层 | 职责 | 状态 |
 | --- | --- | --- |
 | `airconnect-engine` | 官方 airupnp/aircast 二进制、版本与来源追踪 | 包配方已编写，待 SDK 构建 |
-| `airconnect-manager` | UCI 校验、原子生成 XML、procd、受限诊断 RPC | 已定义接口边界，待实现 |
+| `airconnect-manager` | UCI 校验、原子生成 XML、procd、受限诊断 RPC | 适配层与 `airconnect.manager` rpcd 后端已实现，待 SDK 构建与设备验证 |
 | `luci-app-airconnect-manager` | shadcn 风格静态 LuCI 页面，设备和常用设置优先 | 需求已确定，待实现 |
 
 首版验证目标：OpenWrt/iStoreOS 25.12、aarch64_generic；随后验证 x86_64。24.10/IPK 单独构建。不能将 SNAPSHOT 的可安装性替代稳定版 SDK 构建与设备验收。

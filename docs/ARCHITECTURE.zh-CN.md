@@ -32,6 +32,19 @@
 
 procd 使用 `-Z`，不让引擎自行 daemonize；分别管理 UPnP/Cast 实例。扫描、状态和日志通过有界缓存提供，避免每个页面都启动一个发现进程。结构化数据来源不足时展示未知，不伪装为可靠实时播放 API。
 
+### `airconnect.manager` rpcd 后端
+
+`files/usr/share/rpcd/ucode/airconnect-manager` 是 rpcd 的 ucode 插件，顶层 `return` 即签名对象，注册 `airconnect.manager` 的 `status`、`logs`、`scan`、`validate`、`action` 五个方法（ACL 已在 LuCI 包中，不在此重复）。
+
+- **复用而非重写**：`config.uc` 负责校验与渲染，`discovery.uc` 负责 SSDP，`runtime.uc` 负责读 UCI（该文件是 script 模式，只能经 `loadfile()` 取到 API），`state.uc` 与 `files.uc` 负责纯逻辑与有界 I/O。
+- **降级而不是失联**：`uci`、`ubus` 用 `require()` 在 try/catch 内加载。静态 `import` 一旦缺模块会让整个插件编译失败、所有方法消失，而 `status` 恰恰需要在 procd 读不到时仍能返回。
+- **状态与进程分离**：`enabled`/`interface` 来自 UCI，`running` 来自 procd 的 `service list`；ubus 问不到时为 `null`（未知），绝不写成 `false`。
+- **扫描显式且限时**：`status` 从不发起扫描。`scan` 取锁后立刻返回，工作进程是同一文件的 `scan-worker` 分支，不新增常驻进程，受 `discovery.uc` 自带 8 秒预算约束。
+- **不做破坏性动作**：冲突检测只报告旧服务、旧二进制或外来进程的存在，绝不终止、删除或修改。`start`/`restart` 在存在冲突时拒绝。
+- **请求值不进 shell**：`action` 用请求值在固定表里选命令，命令本身是字面量。
+
+主机测试见 `tests/state/`；真实 rpcd、procd、netifd 与 SSDP 仍属设备验收项，未在主机验证。
+
 ### 页面：luci-app-airconnect-manager
 
 继续使用 LuCI 认证与权限，提供 shadcn 风格的静态管理界面。分为音箱、设置、诊断；名称/音量为常用操作，格式/缓冲等折叠为高级设置。页面样式不污染其他 LuCI 页面，隐藏暂停轮询，日志按需读取。
