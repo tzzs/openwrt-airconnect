@@ -84,7 +84,11 @@ function text(value, path, max_bytes, allow_empty) {
 function number(value, path, min, max, integer) {
 	let kind = type(value);
 	if (kind == 'string') {
-		if (!match(value, integer ? /^(0|[1-9][0-9]*)$/ : /^(0|[1-9][0-9]*)(\.[0-9]+)?$/))
+		// Patterns are anchored, but ucode's `$` also matches before a trailing
+		// newline, so require the match to consume the whole value.
+		let re = integer ? /^(0|[1-9][0-9]*)$/ : /^(0|[1-9][0-9]*)(\.[0-9]+)?$/;
+		let m = match(value, re);
+		if (!m || length(m[0]) != length(value))
 			invalid(path, integer ? 'expected a decimal integer' : 'expected a decimal number');
 		value = +value;
 	}
@@ -99,10 +103,14 @@ function number(value, path, min, max, integer) {
 function codec(value, path) {
 	if (type(value) != 'string')
 		invalid(path, 'expected a codec string');
-	if (value == 'wav' || value == 'pcm' || value == 'flac' || match(value, /^flac:[0-9]$/))
+	let flac = match(value, /^flac:[0-9]$/);
+	// `$` matches before a trailing newline in ucode, so confirm the match
+	// consumed the whole value before trusting it.
+	if (value == 'wav' || value == 'pcm' || value == 'flac' ||
+		(flac && length(flac[0]) == length(value)))
 		return value;
 	let parts = match(value, /^(mp3|aac)(:([1-9][0-9]{1,2}))?$/);
-	if (parts) {
+	if (parts && length(parts[0]) == length(value)) {
 		if (!parts[3])
 			return value;
 		let rate = int(parts[3]);
@@ -116,7 +124,9 @@ function latency(value, path) {
 	if (type(value) != 'string')
 		invalid(path, 'expected RTP:HTTP milliseconds');
 	let parts = match(value, /^(0|[1-9][0-9]{0,4}):(0|[1-9][0-9]{0,4})$/);
-	if (!parts || int(parts[1]) > 10000 || int(parts[2]) > 10000)
+	// ucode's `$` accepts a trailing newline, so the match must span the value.
+	if (!parts || length(parts[0]) != length(value) ||
+		int(parts[1]) > 10000 || int(parts[2]) > 10000)
 		invalid(path, 'expected RTP:HTTP integers in 0..10000');
 	return value;
 }
@@ -139,8 +149,9 @@ export function normalizeConfig(input) {
 		media_volume: number(option(source, 'media_volume', '0.5'), 'main.media_volume', 0, 1, false),
 		log_level: option(source, 'log_level', 'warn')
 	};
+	let ifaceMatch = match(main.interface, /^[A-Za-z0-9_][A-Za-z0-9_.-]*$/);
 	if (type(main.interface) != 'string' || length(main.interface) > 15 ||
-		!match(main.interface, /^[A-Za-z0-9_][A-Za-z0-9_.-]*$/) ||
+		!ifaceMatch || length(ifaceMatch[0]) != length(main.interface) ||
 		main.interface == '.' || main.interface == '..')
 		invalid('main.interface', 'expected a Linux interface token of 1..15 ASCII bytes');
 	if (type(main.log_level) != 'string' || index(['error', 'warn', 'info', 'debug'], main.log_level) < 0)
