@@ -246,7 +246,11 @@ EOF
 		files/etc/uci-defaults/90-airconnect-manager \
 		files/usr/share/airconnect-manager/config.uc \
 		files/usr/share/airconnect-manager/discovery.uc \
-		files/usr/share/airconnect-manager/runtime.uc
+		files/usr/share/airconnect-manager/state.uc \
+		files/usr/share/airconnect-manager/files.uc \
+		files/usr/share/airconnect-manager/VERSION \
+		files/usr/share/airconnect-manager/runtime.uc \
+		files/usr/share/rpcd/ucode/airconnect-manager
 	do
 		if printf '%s\n' "${install_block}" | grep -q "${payload}"; then
 			ok "payload is installed: ${payload#files/}"
@@ -263,6 +267,42 @@ if grep -qF '$(INSTALL_BIN) ./files/usr/share/airconnect-manager/runtime.uc' "${
 	ok 'recipe installs runtime.uc as an executable'
 else
 	no 'recipe installs runtime.uc as an executable' 'the init script executes it directly, so it needs INSTALL_BIN'
+fi
+
+# rpcd skips non-regular and world-writable entries, so the plugin has to land as
+# a regular 0755 file. INSTALL_DATA would drop the exec bit and rpcd would then
+# silently skip the whole object - every UI call would fail with NO_DATA.
+if grep -qF '$(INSTALL_BIN) ./files/usr/share/rpcd/ucode/airconnect-manager $(1)/usr/share/rpcd/ucode/airconnect-manager' "${makefile}"; then
+	ok 'recipe installs the rpcd plugin with INSTALL_BIN'
+else
+	no 'recipe installs the rpcd plugin with INSTALL_BIN' 'rpcd skips a non-executable entry'
+fi
+if [ -f "${pkg}/files/usr/share/rpcd/ucode/airconnect-manager" ]; then
+	ok 'the rpcd plugin is a regular file'
+else
+	no 'the rpcd plugin is a regular file' 'missing files/usr/share/rpcd/ucode/airconnect-manager'
+fi
+plugin_mode=$(stat -c '%a' "${pkg}/files/usr/share/rpcd/ucode/airconnect-manager" 2>/dev/null ||
+	stat -f '%Lp' "${pkg}/files/usr/share/rpcd/ucode/airconnect-manager" 2>/dev/null)
+case "${plugin_mode}" in
+	755|0755) ok 'the rpcd plugin is mode 0755 in the tree' ;;
+	*) no 'the rpcd plugin is mode 0755 in the tree' "mode is ${plugin_mode:-unknown}" ;;
+esac
+if grep -qF '$(INSTALL_DIR) $(1)/usr/share/rpcd/ucode' "${makefile}"; then
+	ok 'recipe creates the rpcd plugin directory'
+else
+	no 'recipe creates the rpcd plugin directory' 'missing /usr/share/rpcd/ucode'
+fi
+if [ -f "${pkg}/files/usr/share/airconnect-manager/VERSION" ] &&
+	printf '0.1.0\n' | cmp -s - "${pkg}/files/usr/share/airconnect-manager/VERSION"; then
+	ok 'VERSION contains 0.1.0'
+else
+	no 'VERSION contains 0.1.0' 'the status reply reads this file'
+fi
+if grep -qF '$(INSTALL_DATA) ./files/usr/share/airconnect-manager/VERSION' "${makefile}"; then
+	ok 'recipe installs VERSION'
+else
+	no 'recipe installs VERSION' 'status would report the version as unknown'
 fi
 
 # --- recipe shape -----------------------------------------------------------
@@ -305,7 +345,7 @@ else
 	no 'recipe keeps the engine architecture restriction' 'missing @(aarch64||x86_64)'
 fi
 missing_dependencies=''
-for dependency in airconnect-engine ucode ucode-mod-fs ucode-mod-socket ucode-mod-uci rpcd rpcd-mod-ucode curl; do
+for dependency in airconnect-engine ucode ucode-mod-fs ucode-mod-socket ucode-mod-ubus ucode-mod-uci rpcd rpcd-mod-ucode curl; do
 	grep -Eq "^[[:space:]]*DEPENDS:=.*\+${dependency}([[:space:]]|$)" "${makefile}" ||
 		missing_dependencies="${missing_dependencies} +${dependency}"
 done

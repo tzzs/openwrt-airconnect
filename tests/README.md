@@ -48,6 +48,19 @@ UCI loading, validation and atomic runtime-file writes for `runtime.uc`.
   0750/0640 modes, `status.json` shape and digest stability, and the CLI exit
   codes for `apply`, `validate` and `show`.
 
+## state
+
+Pure reply shaping (`state.uc`), bounded file access (`files.uc`) and the rpcd
+plugin itself.
+
+- Command: `~/.local/opt/ucode-host/bin/ucode -L ~/.local/opt/ucode-host/lib/ucode tests/state/run.uc`
+  and `bash tests/state/check-plugin.sh`
+- Covers: the configured-but-offline merge, cache staleness, `ps` parsing,
+  log tailing and truncation, error clamping, the plugin's rpcd signature, and
+  every RPC method against a sandbox root with fake `uci`/`ubus` modules.
+- See `tests/state/README.md` for what a host cannot verify (real rpcd, procd,
+  netifd and SSDP).
+
 ## package
 
 Static checks for the packaged files (package metadata and the init script).
