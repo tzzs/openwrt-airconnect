@@ -1,0 +1,23 @@
+#!/bin/sh
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 tzzs
+#
+# First-boot preparation, idempotent and safe to re-run. /var is a tmpfs, so the
+# runtime directory never survives a reboot; the init script recreates it as
+# well, this only makes a fresh installation usable without a manual step.
+#
+# The service is deliberately left disabled: installing this package must not
+# start broadcasting AirPlay. Enabling is an explicit user action.
+#
+# exit 0 lets the boot script delete this file from /etc/uci-defaults; a
+# nonzero status keeps it there so the next boot retries.
+
+RUNTIME_DIR='/var/etc/airconnect-manager'
+
+if ! mkdir -p "${RUNTIME_DIR}"; then
+	logger -t airconnect-manager -p daemon.err "cannot create ${RUNTIME_DIR}"
+	exit 1
+fi
+chmod 0750 "${RUNTIME_DIR}"
+
+exit 0

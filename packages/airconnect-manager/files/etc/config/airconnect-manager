@@ -1,0 +1,23 @@
+# SPDX-License-Identifier: MIT
+#
+# AirConnect manager configuration.
+#
+# This file is the single persistent source of truth. The manager reads and
+# validates it, then regenerates the engine XML under
+# /var/etc/airconnect-manager/ on every start or reload. Runtime files are
+# disposable output: never edit them, and never move device configuration into
+# them. Write requests that fail validation keep the previous valid XML.
+#
+# enabled is 0 on purpose: a freshly installed package must not broadcast
+# AirPlay receivers on the LAN until the user opts in.
+
+config main 'main'
+	option enabled '0'
+	option interface 'br-lan'
+	option airupnp '1'
+	option aircast '0'
+	option codec 'flac'
+	option latency '1000:2000'
+	option max_volume '100'
+	option media_volume '0.5'
+	option log_level 'warn'
