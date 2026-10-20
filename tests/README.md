@@ -101,3 +101,19 @@ Static and behavioural checks for the `airconnect-engine` recipe.
   extraction script driven against a synthetic zip. The 95 MB upstream archive
   is never downloaded here.
 - See `tests/engine/README.md` for the deliberate limits of a synthetic archive.
+
+## migration
+
+Host tests for `scripts/migrate-legacy.sh`, the legacy-instance migration and
+rollback script.
+
+- Command: `bash tests/migration/run.sh`
+- Covers: default invocation and `--dry-run` changing nothing (recursive digest
+  comparison), every mapping and skip line including the alternate legacy key
+  spellings, `--apply` writing the mapped UCI plus one backup with a manifest,
+  `--rollback` restoring the original bytes and being idempotent, a second
+  `--apply` refusing, backup-directory collisions, `--force-stop-new`, and the
+  Docker-only / old-binary-only / no-UDN / disabled-legacy cases. The script is
+  additionally parsed with `dash -n`.
+- See `tests/migration/README.md` for the sandbox layout and what a host cannot
+  verify (real uci, procd, docker, init scripts, speakers).
