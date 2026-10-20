@@ -3,6 +3,28 @@
 This directory holds host-side test suites for `airconnect-manager`. They run
 against a real ucode interpreter on the host; the router never runs them.
 
+## Run everything
+
+```sh
+bash scripts/run-tests.sh            # one PASS/FAIL line per suite, then a summary
+bash scripts/run-tests.sh --verbose  # stream each suite's full output
+```
+
+`scripts/run-tests.sh` discovers suites by convention — `tests/<suite>/run.uc`
+(ucode), `tests/<suite>/*.mjs` (node) and `tests/<suite>/**/*.sh` (bash) — so a
+new suite is picked up without editing the runner. Pass/fail is judged by exit
+status only, so a suite may print TAP or its own summary. A failing suite does
+not stop the run.
+
+The ucode interpreter comes from `$UCODE`, then
+`~/.local/opt/ucode-host/bin/ucode`, then `ucode` on PATH; when none is found
+the runner stops with build instructions instead of skipping the ucode suites.
+See [docs/TESTING.zh-CN.md](../docs/TESTING.zh-CN.md) for what these suites
+prove, what they cannot prove, and what CI covers.
+
+The per-suite `Command:` lines below are the exact invocations the runner uses;
+they are handy when debugging one suite in isolation.
+
 ## config
 
 Pure validation and XML render checks for `config.uc`.
@@ -68,3 +90,14 @@ Static checks for the packaged files (package metadata and the init script).
 - Command: `bash tests/package/check-package.sh` and `bash tests/package/run-init-script.sh`
 - Covers: package manifest rules, file layout, and procd/init-script behaviour
   on the host, without building the OpenWrt packages.
+
+## engine
+
+Static and behavioural checks for the `airconnect-engine` recipe.
+
+- Command: `bash tests/engine/check-recipe.sh`
+- Covers: recipe content (version, upstream digest, arch restriction, POSIX
+  extract helper), `AIRCONNECT_ARCH` normalization through `make -f`, and the
+  extraction script driven against a synthetic zip. The 95 MB upstream archive
+  is never downloaded here.
+- See `tests/engine/README.md` for the deliberate limits of a synthetic archive.
