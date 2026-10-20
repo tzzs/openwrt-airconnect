@@ -61,4 +61,7 @@ procd 使用 `-Z`，不让引擎自行 daemonize；分别管理 UPnP/Cast 实例
 4. 实现完整新界面并验证保存、反馈、移动/明暗/键盘体验。
 5. 在匹配的稳定 SDK 构建 APK，完成依赖许可核对，再进行有回退的设备验收与发布。
 
-当前仅完成独立项目初始化、文档迁移和引擎包配方；后续步骤尚未完成。
+已完成：独立项目初始化、文档迁移、引擎包配方、UCI → XML 适配层（`config.uc`、`runtime.uc`）、
+有界发现解析（`discovery.uc`）、procd 启动脚本、`airconnect.manager` rpcd 后端、三个页签的
+LuCI 页面与旧实例迁移脚本（`scripts/migrate-legacy.sh`）。这些均有主机测试（见 `tests/`），
+但未在 SDK 中构建、未在路由器上运行、也未接入真实音箱；构建与设备验收仍属后续步骤。

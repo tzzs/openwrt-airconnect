@@ -15,7 +15,75 @@
 - https://github.com/philippe44/AirConnect/releases/tag/1.12.4
 - https://github.com/philippe44/AirConnect/blob/1.12.4/LICENSE
 
-未部署新服务，路由器继续使用之前已安装的版本。独立管理层、新界面及稳定版 APK 发布仍待实现与验收。
+未部署新服务，路由器继续使用之前已安装的版本。独立管理层与新界面已写入仓库并在主机测试下运行，
+但尚未经 SDK 构建与真实设备验收；当时的这项结论对构建与设备仍然成立，具体状态见下一节。
+
+## 主机验证现状（2026-10-21）
+
+本节记录一次完整的主机运行结果，与上文的初始化记录和下文的分项记录并存，不互相替代。
+
+### 证据来源
+
+- 机器：macOS 27.0（Darwin 27.0.0，arm64）。
+- ucode：`~/.local/opt/ucode-host/bin/ucode`（主机自建，含 `fs`/`socket`/`math` 等
+  模块，`-L ~/.local/opt/ucode-host/lib/ucode`）；node v24.13.0；bash 3.2.57；`/bin/dash`。
+- 未使用 OpenWrt SDK、未联网、未安装任何路由器组件。
+
+### 已在这台主机上验证
+
+统一入口：`bash scripts/run-tests.sh`（11 个套件全部通过）。分套件结果：
+
+| 套件 | 命令 | 结果 |
+| --- | --- | --- |
+| config | `ucode tests/config/run.uc` | 402 通过，0 失败 |
+| discovery | `ucode tests/discovery/run.uc` | 90 项检查通过 |
+| parity（后端） | `ucode tests/parity/run.uc` | 893 通过，0 失败 |
+| parity（前端） | `node tests/parity/check-frontend.mjs` | 577 通过，0 失败 |
+| runtime | `ucode tests/runtime/run.uc` | 35 通过，0 失败 |
+| state | `ucode tests/state/run.uc` | 72 通过，0 失败 |
+| state 插件 | `bash tests/state/check-plugin.sh` | 43 通过，0 失败 |
+| package 静态 | `bash tests/package/check-package.sh` | 67 通过，0 失败 |
+| init 脚本 | `bash tests/package/run-init-script.sh` | 134 项检查，0 失败 |
+| engine 配方 | `bash tests/engine/check-recipe.sh` | 30 通过，0 失败 |
+| migration | `bash tests/migration/run.sh` | 122 通过，0 失败 |
+
+由此可以确认的具体事实：
+
+- **校验与渲染**：`config.uc` 的 `normalizeConfig` / `renderXml` 对两种引擎的默认值、
+  继承、非法输入、控制字节和尾随换行均有覆盖（`tests/config/`）。
+- **前后端校验一致**：`rules.js` 与 `config.uc` 对 `tests/parity/cases.json` 的每一行
+  给出一致结论，边界值包含 0/1/100/101、`1.5`、`0999:1`、63/64 字节名称。
+- **原子写入与保留最后有效文件**：`runtime.uc` 在验证失败、渲染失败和单引擎失败时都不
+  覆盖上一份有效 XML，权限为 0750/0640（`tests/runtime/`）。
+- **rpcd 后端形状**：插件编译通过，签名只注册 `airconnect.manager` 的五个方法；
+  在没有 uci、没有 ubus 时仍返回普通对象；冲突检测只报告，不终止或删除
+  （`tests/state/check-plugin.sh`）。
+- **init 脚本**：`-Z -x`、不使用 `-z`/`-b`、拒绝非法接口值、配置被拒时不发布任何实例；
+  仅启用 aircast 时只启动 aircast（`tests/package/run-init-script.sh`）。
+- **引擎配方静态内容**：版本、摘要、源路径、ARCH 归一化与提取脚本自诊断
+  （`tests/engine/check-recipe.sh`，合成归档，非真实 ZIP）。
+- **迁移脚本逻辑**：`scripts/migrate-legacy.sh` 的 dry-run、备份、写入原子性、拒绝非法参数与
+  幂等性由 `tests/migration/run.sh` 覆盖（沙箱根目录，未接触真实设备配置）。
+
+### 仍未验证
+
+- **SDK 构建**：没有用 OpenWrt SDK 编译过任何一个包，也没有生成或安装过 APK 或 IPK。
+  仓库内不存在 `*.apk`、`*.ipk` 或构建产物。CI 中的 `sdk-build` 只是一个明确标注为
+  “未实现”的占位 job，不产出任何东西。
+- **CI 执行**：`.github/workflows/test.yml` 的主机测试工作流已实现，但从未执行过；
+  没有任何一次 CI 运行结果可查。本节表格中的全部数字来自上面的本地运行。
+- **真实设备**：没有任何东西在真实路由器上运行过。真实 rpcd 注册、procd/netifd 的 ubus
+  返回形状、设备上的 `/etc/init.d/airconnect-manager` 行为均未核对。
+- **真实音箱**：没有接入任何音箱，因此播放、发现真实设备、以及“AirPlay 满音量映射”
+  都未验证。音量上限只验证了数值边界与 XML 渲染，没有验证音箱端的实际响度。
+- **LuCI 集成**：`overview.js` 只在 `dev/` 的模拟后端（`dev/luci-preview.js`）下检查过，
+  从未在真实 LuCI 中加载，也没有经过真实的 rpcd/UCI 保存与回滚。`rules.js` 有主机测试，
+  页面本身没有自动化浏览器测试。
+- **迁移与回退**：迁移脚本已实现且只有主机测试，从未在路由器上运行过；启动新实例与验证
+  发现/广播/播放的步骤由人执行，流程见 `docs/MIGRATION.zh-CN.md`，整条流程从未演练。
+- **升级保留设置**：`conffiles` 已在配方中声明并由静态检查覆盖，但“升级后设置保留”需要
+  一次真实的软件包升级才能确认。
+- **性能测量**：没有按 `docs/PERFORMANCE.zh-CN.md` 做任何请求频率、RSS 或播放影响测量。
 
 ## 引擎包配方验证状态（T6，2026）
 
