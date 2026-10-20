@@ -1,0 +1,11 @@
+# AirConnect management UI
+
+The approved direction is a quiet system settings page with shadcn-inspired neutral surfaces, 6–9px control/card radii, thin borders and text-first service states. It uses native LuCI forms, navigation, permissions and save/apply. No React, runtime Node, online fonts or CDN are shipped.
+
+The default Speakers tab puts the original name next to the AirPlay name override. UPnP shows its volume limit; Chromecast shows media volume with a distinct explanation. Empty overrides inherit global settings. Audio format and buffering live inside native details disclosures. Device facts never substitute an inferred model, manufacturer, address or timestamp. Discovered and service-running labels do not claim successful playback; broadcast and playback are explicitly unknown until measured.
+
+CSS is scoped to `.ac-manager`; neutral background/surface/text/border and positive/warning/focus semantic tokens have light/dark values. Typography inherits the host's system font, preserving LuCI. The page uses 28/19/16px heading sizes, 13px labels and 11–12px supplementary facts. A single column and stacked labels below 600px keep controls reachable on a phone. Native labels, validation, focus rings, semantic disclosure controls, keyboard tabs and textual status states support keyboard and assistive technology use. The interface does not animate.
+
+State refresh updates facts and badges only, never form values. Polling is ten seconds, skips hidden documents, serializes requests and backs off to sixty seconds on repeated failure. Logs and full discovery run only on explicit actions. Configured devices remain visible when absent from discovery. Save parses every native form, sends the canonical proposed UCI payload to backend validation, and only stages valid settings. Save & Apply delegates UCI confirmation/rollback and service reload to LuCI. The manager does not infer application success from an RPC return or launch a second restart.
+
+`dev/` executes the production view with an explicitly labelled mock backend and synthetic devices for visual/interaction inspection. Target LuCI integration and real audio verification remain separate gates.
