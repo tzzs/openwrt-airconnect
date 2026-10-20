@@ -21,6 +21,17 @@ Bounded SSDP and XML parser checks for `discovery.uc`.
   and `deduplicate` — strict header/URL parsing, control-byte scanning, comment
   handling and the bounded XML tokenizer.
 
+## runtime
+
+UCI loading, validation and atomic runtime-file writes for `runtime.uc`.
+
+- Command: `~/.local/opt/ucode-host/bin/ucode -L ~/.local/opt/ucode-host/lib/ucode tests/runtime/run.uc`
+- Covers: `loadConfig` with an injected fake cursor, `applyConfig` rendering and
+  writing both engines, the "keep the last good file" guarantee on validation
+  and render failures, per-file atomicity when one engine fails, `dry_run`,
+  0750/0640 modes, `status.json` shape and digest stability, and the CLI exit
+  codes for `apply`, `validate` and `show`.
+
 ## package
 
 Static checks for the packaged files (package metadata and the init script).
