@@ -245,7 +245,8 @@ EOF
 		files/etc/init.d/airconnect-manager \
 		files/etc/uci-defaults/90-airconnect-manager \
 		files/usr/share/airconnect-manager/config.uc \
-		files/usr/share/airconnect-manager/discovery.uc
+		files/usr/share/airconnect-manager/discovery.uc \
+		files/usr/share/airconnect-manager/runtime.uc
 	do
 		if printf '%s\n' "${install_block}" | grep -q "${payload}"; then
 			ok "payload is installed: ${payload#files/}"
@@ -255,10 +256,13 @@ EOF
 	done
 fi
 
-if grep -q 'airconnect-manager/runtime.uc' "${makefile}"; then
-	no 'recipe does not reference the not-yet-existing runtime.uc' 'the renderer belongs to a later task'
+# runtime.uc is the renderer the init script executes. T2 landed it, so the
+# recipe must now install it as an executable; an INSTALL_DATA line would drop
+# the exec bit and make prepare_runtime() fail on the router.
+if grep -qF '$(INSTALL_BIN) ./files/usr/share/airconnect-manager/runtime.uc' "${makefile}"; then
+	ok 'recipe installs runtime.uc as an executable'
 else
-	ok 'recipe does not reference the not-yet-existing runtime.uc'
+	no 'recipe installs runtime.uc as an executable' 'the init script executes it directly, so it needs INSTALL_BIN'
 fi
 
 # --- recipe shape -----------------------------------------------------------

@@ -51,6 +51,7 @@ define Package/airconnect-manager/install
 	$(INSTALL_BIN) ./files/etc/uci-defaults/90-airconnect-manager $(1)/etc/uci-defaults/90-airconnect-manager
 	$(INSTALL_DATA) ./files/usr/share/airconnect-manager/config.uc $(1)/usr/share/airconnect-manager/config.uc
 	$(INSTALL_DATA) ./files/usr/share/airconnect-manager/discovery.uc $(1)/usr/share/airconnect-manager/discovery.uc
+	$(INSTALL_BIN) ./files/usr/share/airconnect-manager/runtime.uc $(1)/usr/share/airconnect-manager/runtime.uc
 endef
 
 $(eval $(call BuildPackage,airconnect-manager))
