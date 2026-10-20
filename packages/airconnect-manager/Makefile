@@ -20,7 +20,7 @@ define Package/airconnect-manager
   CATEGORY:=Utilities
   TITLE:=AirConnect management adapter
   URL:=https://github.com/philippe44/AirConnect
-  DEPENDS:=@(aarch64||x86_64) +airconnect-engine +ucode +ucode-mod-fs +ucode-mod-socket +ucode-mod-uci +rpcd +rpcd-mod-ucode +curl
+  DEPENDS:=@(aarch64||x86_64) +airconnect-engine +ucode +ucode-mod-fs +ucode-mod-socket +ucode-mod-ubus +ucode-mod-uci +rpcd +rpcd-mod-ucode +curl
 endef
 
 define Package/airconnect-manager/description
@@ -43,15 +43,23 @@ endef
 define Build/Compile
 endef
 
+# rpcd loads every regular, non-world-writable file in /usr/share/rpcd/ucode and
+# skips anything else, so the plugin is installed with INSTALL_BIN (regular,
+# 0755). It is both the RPC provider and its own scan worker.
 define Package/airconnect-manager/install
 	$(INSTALL_DIR) $(1)/etc/config $(1)/etc/init.d $(1)/etc/uci-defaults
 	$(INSTALL_DIR) $(1)/usr/share/airconnect-manager
+	$(INSTALL_DIR) $(1)/usr/share/rpcd/ucode
 	$(INSTALL_CONF) ./files/etc/config/airconnect-manager $(1)/etc/config/airconnect-manager
 	$(INSTALL_BIN) ./files/etc/init.d/airconnect-manager $(1)/etc/init.d/airconnect-manager
 	$(INSTALL_BIN) ./files/etc/uci-defaults/90-airconnect-manager $(1)/etc/uci-defaults/90-airconnect-manager
 	$(INSTALL_DATA) ./files/usr/share/airconnect-manager/config.uc $(1)/usr/share/airconnect-manager/config.uc
 	$(INSTALL_DATA) ./files/usr/share/airconnect-manager/discovery.uc $(1)/usr/share/airconnect-manager/discovery.uc
+	$(INSTALL_DATA) ./files/usr/share/airconnect-manager/state.uc $(1)/usr/share/airconnect-manager/state.uc
+	$(INSTALL_DATA) ./files/usr/share/airconnect-manager/files.uc $(1)/usr/share/airconnect-manager/files.uc
+	$(INSTALL_DATA) ./files/usr/share/airconnect-manager/VERSION $(1)/usr/share/airconnect-manager/VERSION
 	$(INSTALL_BIN) ./files/usr/share/airconnect-manager/runtime.uc $(1)/usr/share/airconnect-manager/runtime.uc
+	$(INSTALL_BIN) ./files/usr/share/rpcd/ucode/airconnect-manager $(1)/usr/share/rpcd/ucode/airconnect-manager
 endef
 
 $(eval $(call BuildPackage,airconnect-manager))

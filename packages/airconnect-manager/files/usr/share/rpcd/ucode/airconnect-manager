@@ -1,0 +1,692 @@
+#!/usr/bin/env ucode
+// SPDX-License-Identifier: MIT
+// rpcd ucode plugin: the airconnect.manager ubus object.
+//
+// rpcd loads every regular, non-world-writable file in /usr/share/rpcd/ucode,
+// executes it, and registers the objects described by the value its top-level
+// `return` evaluates to. That return value is the whole contract: a script that
+// returns anything else is skipped with a message on rpcd's stderr and every
+// call from the LuCI page then fails with NO_DATA.
+//
+// This file is also the discovery worker. `scan` has to answer the RPC quickly,
+// so it starts a short-lived copy of this same script with the fixed argument
+// `scan-worker`; that copy runs discovery, writes the cache and exits. The
+// worker branch is taken before the signature object is returned, so running
+// the file as a program never registers anything. No resident process is added:
+// the worker lives at most as long as discovery.uc's own 8 second budget.
+//
+// Why `require()` and not `import` for uci and ubus
+// ------------------------------------------------
+// ucode resolves `import ... from 'uci'` at compile time. If the module were
+// absent, the file would not compile at all, rpcd would skip the whole plugin
+// and even `status` would disappear - although `status` is exactly the method
+// that must keep working when procd or UCI cannot be read. A runtime
+// require() inside try/catch degrades to "unknown" instead, and it is the same
+// pattern runtime.uc already uses for its optional modules. It also keeps
+// `ucode -c <this file>` working on a host that has neither module.
+//
+// Reused modules: config.uc (validation and rendering), discovery.uc (SSDP),
+// state.uc (pure reply shaping) and runtime.uc (UCI loading). runtime.uc is a
+// script-mode file and cannot be named-imported, so it is loaded with
+// loadfile(), which returns its API object.
+
+import * as fs from 'fs';
+import { normalizeConfig, renderXml } from '../../airconnect-manager/config.uc';
+import {
+	buildStatus, parsePsOutput, tailLines, clampErrors, actionSatisfied,
+	stripControl, dropPartialLine
+} from '../../airconnect-manager/state.uc';
+import * as discovery from '../../airconnect-manager/discovery.uc';
+import {
+	ensureDir, writeAtomic, readTail, commandTail, readJson, readText, pathExists
+} from '../../airconnect-manager/files.uc';
+
+const SERVICE_NAME = 'airconnect-manager';
+
+// Host tests need a sandbox instead of the real /var, /usr and /etc. The prefix
+// is empty on the router, so every default below is the real path. It is only
+// honoured as an absolute path to an existing directory. rpcd never sets this
+// variable, and no ubus request can set it, so it can only come from the
+// administrator - the same idea as AIRCONNECT_MANAGER_ROOT in the init script
+// and IPKG_INSTROOT in rc.common.
+function rootPrefix() {
+	let value = getenv('AIRCONNECT_MANAGER_ROOT');
+	if (type(value) != 'string' || substr(value, 0, 1) != '/')
+		return '';
+	let info = fs.stat(value);
+	if (info == null || info.type != 'directory')
+		return '';
+	return length(value) > 1 ? replace(value, /\/+$/, '') : '';
+}
+
+const ROOT = rootPrefix();
+const STATE_DIR = ROOT + '/var/lib/airconnect-manager';
+const CACHE_FILE = STATE_DIR + '/devices.json';
+const LOCK_FILE = STATE_DIR + '/scan.lock';
+const VERSION_FILE = ROOT + '/usr/share/airconnect-manager/VERSION';
+const RUNTIME_FILE = '../../airconnect-manager/runtime.uc';
+const LOG_SOURCES = [
+	ROOT + '/var/log/airconnect-manager.log',
+	ROOT + '/var/log/airconnect-manager/upnp.log',
+	ROOT + '/var/log/airconnect-manager/cast.log'
+];
+const LOGREAD = ROOT + '/sbin/logread';
+const PS_COMMAND = '/bin/ps w';
+const LEGACY_INIT = ROOT + '/etc/init.d/airconnect';
+const LEGACY_SERVICE = 'airconnect';
+const LEGACY_BINARIES = [ROOT + '/usr/bin/airupnp', ROOT + '/usr/bin/aircast'];
+const ACTIONS = ['start', 'stop', 'restart'];
+// One fixed command per accepted action. The request value only selects an
+// entry; it is never concatenated into a shell string, so no request text can
+// reach /bin/sh. The trailing `&` in the worker command detaches it so the RPC
+// returns immediately.
+const ACTION_COMMANDS = {
+	start: ROOT + '/etc/init.d/' + SERVICE_NAME + ' start 2>&1',
+	stop: ROOT + '/etc/init.d/' + SERVICE_NAME + ' stop 2>&1',
+	restart: ROOT + '/etc/init.d/' + SERVICE_NAME + ' restart 2>&1'
+};
+const UCODE_BIN = '/usr/bin/ucode';
+const WORKER_COMMAND_SUFFIX = ' scan-worker </dev/null >/dev/null 2>&1 &';
+// logread output is a stream, so `tail -c` is what "seek to the end" means for a
+// pipe: it keeps the newest bytes instead of the oldest ones. Both programs are
+// fixed literals, and the tag filter is a constant.
+const LOGREAD_COMMAND = LOGREAD + ' -e airconnect 2>/dev/null | tail -c ' + 65536;
+const TAIL_BYTES = 65536;
+const LOG_LINES = 200;
+const LOCK_MAX_AGE = 60;
+const CACHE_LIMIT = 262144;
+const MAX_TEXT = 512;
+
+let runtimeApi = null;
+let ubusConnection = null;
+
+// --- small helpers ---------------------------------------------------------
+
+function messageOf(error) {
+	if (type(error) == 'string')
+		return error;
+	if (type(error) == 'object' && error != null && type(error.message) == 'string')
+		return error.message;
+	return sprintf('%J', error);
+}
+
+// Diagnostics are user-visible text, so a control byte or an unbounded string
+// from a subprocess must not reach the reply. The scan itself lives in state.uc
+// where it is unit-tested.
+function cleanText(value, maxBytes) {
+	return stripControl(value, maxBytes);
+}
+
+function pluginPath() {
+	let self = sourcepath();
+	return type(self) == 'string' && self != '' ? self : '/usr/share/rpcd/ucode/airconnect-manager';
+}
+
+function enabledEngines(main) {
+	let engines = [];
+	if (main.airupnp === true)
+		push(engines, 'upnp');
+	if (main.aircast === true)
+		push(engines, 'cast');
+	return engines;
+}
+
+// The init script names its procd instances after the engine binaries
+// (airupnp/aircast). The short names are accepted as well so that renaming an
+// instance does not silently turn a running engine into "unknown".
+function engineForInstance(name) {
+	if (name == 'upnp' || name == 'airupnp')
+		return 'upnp';
+	if (name == 'cast' || name == 'aircast')
+		return 'cast';
+	return null;
+}
+
+// --- ubus and uci ----------------------------------------------------------
+
+function ubusConnect() {
+	if (ubusConnection != null)
+		return ubusConnection;
+	try {
+		let module = require('ubus');
+		if (type(module) == 'object' && module != null && type(module.connect) == 'function')
+			ubusConnection = module.connect();
+	}
+	catch (error) {
+		ubusConnection = null;
+	}
+	return ubusConnection;
+}
+
+// null means "ubus could not answer", which every caller keeps distinct from an
+// empty reply.
+function ubusCall(connection, object, method, args) {
+	if (connection == null)
+		return null;
+	try {
+		let reply = connection.call(object, method, args ?? {});
+		return type(reply) == 'object' && reply != null ? reply : null;
+	}
+	catch (error) {
+		return null;
+	}
+}
+
+// runtime.uc is script mode (see its header) and returns its API object from a
+// trailing expression, so loadfile(path)() is the documented accessor.
+function runtime() {
+	if (runtimeApi != null)
+		return runtimeApi;
+	let path = fs.dirname(pluginPath()) + '/' + RUNTIME_FILE;
+	let api = loadfile(path)();
+	if (type(api) != 'object' || api == null || type(api.loadConfig) != 'function')
+		die('cannot load the runtime adapter');
+	runtimeApi = api;
+	return api;
+}
+
+function uciCursor() {
+	let module = require('uci');
+	let cursor = module.cursor();
+	cursor.load(SERVICE_NAME);
+	return cursor;
+}
+
+// loadConfig is runtime.uc's job: it already knows that UCI metadata keys are
+// transport details and that every value stays a string until normalizeConfig.
+function loadUciConfig() {
+	return runtime().loadConfig(uciCursor());
+}
+
+// --- procd state -----------------------------------------------------------
+
+// Instances come from procd, never from a pidfile. `null` means "procd could not
+// be asked" and must stay distinguishable from `false`.
+function readService() {
+	let result = { state: { upnp: null, cast: null }, pids: [] };
+	let connection = ubusConnect();
+	if (connection == null)
+		return result;
+	let reply = ubusCall(connection, 'service', 'list', { name: SERVICE_NAME });
+	if (reply == null)
+		return result;
+	let service = reply[SERVICE_NAME];
+	if (type(service) != 'object' || service == null) {
+		// procd answered and does not know the service, so it is definitely not
+		// running: that is a known false, not an unknown.
+		result.state.upnp = false;
+		result.state.cast = false;
+		return result;
+	}
+	let instances = type(service.instances) == 'object' && service.instances != null ? service.instances : {};
+	result.state.upnp = false;
+	result.state.cast = false;
+	for (let name in instances) {
+		let engine = engineForInstance(name);
+		if (engine == null)
+			continue;
+		let instance = instances[name];
+		if (type(instance) != 'object' || instance == null)
+			continue;
+		if (instance.running === true)
+			result.state[engine] = true;
+		if (type(instance.pid) == 'int' && instance.pid > 0 && index(result.pids, instance.pid) < 0)
+			push(result.pids, instance.pid);
+	}
+	return result;
+}
+
+// The manager's own engine pids, so a foreign process can be told apart. Both
+// pidfile layouts are honoured: the documented state directory and the
+// per-instance files the init script asks procd to write.
+//
+// A stale pidfile can only hide a foreign process, never invent one, which is
+// the failure direction this check wants: a false conflict would block start.
+function readPidFiles() {
+	let pids = [];
+	for (let directory in [STATE_DIR, ROOT + '/var/run']) {
+		let entries = fs.lsdir(directory) ?? [];
+		for (let name in entries) {
+			if (!match(name, /^airconnect[-.]?[A-Za-z0-9._-]*\.pid$/) || length(name) > 64)
+				continue;
+			let text = fs.readfile(directory + '/' + name);
+			if (type(text) != 'string' || length(text) > 32)
+				continue;
+			let value = int(trim(text));
+			if (value > 0 && index(pids, value) < 0)
+				push(pids, value);
+		}
+	}
+	return pids;
+}
+
+function ownPids(service) {
+	let pids = [];
+	for (let pid in service.pids)
+		push(pids, pid);
+	for (let pid in readPidFiles())
+		if (index(pids, pid) < 0)
+			push(pids, pid);
+	return pids;
+}
+
+function legacyServiceRunning() {
+	let connection = ubusConnect();
+	if (connection == null)
+		return false;
+	let reply = ubusCall(connection, 'service', 'list', { name: LEGACY_SERVICE });
+	if (reply == null)
+		return false;
+	let service = reply[LEGACY_SERVICE];
+	if (type(service) != 'object' || service == null ||
+		type(service.instances) != 'object' || service.instances == null)
+		return false;
+	for (let name in service.instances) {
+		let instance = service.instances[name];
+		if (type(instance) == 'object' && instance != null && instance.running === true)
+			return true;
+	}
+	return false;
+}
+
+function psText() {
+	let proc = fs.popen(PS_COMMAND, 'r');
+	if (proc == null)
+		return '';
+	let text = proc.read(TAIL_BYTES + 1) ?? '';
+	proc.close();
+	if (type(text) != 'string')
+		return '';
+	return substr(text, 0, TAIL_BYTES);
+}
+
+// Presence only. Nothing found here is ever signalled, stopped or deleted: the
+// migration away from a legacy install is the user's decision, not the
+// backend's.
+function detectConflicts(service) {
+	let conflicts = [];
+	if (pathExists(LEGACY_INIT) && legacyServiceRunning())
+		push(conflicts, "Legacy service 'airconnect' is running.");
+	for (let path in LEGACY_BINARIES) {
+		if (pathExists(path)) {
+			push(conflicts, 'Legacy binaries found in /usr/bin.');
+			break;
+		}
+	}
+	let foreign = parsePsOutput(psText(), ownPids(service));
+	if (length(foreign))
+		push(conflicts, sprintf('AirConnect engine processes are running outside this manager (%d).', length(foreign)));
+	return conflicts;
+}
+
+// --- discovery cache and lock ---------------------------------------------
+
+function readCache() {
+	return readJson(CACHE_FILE, CACHE_LIMIT);
+}
+
+// The documented shape is { scanned_at, devices }. `error` is an extra field:
+// status reports it as scan.error so a failed scan is visible instead of
+// looking like "no speakers found". A partial update keeps the other fields.
+function writeCache(patch) {
+	let current = readCache() ?? {};
+	let next = {
+		scanned_at: exists(patch, 'scanned_at') ? patch.scanned_at :
+			(type(current.scanned_at) == 'int' ? current.scanned_at : null),
+		devices: exists(patch, 'devices') ? patch.devices :
+			(type(current.devices) == 'array' ? current.devices : []),
+		error: exists(patch, 'error') ? patch.error :
+			(type(current.error) == 'string' ? current.error : null)
+	};
+	return writeAtomic(CACHE_FILE, sprintf('%J\n', next), 0640);
+}
+
+// null when no lock exists, otherwise its age in seconds. A lock left behind by
+// a killed worker stops blocking scans after LOCK_MAX_AGE.
+function lockAge() {
+	let info = fs.stat(LOCK_FILE);
+	if (info == null || info.type != 'file')
+		return null;
+	return time() - info.mtime;
+}
+
+function scanRunning() {
+	let age = lockAge();
+	return age != null && age <= LOCK_MAX_AGE;
+}
+
+function removeLock() {
+	fs.unlink(LOCK_FILE);
+}
+
+function takeLock() {
+	let age = lockAge();
+	if (age != null && age > LOCK_MAX_AGE)
+		removeLock();
+	let handle = fs.open(LOCK_FILE, 'wx', 0644);
+	if (handle == null)
+		return false;
+	handle.write(sprintf('%d\n', time()));
+	handle.close();
+	return true;
+}
+
+function shellQuote(value) {
+	return "'" + replace(value, "'", "'\\''") + "'";
+}
+
+function spawnWorker() {
+	// The shell's exit status for `cmd &` says only that the background job was
+	// forked, so the two things it needs are checked here first: otherwise a
+	// missing interpreter would still answer ok:true and the UI would show
+	// "scanning" until the lock expired.
+	if (!pathExists(UCODE_BIN) || !pathExists(pluginPath()))
+		return false;
+	// A fixed command line: the only variable parts are this script's own
+	// installed path (from sourcepath(), never from the request, UCI or
+	// discovery) and the sandbox prefix, both single-quoted so even an unexpected
+	// character in them cannot split the command. The worker re-reads UCI itself
+	// and releases the lock when it is done.
+	let command = UCODE_BIN + ' ' + shellQuote(pluginPath()) + WORKER_COMMAND_SUFFIX;
+	if (ROOT != '')
+		command = 'AIRCONNECT_MANAGER_ROOT=' + shellQuote(ROOT) + ' ' + command;
+	let proc = fs.popen(command, 'r');
+	if (proc == null)
+		return false;
+	proc.read(1);
+	return proc.close() == 0;
+}
+
+// --- discovery worker ------------------------------------------------------
+
+// SSDP needs the interface address: it binds the socket to it and rejects a
+// LOCATION that points elsewhere. netifd owns that knowledge, so ask it through
+// ubus instead of parsing /proc or shelling out.
+function firstIpv4(reply) {
+	let list = type(reply) == 'object' && reply != null &&
+		type(reply['ipv4-address']) == 'array' ? reply['ipv4-address'] : [];
+	for (let entry in list) {
+		if (type(entry) == 'object' && entry != null &&
+			type(entry.address) == 'string' && length(entry.address) <= 45)
+			return entry.address;
+	}
+	return null;
+}
+
+function interfaceAddress(connection, iface) {
+	if (connection != null) {
+		let address = firstIpv4(ubusCall(connection, 'network.device', 'status', { name: iface }));
+		if (address != null)
+			return address;
+		let dump = ubusCall(connection, 'network.interface', 'dump', {});
+		let list = type(dump) == 'object' && dump != null &&
+			type(dump.interface) == 'array' ? dump.interface : [];
+		for (let entry in list) {
+			if (type(entry) != 'object' || entry == null)
+				continue;
+			// The configured value may name a netifd interface rather than its
+			// kernel device, so both are matched.
+			if (entry.interface != iface && entry.l3_device != iface && entry.device != iface)
+				continue;
+			address = firstIpv4(entry);
+			if (address != null)
+				return address;
+		}
+	}
+	die('no IPv4 address is available on the selected interface');
+}
+
+function runScanWorker() {
+	let failure = null;
+	try {
+		let normalized = normalizeConfig(loadUciConfig());
+		if (!length(enabledEngines(normalized.main)))
+			die('no discovery engine is enabled');
+		let address = interfaceAddress(ubusConnect(), normalized.main.interface);
+		let devices = discovery.discover(address, normalized.main.interface);
+		writeCache({ scanned_at: time(), devices: devices, error: null });
+	}
+	catch (error) {
+		failure = cleanText(messageOf(error), MAX_TEXT);
+		if (failure == '')
+			failure = 'discovery failed';
+		// The previous snapshot is kept: a failed scan is not evidence that the
+		// speakers went away, and status must not present it as a fresh result.
+		writeCache({ error: failure });
+	}
+	// The lock is released last, so a poll that observes running:false also
+	// observes the outcome of this run.
+	removeLock();
+	return failure == null ? 0 : 1;
+}
+
+// --- RPC methods -----------------------------------------------------------
+
+// VERSION holds a plain token, not JSON, so it is read with readText()'s size
+// guard rather than readJson(). Anything that is not a short version token is
+// reported as unknown instead of being shown verbatim.
+function readVersion() {
+	let text = readText(VERSION_FILE, 64);
+	if (text == null)
+		return null;
+	text = trim(text);
+	let m = match(text, /^[0-9A-Za-z._+-]{1,32}$/);
+	// `$` matches before a trailing newline, so require the whole value.
+	return m != null && length(m[0]) == length(text) ? text : null;
+}
+
+function safeService() {
+	try {
+		return readService();
+	}
+	catch (error) {
+		return { state: { upnp: null, cast: null }, pids: [] };
+	}
+}
+
+function status() {
+	// status must never break the page: any failure degrades to a reply the UI
+	// can render, with unknown values left null rather than invented.
+	try {
+		let service = safeService();
+		let raw = loadUciConfig();
+		let cached = readCache();
+		return buildStatus({
+			uciMain: raw.main,
+			devices: raw.devices,
+			cached: cached,
+			serviceState: service.state,
+			conflicts: detectConflicts(service),
+			version: readVersion(),
+			scanRunning: scanRunning(),
+			scanError: type(cached) == 'object' && cached != null ? cached.error : null,
+			now: time()
+		});
+	}
+	catch (error) {
+		return buildStatus({ serviceState: safeService().state, now: time() });
+	}
+}
+
+// Each source's text ends with a newline; joining those directly would insert a
+// blank line at every file boundary, which is not an entry in any log.
+function appendChunk(parts, text) {
+	if (text == '')
+		return;
+	push(parts, substr(text, -1) == '\n' ? substr(text, 0, length(text) - 1) : text);
+}
+
+function logs() {
+	try {
+		let parts = [], truncated = false, budget = TAIL_BYTES;
+		for (let path in LOG_SOURCES) {
+			if (budget < 1) {
+				truncated = true;
+				break;
+			}
+			let tail = readTail(path, budget);
+			truncated = truncated || tail.truncated;
+			if (tail.text != '') {
+				appendChunk(parts, tail.text);
+				budget -= length(tail.text);
+			}
+		}
+		// procd sends instance stdout to syslog, so the engine's own output is
+		// only reachable through logread when no log file was written.
+		if (!length(parts) && budget > 0 && pathExists(LOGREAD)) {
+			let syslog = commandTail(LOGREAD_COMMAND, budget);
+			truncated = truncated || syslog.truncated;
+			appendChunk(parts, syslog.text);
+		}
+		let tail = tailLines(join('\n', parts), LOG_LINES, TAIL_BYTES);
+		return { lines: tail.lines, truncated: truncated || tail.truncated };
+	}
+	catch (error) {
+		return { lines: [], truncated: false };
+	}
+}
+
+function validate(config) {
+	let errors = [];
+	let normalized = null;
+	try {
+		normalized = normalizeConfig(config);
+	}
+	catch (error) {
+		push(errors, messageOf(error));
+	}
+	if (normalized != null) {
+		// Rendering every enabled engine here turns a render-time rejection into
+		// a validation error instead of a 500 at apply time.
+		for (let engine in enabledEngines(normalized.main)) {
+			try {
+				renderXml(normalized, engine);
+			}
+			catch (error) {
+				push(errors, engine + ': ' + messageOf(error));
+			}
+		}
+	}
+	let clamped = clampErrors(errors);
+	return { ok: length(clamped) == 0, errors: clamped };
+}
+
+function scan() {
+	let locked = false;
+	try {
+		let raw;
+		try {
+			raw = loadUciConfig();
+		}
+		catch (error) {
+			return { ok: false, error: 'Cannot read the configuration: ' + cleanText(messageOf(error), MAX_TEXT) };
+		}
+		let normalized = normalizeConfig(raw);
+		// The interface token and the engine selection are validated by
+		// config.uc, so an unusable configuration is rejected here rather than
+		// silently scanning with defaults.
+		if (!length(enabledEngines(normalized.main)))
+			return { ok: false, error: 'No discovery engine is enabled' };
+		if (scanRunning())
+			return { ok: false, error: 'A scan is already running' };
+		if (!ensureDir(STATE_DIR))
+			return { ok: false, error: 'The scan state directory is unavailable' };
+		if (!takeLock())
+			return { ok: false, error: 'A scan is already running' };
+		locked = true;
+		if (!spawnWorker()) {
+			removeLock();
+			locked = false;
+			return { ok: false, error: 'Could not start the discovery worker' };
+		}
+		return { ok: true, running: true };
+	}
+	catch (error) {
+		if (locked)
+			removeLock();
+		return { ok: false, error: cleanText(messageOf(error), MAX_TEXT) };
+	}
+}
+
+// procd is asked for the outcome instead of trusting the exit code alone.
+function action(action_name) {
+	if (index(ACTIONS, action_name) < 0)
+		die('unsupported action');
+	let command = ACTION_COMMANDS[action_name];
+	if (type(command) != 'string')
+		die('unsupported action');
+	let service = safeService();
+	if (action_name != 'stop' && length(detectConflicts(service)))
+		// Starting a second engine next to a legacy instance would advertise two
+		// receivers for the same speaker.
+		return { ok: false, error: 'Conflicting AirConnect instance detected' };
+
+	let output = '';
+	let code = null;
+	try {
+		let proc = fs.popen(command, 'r');
+		if (proc == null)
+			return { ok: false, error: 'Could not run the service command' };
+		output = cleanText(proc.read(TAIL_BYTES) ?? '', MAX_TEXT);
+		code = proc.close();
+	}
+	catch (error) {
+		return { ok: false, error: cleanText(messageOf(error), MAX_TEXT) };
+	}
+	if (code != 0)
+		return { ok: false, error: output != '' ? output : 'The service command failed' };
+
+	// procd is authoritative for the resulting state. When ubus cannot be asked
+	// at all the exit code is the only evidence available, and status will then
+	// report "unknown" rather than "running" - nothing is claimed beyond that.
+	let main = null;
+	try {
+		main = loadUciConfig().main;
+	}
+	catch (error) {
+		main = null;
+	}
+	let satisfied = actionSatisfied(action_name, safeService().state, main);
+	if (satisfied === false)
+		return { ok: false, error: action_name == 'stop' ? 'The service is still running' : 'procd did not start the service' };
+	return { ok: true };
+}
+
+// --- worker entry and rpcd signature --------------------------------------
+
+// `ARGV` is undefined when this file is loaded by rpcd rather than executed by
+// the ucode CLI, and referencing it is safe (it evaluates to null).
+if (type(ARGV) == 'array' && length(ARGV) && ARGV[0] == 'scan-worker')
+	exit(runScanWorker());
+
+return {
+	'airconnect.manager': {
+		status: {
+			call: function() {
+				return status();
+			}
+		},
+		logs: {
+			call: function() {
+				return logs();
+			}
+		},
+		scan: {
+			call: function() {
+				return scan();
+			}
+		},
+		validate: {
+			args: { config: {} },
+			call: function(request) {
+				return validate(request.args.config);
+			}
+		},
+		action: {
+			args: { action: 'start' },
+			call: function(request) {
+				return action(request.args.action);
+			}
+		}
+	}
+};
