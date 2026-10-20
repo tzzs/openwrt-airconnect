@@ -192,11 +192,15 @@ return view.extend({
 		var duplicates = this.duplicateNames();
 		this.nameWarning.hidden = duplicates.length === 0;
 		if (duplicates.length === 0) { replace(this.nameWarning, []); return; }
+		// One element per name: a newline inside a single text node is collapsed
+		// by the HTML layout, so several colliding names would run together in
+		// one wrapped sentence.
+		var names = duplicates.map(function(name) { return E('div', {}, name); });
 		replace(this.nameWarning, [
-			E('strong', {}, _('More than one speaker uses the same AirPlay name.')),
-			E('p', {}, duplicates.join('\n')),
+			E('strong', {}, _('More than one speaker uses the same AirPlay name.'))
+		].concat(names, [
 			E('p', {}, _('AirPlay lists these receivers under one name. Give each speaker its own name.'))
-		]);
+		]));
 	},
 	makeDeviceCard: function(device) {
 		var self = this, sectionId = this.findSection(device);
