@@ -1,0 +1,10 @@
+.DS_Store
+*.apk
+*.ipk
+*.zip
+*.tar.gz
+__pycache__/
+.env
+.env.*
+sdk/
+artifacts/
