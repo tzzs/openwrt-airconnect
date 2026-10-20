@@ -1,0 +1,128 @@
+# Host test gate for openwrt-airconnect.
+#
+# This workflow only proves what a Linux host can prove: the ucode modules, the
+# packaged shell scripts and the LuCI view's validation rules. It does NOT build
+# OpenWrt packages, does NOT download the 95 MB AirConnect release archive and
+# does NOT talk to a router. See docs/TESTING.zh-CN.md for what is still a
+# manual gate.
+name: Host tests
+
+on:
+  push:
+  pull_request:
+  # Only so the manual `sdk-build` placeholder below can be triggered at all;
+  # `host-tests` runs on it too, which is harmless.
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  host-tests:
+    name: host-tests
+    runs-on: ubuntu-latest
+    env:
+      # Installed ucode prefix. scripts/run-tests.sh resolves the module
+      # directory as <prefix>/lib/ucode next to the binary.
+      UCODE_PREFIX: ${{ github.workspace }}/.ucode
+      # Upstream tag the interpreter is built from. Pinned on purpose: the
+      # suites must not drift with whatever master happens to be.
+      UCODE_TAG: v0.0.20250529
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          # Pinned major. The repository has no npm dependencies; node only
+          # executes the plain .mjs suite.
+          node-version: 20
+
+      - name: Install build dependencies for ucode
+        # json-c is a hard build requirement of ucode itself. cmake, make and
+        # gcc are already present on ubuntu-latest.
+        run: |
+          set -eu
+          sudo apt-get update
+          sudo apt-get install --no-install-recommends --yes libjson-c-dev
+          # libmd only enables ucode's optional digest module; runtime.uc falls
+          # back to its own digest when the module is absent, so a missing
+          # package must not fail the job.
+          sudo apt-get install --no-install-recommends --yes libmd-dev ||
+            echo 'libmd-dev unavailable; ucode digest module will be skipped'
+
+      - name: Cache the ucode build
+        id: ucode-cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.UCODE_PREFIX }}
+          key: ucode-${{ runner.os }}-${{ env.UCODE_TAG }}-1
+
+      - name: Build ucode ${{ env.UCODE_TAG }}
+        if: steps.ucode-cache.outputs.cache-hit != 'true'
+        env:
+          # TODO: record the SHA256 of the v0.0.20250529 tarball here and verify
+          # it before extracting. The digest was not computed in the environment
+          # that added this workflow (no network), and inventing one would be
+          # worse than not checking yet. Until then only the tag is pinned.
+          UCODE_URL: https://github.com/jow-/ucode/archive/refs/tags/v0.0.20250529.tar.gz
+        run: |
+          set -eu
+          work=$(mktemp -d)
+          trap 'rm -rf "$work"' EXIT
+
+          curl -fsSL --retry 3 --retry-delay 2 -o "$work/ucode.tar.gz" "$UCODE_URL"
+          mkdir -p "$work/src"
+          tar -xzf "$work/ucode.tar.gz" --strip-components=1 -C "$work/src"
+
+          cmake -S "$work/src" -B "$work/build" \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_INSTALL_PREFIX="$UCODE_PREFIX" \
+            -DCMAKE_INSTALL_LIBDIR=lib
+          cmake --build "$work/build" --parallel
+          cmake --install "$work/build"
+
+          # Fail here, not inside the suites, if the interpreter is unusable.
+          "$UCODE_PREFIX/bin/ucode" -e 'print("ucode ok\n")'
+
+      - name: Verify the cached interpreter
+        if: steps.ucode-cache.outputs.cache-hit == 'true'
+        run: |
+          set -eu
+          test -x "$UCODE_PREFIX/bin/ucode"
+          test -d "$UCODE_PREFIX/lib/ucode"
+          "$UCODE_PREFIX/bin/ucode" -e 'print("ucode ok\n")'
+
+      - name: Run the host test suites
+        env:
+          UCODE: ${{ env.UCODE_PREFIX }}/bin/ucode
+        # One command, and it fails the job when any suite fails. Suites are
+        # discovered by convention inside the script.
+        run: bash scripts/run-tests.sh
+
+  sdk-build:
+    # MANUAL ONLY. Nothing here builds anything yet: this job exists so the
+    # intent is recorded and cannot be mistaken for a working release build.
+    # The `if` guard keeps it off every push and pull request.
+    name: sdk-build (not implemented)
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Placeholder
+        run: |
+          echo "sdk-build is NOT implemented yet - no package is produced here."
+          echo
+          echo "What it will do once written:"
+          echo "  1. download a pinned OpenWrt SDK for the target release"
+          echo "     (25.12 / aarch64_generic first, then x86_64) and verify its"
+          echo "     checksum;"
+          echo "  2. link packages/airconnect-engine, packages/airconnect-manager and"
+          echo "     packages/luci-app-airconnect-manager into the SDK package/ tree;"
+          echo "  3. run make defconfig and compile each package with V=s;"
+          echo "  4. check the resulting APK/IPK contents against the recipe"
+          echo "     (binaries, init script, conffiles, rpcd plugin, ACL);"
+          echo "  5. upload the packages as workflow artifacts."
+          echo
+          echo "TODO: implement the steps above. Until then the package build stays"
+          echo "a manual gate; see docs/TESTING.zh-CN.md and docs/VERIFICATION.zh-CN.md."
