@@ -9,7 +9,10 @@
 //
 // It proves NOTHING about a real router: there is no ubusd, no netifd, no procd
 // and no SSDP here. The fake ubus answers exactly the three calls the plugin
-// makes, and the fake uci returns the sections described by a JSON file.
+// makes, the fake uci returns the sections described by a JSON file, and a fake
+// `ps` inside the sandbox supplies the process table - the plugin prefixes every
+// executable path with the sandbox root precisely so this suite never depends on
+// the host's own processes.
 //
 // The ucode module cache is process-wide, so the two stubs are installed once
 // and read their behaviour from <stubdir>/config.json on every call. Because the
@@ -319,6 +322,57 @@ test('conflict detection never deletes or modifies what it finds', () => {
 	assert(fs.stat(root + '/usr/bin/airupnp') != null, 'the legacy binary was removed');
 	assert(fs.readfile(root + '/usr/bin/airupnp') === 'binary', 'the legacy binary was modified');
 	assert(fs.stat(root + '/etc/init.d/airconnect') != null, 'the legacy init script was removed');
+});
+
+test('a foreign engine process is a conflict, our own pids are not', () => {
+	let root = sandbox();
+	// A fake `ps` in the sandbox: one of our engines (pid 5000), one foreign one
+	// (pid 5001), and a look-alike that must not count.
+	stub({ services: { 'airconnect-manager': instances({ upnp: { running: true, pid: 5000 } }) } });
+	writeFile(root + '/bin/ps',
+		'#!/bin/sh\n' +
+		'printf "  PID USER       VSZ STAT COMMAND\\n"\n' +
+		'printf " 5000 root      1580 S    airupnp -Z -x /var/etc/airconnect-manager/airupnp.xml\\n"\n' +
+		'printf " 5001 root      1580 S    aircast -Z -x /var/etc/airconnect-manager/aircast.xml\\n"\n' +
+		'printf " 5002 root      1000 S    grep airupnp\\n"\n');
+	fs.chmod(root + '/bin/ps', 0755);
+	let reply = plugin().status.call({ args: {} });
+	assert(length(reply.conflicts) == 1, 'expected one conflict, got ' + sprintf('%J', reply.conflicts));
+	assert(index(reply.conflicts[0], 'outside this manager (1)') >= 0,
+		'expected exactly the foreign process to be counted: ' + reply.conflicts[0]);
+});
+
+test('our own engines are not a conflict even when a pidfile is missing', () => {
+	let root = sandbox();
+	// procd reports both engines; ps shows the same two pids.
+	stub({ services: { 'airconnect-manager': instances({
+		upnp: { running: true, pid: 6000 }, cast: { running: true, pid: 6001 } }) } });
+	writeFile(root + '/bin/ps',
+		'#!/bin/sh\n' +
+		'printf " 6000 root 1580 S airupnp -Z\\n"\n' +
+		'printf " 6001 root 1580 S aircast -Z\\n"\n');
+	fs.chmod(root + '/bin/ps', 0755);
+	deepEqual(plugin().status.call({ args: {} }).conflicts, []);
+});
+
+test('a pidfile in the state directory also marks an engine as ours', () => {
+	let root = sandbox();
+	// procd cannot report a pid, so the pidfile is what identifies our engine.
+	stub({ services: { 'airconnect-manager': instances({ upnp: { running: true } }) } });
+	writeFile(root + '/bin/ps',
+		'#!/bin/sh\n' +
+		'printf " 7000 root 1580 S airupnp -Z\\n"\n');
+	fs.chmod(root + '/bin/ps', 0755);
+	assert(length(plugin().status.call({ args: {} }).conflicts) == 1, 'an unknown pid must look foreign');
+	writeFile(root + '/var/lib/airconnect-manager/airconnect-upnp.pid', '7000\n');
+	deepEqual(plugin().status.call({ args: {} }).conflicts, []);
+});
+
+test('a missing ps binary is not reported as a conflict', () => {
+	let root = sandbox();
+	stub({});
+	// No /bin/ps in the sandbox at all.
+	deepEqual(plugin().status.call({ args: {} }).conflicts, []);
 });
 
 // --- action ----------------------------------------------------------------

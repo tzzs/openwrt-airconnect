@@ -88,8 +88,9 @@ ucode module cache is process-wide.
   cache and a malformed `VERSION` degrade to empty/`null`; status never creates
   a lock or a cache file.
 - **conflicts** — a running legacy init script, legacy binaries in `/usr/bin`,
-  and nothing at all when neither is present; detection never deletes or
-  modifies what it finds.
+  a foreign engine process (with a fake `ps`, so our own pids, a pidfile-marked
+  pid and a `grep airupnp` look-alike are all distinguished), and nothing at all
+  when none is present; detection never deletes or modifies what it finds.
 - **action** — an unknown name dies without running anything; `start` and
   `restart` are refused while a legacy instance is present, `stop` is not; a
   failing command's output is reported; success is claimed only when procd

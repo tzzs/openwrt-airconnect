@@ -71,7 +71,12 @@ const LOG_SOURCES = [
 	ROOT + '/var/log/airconnect-manager/cast.log'
 ];
 const LOGREAD = ROOT + '/sbin/logread';
-const PS_COMMAND = '/bin/ps w';
+// `ps` and the ucode interpreter are the only two absolute paths that are
+// executed, so both carry the sandbox prefix as well: a host test then never
+// observes the real process table or a system-wide interpreter, which would make
+// the conflict and scan results depend on the machine.
+const PS_COMMAND = ROOT + '/bin/ps w';
+const UCODE_BIN = ROOT + '/usr/bin/ucode';
 const LEGACY_INIT = ROOT + '/etc/init.d/airconnect';
 const LEGACY_SERVICE = 'airconnect';
 const LEGACY_BINARIES = [ROOT + '/usr/bin/airupnp', ROOT + '/usr/bin/aircast'];
@@ -85,7 +90,6 @@ const ACTION_COMMANDS = {
 	stop: ROOT + '/etc/init.d/' + SERVICE_NAME + ' stop 2>&1',
 	restart: ROOT + '/etc/init.d/' + SERVICE_NAME + ' restart 2>&1'
 };
-const UCODE_BIN = '/usr/bin/ucode';
 const WORKER_COMMAND_SUFFIX = ' scan-worker </dev/null >/dev/null 2>&1 &';
 // logread output is a stream, so `tail -c` is what "seek to the end" means for a
 // pipe: it keeps the newest bytes instead of the oldest ones. Both programs are
