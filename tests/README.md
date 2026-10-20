@@ -112,8 +112,9 @@ rollback script.
   comparison), every mapping and skip line including the alternate legacy key
   spellings, `--apply` writing the mapped UCI plus one backup with a manifest,
   `--rollback` restoring the original bytes and being idempotent, a second
-  `--apply` refusing, backup-directory collisions, `--force-stop-new`, and the
-  Docker-only / old-binary-only / no-UDN / disabled-legacy cases. The script is
-  additionally parsed with `dash -n`.
+  `--apply` refusing, backup-directory collisions, `--force-stop-new`, the
+  Docker-only / old-binary-only / no-UDN / disabled-legacy cases, and a
+  cross-check that the generated file passes the shipped `normalizeConfig` and
+  renders both engines. The script is additionally parsed with `dash -n`.
 - See `tests/migration/README.md` for the sandbox layout and what a host cannot
   verify (real uci, procd, docker, init scripts, speakers).

@@ -755,6 +755,52 @@ else
 fi
 apply_backup_dir="${backup_dir}"
 
+# --- (3b) the generated file is accepted by the real validator ------------
+
+section 'the generated file validates and renders through config.uc'
+ucode_bin=''
+if [ -n "${UCODE:-}" ] && [ -x "${UCODE}" ]; then
+	ucode_bin="${UCODE}"
+elif [ -x "${HOME:-}/.local/opt/ucode-host/bin/ucode" ]; then
+	ucode_bin="${HOME}/.local/opt/ucode-host/bin/ucode"
+elif command -v ucode >/dev/null 2>&1; then
+	ucode_bin=$(command -v ucode)
+fi
+if [ -z "${ucode_bin}" ]; then
+	printf 'skip - no ucode interpreter, so the generated file is not cross-checked\n'
+else
+	ucode_lib="${HOME:-}/.local/opt/ucode-host/lib/ucode"
+	if [ -d "${ucode_lib}" ]; then
+		validator_output=$("${ucode_bin}" -L "${ucode_lib}" "${here}/validate.uc" \
+			"${SB}/etc/config/airconnect-manager" 2>&1)
+	else
+		validator_output=$("${ucode_bin}" "${here}/validate.uc" \
+			"${SB}/etc/config/airconnect-manager" 2>&1)
+	fi
+	status=$?
+	if [ "${status}" -eq 0 ]; then
+		ok 'the generated file passes normalizeConfig'
+	else
+		no 'the generated file passes normalizeConfig' "${validator_output}"
+	fi
+	if printf '%s' "${validator_output}" | grep -q 'upnp=1 cast=1 interface=br-lan devices=1'; then
+		ok 'the validator sees the mapped values'
+	else
+		no 'the validator sees the mapped values' "${validator_output}"
+	fi
+	if printf '%s' "${validator_output}" | grep -q 'device: engine=upnp udn=uuid:demo-speaker-0001 max_volume=30'; then
+		ok 'the validator sees the migrated device override'
+	else
+		no 'the validator sees the migrated device override' "${validator_output}"
+	fi
+	if printf '%s' "${validator_output}" | grep -q '^upnp: rendered ' &&
+		printf '%s' "${validator_output}" | grep -q '^cast: rendered '; then
+		ok 'both enabled engines render XML from the generated file'
+	else
+		no 'both enabled engines render XML from the generated file' "${validator_output}"
+	fi
+fi
+
 # --- (4) --rollback restores the original bytes ---------------------------
 
 section '--rollback restores the original bytes exactly'

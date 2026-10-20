@@ -69,7 +69,13 @@ RFC 5737 addresses (`192.0.2.x`), and a `demo/airconnect` image.
    a legacy file with almost every key absent.
 9. **Guards.** A non-root run without a sandbox exits nonzero, two conflicting
    modes exit 2, an unknown flag exits 2, and `--help` exits 0.
-10. **Static properties.** `sh -n`, `dash -n`, `#!/bin/sh`, `set -u`, and the
+10. **The generated file is accepted by the real validator.** `validate.uc`
+    reads the written `/etc/config/airconnect-manager` with a minimal
+    UCI-shaped reader, runs the shipped `normalizeConfig` on it and renders
+    both enabled engines with the shipped `renderXml`. A migrated file that
+    the manager would reject fails the suite instead of being found on the
+    router. Skipped, with a message, when no ucode interpreter is available.
+11. **Static properties.** `sh -n`, `dash -n`, `#!/bin/sh`, `set -u`, and the
     absence of `eval`, `rm -rf`, `docker rm`, `opkg remove`, `apk del`, `[[ ]]`
     and `sed -i`.
 

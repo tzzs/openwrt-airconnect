@@ -627,6 +627,8 @@ write_manifest() {
 	{
 		printf '%s\n' '# airconnect-manager legacy migration backup'
 		printf '%s\n' '# One line per copied file: file=<path relative to /> mode=<octal mode>'
+		printf '%s\n' '# The legacy service state is recorded as a flag, not as a file copy: what'
+		printf '%s\n' '# --apply changes there is the /etc/rc.d symlink, which --rollback recreates.'
 		printf 'created=%s\n' "${BK_STAMP}"
 		printf 'mode=%s\n' "${MODE}"
 		printf 'legacy_enabled=%s\n' "${LEGACY_ENABLED}"
@@ -665,6 +667,11 @@ EOF
 
 write_target_config() {
 	WT_TMP="${CONFIG_DIR}/.airconnect-manager.migrate.$$"
+	# The temp file is written with a restrictive umask and only then chmod'd to
+	# the final mode, so there is no window in which the configuration is more
+	# readable than the file it replaces.
+	(
+	umask 077
 	{
 		printf '%s\n' '# SPDX-License-Identifier: MIT'
 		printf '%s\n' '#'
@@ -701,7 +708,8 @@ write_target_config() {
 			printf "\toption enabled '1'\n"
 			printf "\toption max_volume '%s'\n" "${MAPPED_DEVICE_VOLUME}"
 		fi
-	} > "${WT_TMP}" || {
+	} > "${WT_TMP}"
+	) || {
 		rm -f "${WT_TMP}"
 		fail "cannot write ${WT_TMP}"
 	}
