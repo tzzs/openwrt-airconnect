@@ -131,6 +131,56 @@ function latency(value, path) {
 	return value;
 }
 
+// http_length is an enum, not a number: upstream only documents and handles three
+// modes (`-g -3|-1|0`, README "HTTP content-length and transfer modes").
+//   -3 chunked encoding, -1 no content-length, 0 a fixed dummy length.
+// Any other integer would be handed to the engine as a literal Content-Length.
+// Read by airupnp/src/config_upnp.c:131; aircast/src/config_cast.c has no such item.
+function httpLength(value, path) {
+	let text = type(value) == 'int' ? sprintf('%d', value) : value;
+	if (type(text) != 'string' || index(['-3', '-1', '0'], text) < 0)
+		invalid(path, 'expected -3 (chunked), -1 (no content-length) or 0 (fixed length)');
+	return int(text);
+}
+
+// `artwork` is a URL the speaker is asked to fetch; the manager never requests it.
+// Upstream copies it with strcpy() into char ArtWork[4*STR_LEN] = 1024 bytes
+// (airupnp.h:65, aircast.h:53), so 1023 is the hard ceiling and this product limit
+// is deliberately stricter. The allowed bytes are RFC 3986 unreserved + sub-delims
+// + ':' '@' '/' '?' '#' '-' '[' ']', which also excludes quotes, angle brackets,
+// backslashes and every control byte, so the value cannot break the XML or the
+// JSON metadata payload the Cast engine builds from it (cast_util.c:32-35).
+//
+// The set is checked one byte at a time on purpose: a bracket class is what this
+// repo's ucode has already been bitten by, and `[` `]` are legal URL bytes.
+const ARTWORK_MAX = 512;
+const ARTWORK_BYTES = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789._~%!$&()*+,;=:@/?#-[]';
+
+function artwork(value, path) {
+	if (type(value) != 'string')
+		invalid(path, 'expected an http:// or https:// URL');
+	// Empty means "no artwork": upstream tests *Conf->ArtWork before using it
+	// (airupnp.c:999, aircast.c:206), so this is the upstream default too.
+	if (value == '')
+		return value;
+	if (length(value) > ARTWORK_MAX)
+		invalid(path, 'exceeds ' + ARTWORK_MAX + ' UTF-8 bytes');
+	let offset = 0;
+	if (substr(value, 0, 8) == 'https://')
+		offset = 8;
+	else if (substr(value, 0, 7) == 'http://')
+		offset = 7;
+	if (offset == 0)
+		invalid(path, 'expected a lowercase http:// or https:// URL');
+	if (length(value) == offset)
+		invalid(path, 'expected a host after the scheme');
+	for (let i = offset; i < length(value); i++) {
+		if (index(ARTWORK_BYTES, chr(ord(value, i))) < 0)
+			invalid(path, 'expected a URL without spaces, quotes or control characters');
+	}
+	return value;
+}
+
 function inherited(source, key, fallback) {
 	return !exists(source, key) || source[key] === '' ? fallback : source[key];
 }
@@ -147,7 +197,20 @@ export function normalizeConfig(input) {
 		latency: latency(option(source, 'latency', '1000:2000'), 'main.latency'),
 		max_volume: number(option(source, 'max_volume', '100'), 'main.max_volume', 1, 100, true),
 		media_volume: number(option(source, 'media_volume', '0.5'), 'main.media_volume', 0, 1, false),
-		log_level: option(source, 'log_level', 'warn')
+		log_level: option(source, 'log_level', 'warn'),
+		// Upstream defaults from glMRConfig (airupnp.c:67-83, aircast.c:51-63).
+		// Writing a value equal to the engine's own default keeps the generated
+		// XML behaviourally identical for a configuration that predates it.
+		metadata: boolean(option(source, 'metadata', '1'), 'main.metadata'),
+		flush: boolean(option(source, 'flush', '1'), 'main.flush'),
+		drift: boolean(option(source, 'drift', '0'), 'main.drift'),
+		artwork: artwork(option(source, 'artwork', ''), 'main.artwork'),
+		http_length: httpLength(option(source, 'http_length', '-1'), 'main.http_length'),
+		// The search-topic buffer is char[sizeof(MEDIA_RENDERER)+2], i.e. the URN,
+		// ':', one digit and NUL (airupnp.c:96, 598, 1160), so 9 is the largest
+		// version that is not truncated. MediaRenderer:1-3 are the published ones.
+		upnp_max: number(option(source, 'upnp_max', '1'), 'main.upnp_max', 1, 9, true),
+		stop_receiver: boolean(option(source, 'stop_receiver', '0'), 'main.stop_receiver')
 	};
 	let ifaceMatch = match(main.interface, /^[A-Za-z0-9_][A-Za-z0-9_.-]*$/);
 	if (type(main.interface) != 'string' || length(main.interface) > 15 ||
@@ -181,7 +244,19 @@ export function normalizeConfig(input) {
 			max_volume: number(inherited(entry, 'max_volume', main.max_volume), path + '.max_volume', 1, 100, true),
 			media_volume: number(inherited(entry, 'media_volume', main.media_volume), path + '.media_volume', 0, 1, false),
 			codec: codec(inherited(entry, 'codec', main.codec), path + '.codec'),
-			latency: latency(inherited(entry, 'latency', main.latency), path + '.latency')
+			latency: latency(inherited(entry, 'latency', main.latency), path + '.latency'),
+			// These five are read from a <device> block by the engine that owns them,
+			// so a device override is real and inherits exactly like codec/latency.
+			// upnp_max is absent on purpose: upstream parses it into the device
+			// struct but only ever reads glMRConfig.UPnPMax (airupnp.c:599, 1159),
+			// so a per-device value would be dead XML. It is global-only, like
+			// interface and log_level.
+			metadata: boolean(inherited(entry, 'metadata', main.metadata), path + '.metadata'),
+			flush: boolean(inherited(entry, 'flush', main.flush), path + '.flush'),
+			drift: boolean(inherited(entry, 'drift', main.drift), path + '.drift'),
+			artwork: artwork(inherited(entry, 'artwork', main.artwork), path + '.artwork'),
+			http_length: httpLength(inherited(entry, 'http_length', main.http_length), path + '.http_length'),
+			stop_receiver: boolean(inherited(entry, 'stop_receiver', main.stop_receiver), path + '.stop_receiver')
 		};
 		if (engine == 'cast' && device.codec == 'pcm')
 			invalid(path + '.codec', 'pcm is supported only by UPnP');
@@ -228,6 +303,20 @@ export function renderXml(normalized, engine) {
 	element(lines, '    ', 'codec', main.codec);
 	element(lines, '    ', 'latency', main.latency);
 	element(lines, '    ', volume, main[volume]);
+	element(lines, '    ', 'metadata', main.metadata ? 1 : 0);
+	element(lines, '    ', 'flush', main.flush ? 1 : 0);
+	element(lines, '    ', 'drift', main.drift ? 1 : 0);
+	if (main.artwork != '')
+		element(lines, '    ', 'artwork', main.artwork);
+	// The two engine-specific compatibility switches stay out of the other root
+	// entirely: aircast never reads http_length or upnp_max, airupnp never reads
+	// stop_receiver, and a silently ignored element is worse than no element.
+	if (engine == 'upnp') {
+		element(lines, '    ', 'http_length', main.http_length);
+		element(lines, '    ', 'upnp_max', main.upnp_max);
+	}
+	else
+		element(lines, '    ', 'stop_receiver', main.stop_receiver ? 1 : 0);
 	push(lines, '  </common>');
 	for (let device in config.devices) {
 		if (device.engine != engine)
@@ -240,6 +329,15 @@ export function renderXml(normalized, engine) {
 		element(lines, '    ', 'codec', device.codec);
 		element(lines, '    ', 'latency', device.latency);
 		element(lines, '    ', volume, device[volume]);
+		element(lines, '    ', 'metadata', device.metadata ? 1 : 0);
+		element(lines, '    ', 'flush', device.flush ? 1 : 0);
+		element(lines, '    ', 'drift', device.drift ? 1 : 0);
+		if (device.artwork != '')
+			element(lines, '    ', 'artwork', device.artwork);
+		if (engine == 'upnp')
+			element(lines, '    ', 'http_length', device.http_length);
+		else
+			element(lines, '    ', 'stop_receiver', device.stop_receiver ? 1 : 0);
 		push(lines, '  </device>');
 	}
 	push(lines, '</' + root + '>');
