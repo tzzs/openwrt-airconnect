@@ -21,3 +21,23 @@ config main 'main'
 	option max_volume '100'
 	option media_volume '0.5'
 	option log_level 'warn'
+
+# Advanced engine parameters. Every value below is the upstream engine default,
+# so listing them changes nothing; they are here so the file shows what the
+# engines can be told. An existing configuration without these options
+# normalizes to exactly these values. Per-device overrides live in the device
+# sections; upnp_max is global only because airupnp never reads a per-device
+# value.
+#
+# metadata/flush/drift: read by both engines. artwork: an http(s) URL the
+# speaker fetches itself; empty means none, and the router never downloads it.
+	option metadata '1'
+	option artwork ''
+	option flush '1'
+	option drift '0'
+# http_length: UPnP only (-3 chunked, -1 no content-length, 0 fixed length).
+	option http_length '-1'
+# upnp_max: UPnP only, highest MediaRenderer search version (1..9).
+	option upnp_max '1'
+# stop_receiver: Chromecast only.
+	option stop_receiver '0'

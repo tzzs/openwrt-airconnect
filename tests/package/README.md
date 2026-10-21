@@ -19,8 +19,10 @@ Static assertions over the recipe and the packaged files:
 - the Makefile declares `conffiles` for `/etc/config/airconnect-manager`, never
   for generated files under `/var/etc`, and ships no `postinst`, because
   installing a package must not start broadcasting AirPlay;
-- the default UCI file contains exactly the nine documented options with the
-  documented defaults, in one `config main 'main'` section, single-quoted;
+- the default UCI file contains exactly the sixteen documented options with the
+  documented defaults, in one `config main 'main'` section, single-quoted; the
+  seven advanced options all carry the upstream engine default, so a
+  configuration written before they existed normalizes to the same values;
 - the engine command line passes `-Z` and `-x <generated xml>`, never `-z` (the
   engine must not self-daemonize behind procd) and never `-b` (the binding lives
   in the generated XML);

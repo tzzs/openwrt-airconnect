@@ -86,7 +86,14 @@ codec=flac
 latency=1000:2000
 max_volume=100
 media_volume=0.5
-log_level=warn'
+log_level=warn
+metadata=1
+artwork=
+flush=1
+drift=0
+http_length=-1
+upnp_max=1
+stop_receiver=0'
 
 # Parse strictly: comments and blank lines are skipped, the section must be
 # `config main 'main'`, every option must be single-quoted, and anything else is
@@ -118,15 +125,15 @@ actual_options=$(awk '
 ' "${config}")
 
 if [ "${actual_options}" = "${expected_options}" ]; then
-	ok 'default config has exactly the nine documented options and defaults'
+	ok 'default config has exactly the sixteen documented options and defaults'
 else
-	no 'default config has exactly the nine documented options and defaults' \
+	no 'default config has exactly the sixteen documented options and defaults' \
 		"$(printf '%s\n' "${actual_options}" | tr '\n' ' ')"
 fi
-if [ "$(printf '%s\n' "${actual_options}" | grep -c '=')" -eq 9 ]; then
-	ok 'default config declares nine options'
+if [ "$(printf '%s\n' "${actual_options}" | grep -c '=')" -eq 16 ]; then
+	ok 'default config declares sixteen options'
 else
-	no 'default config declares nine options' 'wrong option count'
+	no 'default config declares sixteen options' 'wrong option count'
 fi
 
 # --- (c) -Z is mandatory, -z must never appear ------------------------------
