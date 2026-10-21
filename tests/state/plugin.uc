@@ -23,11 +23,11 @@
 // Run: bash tests/state/check-plugin.sh   (which runs this file)
 
 import * as fs from 'fs';
+import { install as installStubs, configure as configureStubs } from './stubs.uc';
 
 const PLUGIN = fs.dirname(sourcepath()) +
 	'/../../packages/airconnect-manager/files/usr/share/rpcd/ucode/airconnect-manager';
 const STUBS = getenv('AIRCONNECT_MANAGER_STUBS');
-const STUB_CONFIG = STUBS + '/config.json';
 
 let passed = 0;
 let failed = 0;
@@ -123,57 +123,14 @@ function sandbox() {
 	return ROOT;
 }
 
-// The fake uci and ubus modules are installed once; their behaviour comes from
-// <stubs>/config.json, rewritten by each test.
-writeFile(STUBS + '/uci.uc',
-	'import * as fs from "fs";\n' +
-	'let self = fs.dirname(sourcepath());\n' +
-	'({ cursor: function() { return {\n' +
-	'  load: function(name) { },\n' +
-	'  get_all: function(name, section) {\n' +
-	'    let config = json(fs.readfile(self + "/config.json")) ?? {};\n' +
-	'    return config.main ?? null;\n' +
-	'  },\n' +
-	'  foreach: function(name, kind, callback) {\n' +
-	'    let config = json(fs.readfile(self + "/config.json")) ?? {};\n' +
-	'    for (let device in config.devices ?? [])\n' +
-	'      if (callback(device) === false)\n' +
-	'        break;\n' +
-	'    return true;\n' +
-	'  }\n' +
-	'}; } })\n');
-
-writeFile(STUBS + '/ubus.uc',
-	'import * as fs from "fs";\n' +
-	'let self = fs.dirname(sourcepath());\n' +
-	'({ connect: function() { return {\n' +
-	'  call: function(object, method, args) {\n' +
-	'    let config = json(fs.readfile(self + "/config.json")) ?? {};\n' +
-	'    if (object == "service" && method == "list") {\n' +
-	'      let reply = {};\n' +
-	'      let services = config.services ?? {};\n' +
-	'      if (services[args.name] != null)\n' +
-	'        reply[args.name] = services[args.name];\n' +
-	'      return reply;\n' +
-	'    }\n' +
-	'    if (object == "network.device" && method == "status")\n' +
-	'      return { "ipv4-address": [ { address: "192.0.2.10" } ] };\n' +
-	'    return {};\n' +
-	'  }\n' +
-	'}; } })\n');
+// The fake uci and ubus modules are installed once and shared with every other
+// suite that drives the real plugin (tests/state/stubs.uc), so no suite can pass
+// because its own fake is more forgiving than the next one's.
+installStubs(STUBS);
 
 // Configure the stubs for one test.
 function stub(options) {
-	options = options ?? {};
-	let config = {
-		main: options.main ?? {
-			enabled: '1', interface: 'br-lan', airupnp: '1', aircast: '0', codec: 'flac',
-			latency: '1000:2000', max_volume: '100', media_volume: '0.5', log_level: 'warn'
-		},
-		devices: options.devices ?? [],
-		services: options.services ?? {}
-	};
-	writeFile(STUB_CONFIG, sprintf('%J\n', config));
+	configureStubs(STUBS, options);
 }
 
 // A fresh plugin instance. Every loadfile() call re-executes the file, so the

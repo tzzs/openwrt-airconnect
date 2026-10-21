@@ -82,6 +82,12 @@ file access. Both are imported directly; neither has a runtime module dependency
 search path. The stubs read `<stubs>/config.json` on every call, because the
 ucode module cache is process-wide.
 
+The fake `uci` and `ubus` modules themselves live in `stubs.uc`, not in this
+file: `tests/performance/measure-status.uc` drives the same plugin and imports
+the same fakes, so there is exactly one definition of what a router's `uci` and
+`ubus` look like to this backend. A suite that re-implemented them could pass
+against a fake more forgiving than the other suite's.
+
 - **status** — reads UCI, procd, `VERSION` and the cache; a cache older than 24
   hours is ignored while configured devices stay visible and offline; a corrupt
   cache and a malformed `VERSION` degrade to empty/`null`; status never creates

@@ -31,7 +31,7 @@
 
 ### 已在这台主机上验证
 
-统一入口：`bash scripts/run-tests.sh`（11 个套件全部通过）。分套件结果：
+统一入口：`bash scripts/run-tests.sh`（14 个套件全部通过）。分套件结果：
 
 | 套件 | 命令 | 结果 |
 | --- | --- | --- |
@@ -46,6 +46,9 @@
 | init 脚本 | `bash tests/package/run-init-script.sh` | 148 项检查，0 失败 |
 | engine 配方 | `bash tests/engine/check-recipe.sh` | 30 通过，0 失败 |
 | migration | `bash tests/migration/run.sh` | 122 通过，0 失败 |
+| 性能：静态资源 | `bash tests/performance/measure-payload.sh` | 5 个文件，40,699 B / gzip 12,313 B，预算全部成立 |
+| 性能：回复大小 | `bash tests/performance/measure-status.sh` | 10 通过，0 失败 |
+| 性能：轮询契约 | `node tests/performance/poll-contract.mjs` | 29 通过，0 失败 |
 
 由此可以确认的具体事实：
 
@@ -83,7 +86,10 @@
   发现/广播/播放的步骤由人执行，流程见 `docs/MIGRATION.zh-CN.md`，整条流程从未演练。
 - **升级保留设置**：`conffiles` 已在配方中声明并由静态检查覆盖，但“升级后设置保留”需要
   一次真实的软件包升级才能确认。
-- **性能测量**：没有按 `docs/PERFORMANCE.zh-CN.md` 做任何请求频率、RSS 或播放影响测量。
+- **性能测量**：主机侧可测的部分已在 `tests/performance/` 落实为断言——本包静态资源
+  字节与预算、`status`/`logs` 回复字节与上限执行、轮询间隔/隐藏暂停/退避/表单零写入。
+  路由器 CPU、RSS/VSZ、网络流量、播放中断、浏览器长任务仍**未测量**，需要真实设备；
+  数字、命令与逐项理由见 [性能测量结果](PERFORMANCE-RESULTS.zh-CN.md)。
 
 ## 引擎包配方验证状态（T6，2026）
 

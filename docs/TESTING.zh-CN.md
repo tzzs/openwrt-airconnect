@@ -71,6 +71,7 @@ ucode 套件需要**真实的** ucode 解释器。查找顺序：
 | `tests/state` | `run.uc` + `check-plugin.sh` | `state.uc`/`files.uc` 的纯逻辑与有界 I/O；rpcd 插件能编译、签名正确、五个方法永不返回 NO_DATA；插件在沙箱根目录 + 假 uci/ubus 下的真实 I/O 路径 |
 | `tests/parity` | `run.uc` + `check-frontend.mjs` | `cases.json` 这张手写契约同时约束 `config.uc` 与 LuCI 的 `rules.js`，两边判定必须一致 |
 | `tests/package` | `check-package.sh` + `run-init-script.sh` | 包清单与文件布局；init 脚本在 procd 替身下的实例注册、`-Z`/`-x`、先校验后发布、接口清洗 |
+| `tests/performance` | `measure-payload.sh` + `measure-status.sh` + `poll-contract.mjs` | 本包静态资源字节与 `gzip` 字节及其预算；`status`/`logs` 回复字节与文档化的条数/字节上限是否真的在执行；轮询间隔、隐藏暂停、单请求在途、失败退避、状态刷新不写表单 |
 | `tests/engine` | `check-recipe.sh` | 引擎配方的版本/摘要/架构归一化/提取脚本逻辑，用合成 ZIP 驱动 |
 
 ## 各套件不证明什么
@@ -91,8 +92,10 @@ ucode 套件需要**真实的** ucode 解释器。查找顺序：
 - **没有设备端执行**：二进制未在 aarch64/x86_64 路由器上运行过。
 - **没有浏览器**：`dev/` 预览与 `rules.js` 的加载是模块级验证，不替代真实 LuCI、
   真实浏览器渲染、无障碍与移动端布局验收。
-- **不验证并发与性能**：多流、CPU/RSS、轮询开销等见
-  [性能与资源设计](PERFORMANCE.zh-CN.md)，属于测量任务，不在单元测试范围内。
+- **不验证并发与性能**：`tests/performance` 已把**主机可测**的部分变为了断言（静态资源
+  字节、`status`/`logs` 回复字节、轮询决策），数字与命令见
+  [性能测量结果](PERFORMANCE-RESULTS.zh-CN.md)。但路由器 CPU、RSS/VSZ、网络、播放中断、
+  浏览器长任务仍需真实设备，这些主机无法产生任何数字。
 
 人工验收项汇总见 [验证记录](VERIFICATION.zh-CN.md)。
 
@@ -124,6 +127,7 @@ ucode 套件需要**真实的** ucode 解释器。查找顺序：
   AirPlay 满音量映射与反馈、回退方案。
 - **真实 LuCI 集成**：页面在目标 LuCI 版本中的渲染、保存回滚、服务触发器。
 - **音频与网络**：实际播放、多流并发、发现成功率、防火墙与 DNS 环境差异。
-- **性能测量**：按 [性能与资源设计](PERFORMANCE.zh-CN.md) 的方法对比重构前后。
+- **性能测量**：主机侧部分已完成（静态资源量、`status`/`logs` 回复大小与上限执行、轮询契约），
+  见 [性能测量结果](PERFORMANCE-RESULTS.zh-CN.md)；设备侧的 CPU、RSS、网络与播放中断仍未测。
 
 在这些门槛通过之前，本仓库不声称“可在路由器上直接部署的增强版发行包”。

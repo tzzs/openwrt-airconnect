@@ -8,7 +8,7 @@
 - [x] 建立“音箱 / 设置 / 诊断”的信息结构，常用操作优先，高级参数渐进展开；适配手机与明暗模式。（`overview.js` 的三个 tabpanel，`manager.css` 的 600px 断点与深色 token）
 - [x] 支持配置每台设备的 AirPlay 显示名称，并展示设备原名称、型号、厂商、地址、协议、最后发现时间和可验证的桥接状态。AirPlay 名称与原厂设备名称明确区分。（`overview.js` 的 `updateDevice`，`config.uc` 的名称校验）
 - [ ] 将原生 AirConnect 能力逐项映射到增强版，按适用引擎、继承关系和优先级呈现，不把 Chromecast 参数误套到 UPnP。（`config.uc` 已覆盖 `codec`/`latency`/`max_volume`/`media_volume`/`log_level`；缓冲、元数据、FLUSH 等高级项尚未接入）
-- [ ] 把性能作为实现验收：静态页面、低频状态轮询、隐藏暂停、缓存发现、日志限量，不新增 Node 常驻服务。（页面与后端已按此实现，但尚未做[性能与资源设计](docs/PERFORMANCE.zh-CN.md)要求的测量）
+- [ ] 把性能作为实现验收：静态页面、低频状态轮询、隐藏暂停、缓存发现、日志限量，不新增 Node 常驻服务。（主机侧测量已完成：本包静态资源 5 个文件、未压缩 40,699 B / `gzip -9` 12,313 B 且预算已断言；`status` 回复 1 / 8 / 32 / 64 台设备为 792 / 4,607 / 17,707 / 35,167 B，64 条上限对 128 个候选成立；`logs` 的 200 行 / 512 B 每行 / 64 KiB 文本上限被执行（全反斜杠时报文 130,590 B，故预算按 JSON 转义翻倍定在 160 KiB）；轮询间隔正好 10,000 ms、隐藏时暂停、单请求在途、失败退避到 60,000 ms、状态刷新对表单零写入，均由 `tests/performance/` 断言。**仍未测**：路由器 CPU、RSS/VSZ、网络、播放中断、浏览器长任务，即“以重构前后同条件对比证明不会明显影响播放”这条，故不能关闭。数字、命令与逐项理由见[性能测量结果](docs/PERFORMANCE-RESULTS.zh-CN.md)）
 
 - [x] 在 LuCI 按音箱展示 AirPlay 最大音量，范围 1–100，默认 100 保持上游行为；允许用户自行选择 30 等上限。（`rules.js` 与 `config.uc` 共用同一边界，`tests/parity/`）
 - [x] 用 UPnP UDN 标识音箱，避免依赖 DHCP 地址，不内置任何个人设备名称、IP 或 UDN。（`discovery.uc`、`state.uc`；测试与 `dev/` 只用合成 UDN 与 RFC 5737 地址）
@@ -58,5 +58,6 @@ AirPlay 满音量映射及反馈；[ ] 界面状态与服务一致（仅在 `dev
 - [新版界面与设备信息需求](docs/UI-REQUIREMENTS.zh-CN.md)
 - [原生 AirConnect 能力审计](docs/AIRCONNECT-CAPABILITIES.zh-CN.md)
 - [性能与资源约束](docs/PERFORMANCE.zh-CN.md)
+- [性能测量结果](docs/PERFORMANCE-RESULTS.zh-CN.md)
 
 界面重构、名称配置、信息展示及上游能力接入属于本轮新增的正式范围；文档本身不代表增强版功能已经实现或部署。

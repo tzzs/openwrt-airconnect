@@ -83,6 +83,31 @@ plugin itself.
 - See `tests/state/README.md` for what a host cannot verify (real rpcd, procd,
   netifd and SSDP).
 
+## performance
+
+Measurement suites: the static payload, the rpcd reply sizes and the polling
+contract. They are tests **and** the source of the numbers in
+[docs/PERFORMANCE-RESULTS.zh-CN.md](../docs/PERFORMANCE-RESULTS.zh-CN.md), so a
+budget cannot drift away from the documentation.
+
+- Command: `bash tests/performance/measure-payload.sh`,
+  `bash tests/performance/measure-status.sh`,
+  `node tests/performance/poll-contract.mjs`
+- `measure-payload.sh` — bytes and `gzip -9` bytes of every static file the LuCI
+  package installs (the resources tree plus the menu and ACL JSON), with a total
+  and a per-file budget. Measured with no SDK, no router and no network.
+- `measure-status.sh` — drives the real rpcd plugin through the shared fake
+  `uci`/`ubus` modules (`tests/state/stubs.uc`) and records `status` reply bytes
+  at 1/8/32/64 devices, the 64-device cap against 128 candidates, `logs` reply
+  bytes at the documented caps, and the subprocess count per call.
+- `poll-contract.mjs` — loads the production `overview.js` in the same module
+  shim `tests/parity/check-frontend.mjs` uses and asserts the polling contract:
+  10000 ms interval, skip while `document.hidden`, one request in flight,
+  backoff to 60000 ms, and that `updateStatus` never writes to a form control.
+- Covers: byte budgets, reply bounds and the poll decisions. **Does not cover**
+  router CPU, RSS/VSZ, network, playback interruption, browser long tasks or a
+  real LuCI — see the "未测量" section of the results file.
+
 ## package
 
 Static checks for the packaged files (package metadata and the init script).
