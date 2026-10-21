@@ -46,11 +46,22 @@ endif
 # Only aarch64 and x86_64 are shipped by the 1.12.4 release, but the mapping
 # above also normalizes the documented ARM/MIPS family so a future release or
 # device can opt in by extending one list. A value that survives the mapping
-# unchanged AND is not a known token is genuinely unmapped (e.g. riscv64) and
-# must fail loudly rather than produce a bogus download path.
-ifeq ($(AIRCONNECT_ARCH),$(ARCH))
-  ifeq ($(filter $(ARCH),aarch64 x86_64 arm armv7 armv6 mips mipsel mips64 mips64el),)
-    $(error airconnect-engine: unsupported ARCH=$(ARCH) -- the 1.12.4 release ships aarch64/x86_64 only)
+# unchanged AND is not a known token is genuinely unmapped (e.g. riscv64).
+#
+# The check is gated on ARCH being non-empty on purpose: the SDK's package
+# scanner sources every Makefile with DUMP=1 and an unset ARCH to build the
+# package index, and an unconditional $(error) there aborts the scan, so the
+# package never registers and `make package/airconnect-engine/compile` fails
+# with "No rule to make target" instead of a useful message. An empty ARCH
+# therefore skips the gate, and the same condition is re-asserted inside
+# Build/Prepare where ARCH is guaranteed to be set, turning an unsupported
+# architecture into a real build failure rather than a bogus binary.
+AIRCONNECT_SUPPORTED_ARCHS := aarch64 x86_64 arm armv7 armv6 mips mipsel mips64 mips64el
+ifneq ($(ARCH),)
+  ifeq ($(AIRCONNECT_ARCH),$(ARCH))
+    ifeq ($(filter $(ARCH),$(AIRCONNECT_SUPPORTED_ARCHS)),)
+      $(error airconnect-engine: unsupported ARCH=$(ARCH) -- the 1.12.4 release ships aarch64/x86_64 only)
+    endif
   endif
 endif
 
@@ -75,29 +86,24 @@ endef
 # stderr so the real names are visible instead of guessing. The extraction
 # logic lives in files/extract-engines.sh so it can be exercised on the host
 # without the OpenWrt toolchain.
+#
+# ARCH is guaranteed to be set here, so this is where an unsupported target is
+# refused for real. The package-level gate above had to skip an empty ARCH to
+# keep the SDK scan working.
 define Build/Prepare
+	$(if $(filter $(AIRCONNECT_ARCH),$(AIRCONNECT_SUPPORTED_ARCHS)),,$(error airconnect-engine: unsupported ARCH=$(ARCH)))
+	$(if $(filter aarch64 x86_64,$(AIRCONNECT_ARCH)),,$(error airconnect-engine: the 1.12.4 release ships aarch64/x86_64 only, got $(AIRCONNECT_ARCH)))
 	$(INSTALL_DIR) $(PKG_BUILD_DIR)
 	./files/extract-engines.sh $(DL_DIR)/$(PKG_SOURCE) $(PKG_BUILD_DIR) $(AIRCONNECT_ARCH)
 endef
 
-# Verify the extracted files are non-empty ELF binaries. Prefer `file` when it
-# is present, and fall back to an ELF magic header byte check so the check also
-# works inside a minimal SDK container. Fail naming the file and what was found.
+# Verify the extracted files are non-empty ELF binaries. The loop lives in
+# files/verify-engines.sh rather than inline: OpenWrt expands Build/Compile
+# through several nested macros, and an inline body containing $f is re-expanded
+# as a make variable on the way through, producing "empty: " instead of the path.
+# A real script removes that failure mode and is testable on the host.
 define Build/Compile
-	for f in $(PKG_BUILD_DIR)/airupnp-linux-$(AIRCONNECT_ARCH)-static $(PKG_BUILD_DIR)/aircast-linux-$(AIRCONNECT_ARCH)-static; do \
-		test -s "$$f" || { echo "airconnect-engine: empty: $$f" >&2; exit 1; }; \
-		if command -v file >/dev/null 2>&1; then \
-			case "$$(file -- "$$f")" in \
-				*ELF*) ;; \
-				*) echo "airconnect-engine: not an ELF binary: $$f ($$(file -- "$$f"))" >&2; exit 1 ;; \
-			esac; \
-		else \
-			case "$$(od -An -tx1 -N4 "$$f")" in \
-				' 7f 45 4c 46'*) ;; \
-				*) echo "airconnect-engine: not an ELF binary: $$f ($$(od -An -tx1 -N4 "$$f"))" >&2; exit 1 ;; \
-			esac; \
-		fi; \
-	done
+	./files/verify-engines.sh $(PKG_BUILD_DIR)/airupnp-linux-$(AIRCONNECT_ARCH)-static $(PKG_BUILD_DIR)/aircast-linux-$(AIRCONNECT_ARCH)-static
 endef
 
 define Package/airconnect-engine/install
