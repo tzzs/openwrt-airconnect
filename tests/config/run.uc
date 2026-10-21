@@ -98,6 +98,41 @@ test('overrides and empty-value inheritance are engine independent', () => {
 	assert(value.devices[2].max_volume === 80 && value.devices[2].media_volume === 0.4);
 	assert(value.devices[2].codec == 'aac:128' && value.devices[2].latency == '0:500');
 });
+test('advanced globals are normalized with their upstream types', () => {
+	let main = normalizeConfig(overrides()).main;
+	assert(main.metadata === false && main.flush === false && main.drift === true);
+	assert(main.artwork == 'https://example.com/demo.png');
+	assert(main.http_length === -3 && main.upnp_max === 3);
+	assert(main.stop_receiver === true);
+});
+test('advanced per-device overrides are independent of the global values', () => {
+	let value = normalizeConfig(overrides());
+	assert(value.devices[0].metadata === true && value.devices[0].flush === true && value.devices[0].drift === false);
+	assert(value.devices[0].artwork == 'http://192.0.2.11/upnp-cover.png' && value.devices[0].http_length === 0);
+	assert(value.devices[1].metadata === false && value.devices[1].flush === false && value.devices[1].drift === true);
+	assert(value.devices[1].artwork == 'http://192.0.2.10:8080/demo.jpg');
+	assert(value.devices[1].stop_receiver === true);
+});
+test('an empty device override inherits every advanced global', () => {
+	let value = normalizeConfig(overrides());
+	let inherited_device = value.devices[2];
+	for (let key in ['metadata', 'flush', 'drift', 'artwork', 'http_length', 'stop_receiver'])
+		deepEqual(inherited_device[key], value.main[key], 'devices[2].' + key);
+});
+test('a device override is used when it is present, not the global value', () => {
+	let value = normalizeConfig({ main: { metadata: '1', flush: '1', drift: '0', stop_receiver: '0' },
+		devices: [{ engine: 'upnp', udn: 'uuid:demo-override', metadata: '0', flush: '0', drift: '1' }] });
+	assert(value.devices[0].metadata === false && value.devices[0].flush === false && value.devices[0].drift === true);
+	assert(value.main.metadata === true && value.main.flush === true && value.main.drift === false);
+});
+test('upnp_max is global only and never appears on a device', () => {
+	// Upstream parses it into the device struct but only reads glMRConfig.UPnPMax
+	// when building the search topics, so a device-level value is dead XML.
+	let value = normalizeConfig({ main: { upnp_max: '2' },
+		devices: [{ engine: 'upnp', udn: 'uuid:demo-upnp', upnp_max: '5' }] });
+	assert(value.main.upnp_max === 2);
+	assert(!exists(value.devices[0], 'upnp_max'), 'a device must not carry upnp_max');
+});
 
 for (let value in [null, [], 'bad', 1, true])
 	rejects('reject root ' + sprintf('%J', value), () => normalizeConfig(value), 'config');
@@ -170,6 +205,79 @@ for (let value in ['error', 'warn', 'info', 'debug'])
 for (let value in ['', 'WARN', 'trace', 'warn;id', null, []])
 	rejects('reject log level ' + sprintf('%J', value), () => normalizeConfig(mainConfig('log_level', value)), 'main.log_level');
 
+// --- advanced engine parameters -------------------------------------------
+// metadata / flush / drift / stop_receiver are 0|1 flags in both parsers
+// (LoadConfigItem in config_upnp.c and config_cast.c), so they use boolean().
+for (let key in ['metadata', 'flush', 'drift', 'stop_receiver']) {
+	for (let value in ['0', '1', 0, 1, false, true])
+		test('accept advanced boolean ' + key + '=' + sprintf('%J', value), () => {
+			let result = normalizeConfig(mainConfig(key, value));
+			assert(type(result.main[key]) == 'bool');
+			assert(result.main[key] === (value === '1' || value === 1 || value === true));
+		});
+	for (let value in ['false', 'true', '', 'yes', '01', ' 1', '1\n', 2, -1, [], {}, null])
+		rejects('reject advanced boolean ' + key + '=' + sprintf('%J', value), () => normalizeConfig(mainConfig(key, value)), 'main.' + key);
+	for (let value in ['0', '1', 0, 1, false, true])
+		test('accept device advanced boolean ' + key + '=' + sprintf('%J', value),
+			() => assert(type(normalizeConfig(deviceConfig(key, value)).devices[0][key]) == 'bool'));
+	for (let value in ['false', 'yes', 2, null, []])
+		rejects('reject device advanced boolean ' + key + '=' + sprintf('%J', value),
+			() => normalizeConfig(deviceConfig(key, value)), 'devices[0].' + key);
+	// An empty device value is "inherit", which is valid and is covered by the
+	// inheritance test above; only the main section rejects an empty flag.
+	test('device advanced boolean ' + key + '=empty inherits instead of failing', () => {
+		let result = normalizeConfig(deviceConfig(key, ''));
+		assert(result.devices[0][key] === normalizeConfig({}).main[key]);
+	});
+}
+
+// http_length is an enum of the three documented transfer modes, not a number.
+for (let value in ['-3', '-1', '0', -3, -1, 0])
+	test('accept http_length ' + sprintf('%J', value), () => assert(normalizeConfig(mainConfig('http_length', value)).main.http_length == int(value)));
+for (let value in ['', '-2', '1', '4096', '-4', '0.0', '-1 ', ' -1', '-1\n', '3', 'chunked', null, true, [], {}, 1, -2]) {
+	rejects('reject main http_length ' + sprintf('%J', value), () => normalizeConfig(mainConfig('http_length', value)), 'main.http_length');
+	if (value !== '')
+		rejects('reject device http_length ' + sprintf('%J', value), () => normalizeConfig(deviceConfig('http_length', value)), 'devices[0].http_length');
+}
+
+// upnp_max is bounded by the search-topic buffer: char[sizeof(URN)+2] holds the
+// URN, ':', one digit and NUL (airupnp.c:96, 598, 1160).
+for (let value in [1, 3, 9, '1', '3', '9'])
+	test('accept upnp_max ' + sprintf('%J', value), () => assert(normalizeConfig(mainConfig('upnp_max', value)).main.upnp_max == +value));
+for (let value in [0, 10, 11, -1, 1.5, '01', '1.0', '1 ', '1\n', '', null, true, [], {}])
+	rejects('reject upnp_max ' + sprintf('%J', value), () => normalizeConfig(mainConfig('upnp_max', value)), 'main.upnp_max');
+
+// artwork: a user-supplied http(s) URL, validated but never fetched.
+for (let value in [
+	'',
+	'http://192.0.2.10/cover.png',
+	'https://example.com/a/b/c.jpg?x=1&y=2#frag',
+	'http://[::1]:8080/a.png',
+	'https://example.com/' + repeated('a', 400)
+])
+	test('accept artwork ' + sprintf('%J', value), () => assert(normalizeConfig(mainConfig('artwork', value)).main.artwork == value));
+for (let value in [
+	'HTTP://example.com/a.png', 'Https://example.com/a.png', 'ftp://example.com/a.png',
+	'//example.com/a.png', 'example.com/a.png', 'http:/example.com/a.png', 'http://',
+	'http://example.com/a b.png', 'http://example.com/a\tb.png', 'http://example.com/a\nb.png',
+	'http://example.com/a\rb.png', 'http://example.com/\u3000.png',
+	'http://example.com/a.png ', ' http://example.com/a.png',
+	'http://example.com/<x>.png', 'http://example.com/"x".png', 'http://example.com/a\\b.png',
+	'http://example.com/\u97f3.png', 'https://example.com/' + repeated('a', 500),
+	null, [], {}, 1
+]) {
+	rejects('reject main artwork ' + sprintf('%J', value), () => normalizeConfig(mainConfig('artwork', value)), 'main.artwork');
+	if (value !== '')
+		rejects('reject device artwork ' + sprintf('%J', value), () => normalizeConfig(deviceConfig('artwork', value)), 'devices[0].artwork');
+}
+test('artwork byte cap is inclusive', () => {
+	let prefix = 'https://example.com/';
+	let exact = prefix + repeated('a', 512 - length(prefix));
+	assert(length(exact) == 512, 'fixture is not 512 bytes');
+	assert(normalizeConfig(mainConfig('artwork', exact)).main.artwork == exact);
+	rejects('reject artwork 513 bytes', () => normalizeConfig(mainConfig('artwork', exact + 'a')), 'main.artwork');
+});
+
 for (let value in ['', 'dlna', 'airupnp', null, 1])
 	rejects('reject device engine ' + sprintf('%J', value), () => normalizeConfig(deviceConfig('engine', value)), 'devices[0].engine');
 for (let value in ['', ' ', '　', null, 1, [], repeated('u', 256)])
@@ -207,6 +315,56 @@ test('XML separates engine volumes and device identities', () => {
 	assert(index(upnp, '<enabled>0</enabled>') >= 0 && index(upnp, '<codec>flac:5</codec>') >= 0);
 	assert(index(cast, '<name>演示音箱</name>') >= 0);
 });
+test('UPnP-only elements never reach the aircast root', () => {
+	// Both UPnP-only fields are set globally and per device, then rendered for
+	// Cast: config_cast.c reads neither name, so neither may appear.
+	let xml = renderXml(normalizeConfig(overrides()), 'cast');
+	assert(index(xml, '<http_length>') < 0, 'aircast must not carry http_length');
+	assert(index(xml, '<upnp_max>') < 0, 'aircast must not carry upnp_max');
+	assert(index(xml, '<airupnp>') < 0 && index(xml, '<aircast>') >= 0);
+});
+test('Cast-only elements never reach the airupnp root', () => {
+	// stop_receiver exists only in config_cast.c's LoadConfigItem.
+	let xml = renderXml(normalizeConfig(overrides()), 'upnp');
+	assert(index(xml, '<stop_receiver>') < 0, 'airupnp must not carry stop_receiver');
+	assert(index(xml, '<aircast>') < 0 && index(xml, '<airupnp>') >= 0);
+});
+test('shared advanced elements reach both roots', () => {
+	let value = normalizeConfig({ main: { metadata: '0', flush: '0', drift: '1', artwork: 'https://example.com/a.png' } });
+	for (let engine in ['upnp', 'cast']) {
+		let xml = renderXml(value, engine);
+		assert(index(xml, '<metadata>0</metadata>') >= 0, engine + ' lost metadata');
+		assert(index(xml, '<flush>0</flush>') >= 0, engine + ' lost flush');
+		assert(index(xml, '<drift>1</drift>') >= 0, engine + ' lost drift');
+		assert(index(xml, '<artwork>https://example.com/a.png</artwork>') >= 0, engine + ' lost artwork');
+	}
+});
+test('an empty artwork is omitted instead of rendered empty', () => {
+	// Upstream tests *Conf->ArtWork before using it, so the element is optional.
+	for (let engine in ['upnp', 'cast'])
+		assert(index(renderXml(normalizeConfig({}), engine), '<artwork>') < 0, engine + ' emitted an empty artwork');
+});
+test('device overrides reach the matching engine and only that engine', () => {
+	let value = normalizeConfig(overrides());
+	let upnp = renderXml(value, 'upnp');
+	let cast = renderXml(value, 'cast');
+	assert(index(upnp, '<http_length>0</http_length>') >= 0, 'UPnP device http_length override lost');
+	assert(index(upnp, '<http_length>-3</http_length>') >= 0, 'UPnP global http_length lost');
+	assert(index(cast, '<stop_receiver>1</stop_receiver>') >= 0, 'Cast stop_receiver override lost');
+	assert(index(upnp, '<artwork>http://192.0.2.11/upnp-cover.png</artwork>') >= 0, 'UPnP device artwork lost');
+	assert(index(cast, '<artwork>http://192.0.2.10:8080/demo.jpg</artwork>') >= 0, 'Cast device artwork lost');
+	assert(index(cast, '<artwork>https://example.com/demo.png</artwork>') >= 0, 'Cast global artwork lost');
+	assert(index(upnp, 'http://192.0.2.10:8080/demo.jpg') < 0, 'a Cast device override leaked into airupnp');
+	assert(index(cast, 'http://192.0.2.11/upnp-cover.png') < 0, 'a UPnP device override leaked into aircast');
+});
+test('the inherited device renders the global advanced values verbatim', () => {
+	let xml = renderXml(normalizeConfig(overrides()), 'upnp');
+	let inherited = substr(xml, index(xml, '<udn>uuid:demo-inherited</udn>'));
+	inherited = substr(inherited, 0, index(inherited, '</device>'));
+	for (let pair in [['<metadata>0</metadata>'], ['<flush>0</flush>'], ['<drift>1</drift>'],
+		['<http_length>-3</http_length>'], ['<artwork>https://example.com/demo.png</artwork>']])
+		assert(index(inherited, pair[0]) >= 0, 'inherited device lost ' + pair[0]);
+});
 test('empty device name omits XML override', () => {
 	let xml = renderXml(normalizeConfig(deviceConfig('name', '')), 'upnp');
 	assert(index(xml, '<name>') < 0 && index(xml, '<device>') >= 0);
@@ -232,6 +390,13 @@ for (let key in ['latency', 'codec']) {
 	for (let suffix in ['\n', '\r', '\t', '\n\n']) {
 		let value = '0:0' + suffix;
 		if (key == 'codec') value = 'flac:1' + suffix;
+		rejects('reject main ' + key + ' trailing ' + hexenc(suffix), () => normalizeConfig(mainConfig(key, value)), 'main.' + key);
+		rejects('reject device ' + key + ' trailing ' + hexenc(suffix), () => normalizeConfig(deviceConfig(key, value)), 'devices[0].' + key);
+	}
+}
+for (let key in ['http_length', 'artwork']) {
+	for (let suffix in ['\n', '\r', '\t', '\n\n']) {
+		let value = key == 'http_length' ? '-1' + suffix : 'https://example.com/a.png' + suffix;
 		rejects('reject main ' + key + ' trailing ' + hexenc(suffix), () => normalizeConfig(mainConfig(key, value)), 'main.' + key);
 		rejects('reject device ' + key + ' trailing ' + hexenc(suffix), () => normalizeConfig(deviceConfig(key, value)), 'devices[0].' + key);
 	}

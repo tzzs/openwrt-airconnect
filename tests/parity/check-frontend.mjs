@@ -32,7 +32,14 @@ const RULES = {
 	latency: 'latency',
 	max_volume: 'upnpVolume',
 	media_volume: 'castVolume',
-	name: 'airplayName'
+	name: 'airplayName',
+	metadata: 'binaryFlag',
+	flush: 'binaryFlag',
+	drift: 'binaryFlag',
+	stop_receiver: 'binaryFlag',
+	http_length: 'httpLength',
+	upnp_max: 'upnpMax',
+	artwork: 'artwork'
 };
 
 const UCODE = process.env.UCODE || join(process.env.HOME || '', '.local/opt/ucode-host/bin/ucode');
@@ -106,10 +113,13 @@ function main() {
 	const verdicts = backendVerdicts();
 
 	// --- module shape ------------------------------------------------------
-	for (const field of Object.keys(RULES))
-		check(typeof rules[RULES[field]] === 'function', 'rules.js exports ' + RULES[field]);
-	check(Object.keys(rules).length === Object.keys(RULES).length,
-		'rules.js exports exactly the six documented rules',
+	// Several fields share one rule (the four 0/1 flags), so the export count is
+	// the number of distinct rule names, not the number of mapped fields.
+	const ruleNames = new Set(Object.values(RULES));
+	for (const name of ruleNames)
+		check(typeof rules[name] === 'function', 'rules.js exports ' + name);
+	check(Object.keys(rules).length === ruleNames.size,
+		'rules.js exports exactly the documented rules',
 		Object.keys(rules).join(', '));
 
 	// A message must be a non-empty string, not `false`, so LuCI shows text.
@@ -118,7 +128,9 @@ function main() {
 		if (typeof rule !== 'function')
 			continue;
 		const sample = { interface: '-bad', log_level: 'trace', latency: '0999:1',
-			max_volume: '1.5', media_volume: '.5', name: '   ' }[field];
+			max_volume: '1.5', media_volume: '.5', name: '   ',
+			metadata: 'yes', flush: 'yes', drift: 'yes', stop_receiver: 'yes',
+			http_length: '4096', upnp_max: '10', artwork: 'ftp://example.com/a.png' }[field];
 		const result = rule(sample);
 		check(typeof result === 'string' && result.length > 0,
 			RULES[field] + ' returns a message string for ' + JSON.stringify(sample),
@@ -133,8 +145,10 @@ function main() {
 	let compared = 0;
 	for (let index = 0; index < cases.length; index++) {
 		const entry = cases[index];
+		// Must match MAIN_ONLY/DEVICE_ONLY in run.uc: upnp_max is main-only because
+		// upstream never reads a per-device value.
 		const scopes = entry.scope ? [entry.scope]
-			: (entry.field === 'interface' || entry.field === 'log_level') ? ['main']
+			: (entry.field === 'interface' || entry.field === 'log_level' || entry.field === 'upnp_max') ? ['main']
 			: entry.field === 'name' ? ['device']
 			: ['main', 'device'];
 		for (const scope of scopes) {

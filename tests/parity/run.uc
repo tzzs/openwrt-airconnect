@@ -23,8 +23,16 @@ const VERDICTS_ONLY = index(ARGV, '--verdicts') >= 0;
 // Every field the table may use. The two section lists name the fields that
 // exist in only one place; everything else is checked in both, unless a case
 // says `scope` explicitly, because device overrides must follow the same rules.
-const FIELDS = ['interface', 'log_level', 'latency', 'max_volume', 'media_volume', 'name'];
-const MAIN_ONLY = ['interface', 'log_level'];
+//
+// upnp_max is main-only for a source-level reason, not a UI choice: upstream
+// parses it into the device struct but only ever reads glMRConfig.UPnPMax when
+// it builds the search topics (airupnp.c:599, 1159), so a per-device value
+// would be dead XML and is deliberately not part of the device contract.
+const FIELDS = [
+	'interface', 'log_level', 'latency', 'max_volume', 'media_volume', 'name',
+	'metadata', 'flush', 'drift', 'stop_receiver', 'http_length', 'upnp_max', 'artwork'
+];
+const MAIN_ONLY = ['interface', 'log_level', 'upnp_max'];
 const DEVICE_ONLY = ['name'];
 
 let passed = 0;

@@ -6,7 +6,7 @@
 // Run: ucode -L ~/.local/opt/ucode-host/lib/ucode tests/runtime/run.uc
 import * as fs from 'fs';
 import { normalizeConfig, renderXml } from '../../packages/airconnect-manager/files/usr/share/airconnect-manager/config.uc';
-import { uciMain, uciDevices, fakeCursor, rawConfig, pcmUpnpOnly, previousXml } from './fixtures.uc';
+import { uciMain, uciDevices, fakeCursor, rawConfig, legacyRawConfig, currentDefaultRawConfig, pcmUpnpOnly, previousXml } from './fixtures.uc';
 
 // runtime.uc is a script-mode file (see its header): it cannot be named-imported
 // and instead returns its API object from a trailing expression.
@@ -195,8 +195,7 @@ test('applyConfig accepts an already normalized configuration', () => {
 	assert(readOrNull(sandbox + '/airupnp.xml') === renderXml(normalized, 'upnp'), 'bytes differ');
 });
 
-test('applyConfig renders only the requested engines', () => {
-	sandbox = newDir();
+test('applyConfig renders only the requested engines', () => {	sandbox = newDir();
 	let result = runtime.applyConfig(rawConfig(), { dir: sandbox, engines: ['upnp'] });
 	assert(result.ok === true, 'expected ok: ' + sprintf('%J', result.errors));
 	deepEqual(result.written, [sandbox + '/airupnp.xml']);
@@ -208,6 +207,57 @@ test('applyConfig leaves no temporary files behind', () => {
 	runtime.applyConfig(rawConfig(), { dir: sandbox });
 	for (let name in fs.lsdir(sandbox) ?? [])
 		assert(substr(name, 0, 1) != '.', 'temporary file left behind: ' + name);
+});
+
+// --- advanced engine parameters -------------------------------------------
+// runtime.uc does not need to know about these fields: it hands raw UCI to
+// normalizeConfig and the normalized object to renderXml. These tests prove the
+// chain actually carries them to disk and keeps the engines apart.
+test('advanced parameters reach the generated files for the owning engine', () => {
+	sandbox = newDir();
+	let raw = rawConfig({
+		metadata: '0', artwork: 'https://example.com/demo.png', flush: '0', drift: '1',
+		http_length: '-3', upnp_max: '3', stop_receiver: '1'
+	});
+	let result = runtime.applyConfig(raw, { dir: sandbox, engines: ['upnp', 'cast'] });
+	assert(result.ok === true, 'expected ok: ' + sprintf('%J', result.errors));
+	let upnp = readOrNull(sandbox + '/airupnp.xml');
+	let cast = readOrNull(sandbox + '/aircast.xml');
+	for (let xml in [upnp, cast]) {
+		assert(index(xml, '<metadata>0</metadata>') >= 0, 'metadata not written');
+		assert(index(xml, '<flush>0</flush>') >= 0, 'flush not written');
+		assert(index(xml, '<drift>1</drift>') >= 0, 'drift not written');
+		assert(index(xml, '<artwork>https://example.com/demo.png</artwork>') >= 0, 'artwork not written');
+	}
+	assert(index(upnp, '<http_length>-3</http_length>') >= 0 && index(upnp, '<upnp_max>3</upnp_max>') >= 0,
+		'the UPnP-only elements are missing from airupnp.xml');
+	assert(index(upnp, '<stop_receiver>') < 0, 'airupnp.xml carries the Cast-only stop_receiver');
+	assert(index(cast, '<stop_receiver>1</stop_receiver>') >= 0, 'stop_receiver missing from aircast.xml');
+	assert(index(cast, '<http_length>') < 0 && index(cast, '<upnp_max>') < 0,
+		'aircast.xml carries a UPnP-only element');
+});
+test('a configuration without the advanced options renders the same as the shipped default', () => {
+	// The backwards-compatibility promise: an existing /etc/config file that
+	// predates these options must produce byte-identical runtime XML.
+	deepEqual(normalizeConfig(legacyRawConfig()), normalizeConfig(currentDefaultRawConfig()));
+	sandbox = newDir();
+	let legacy = runtime.applyConfig(legacyRawConfig(), { dir: sandbox + '/legacy' });
+	let current = runtime.applyConfig(currentDefaultRawConfig(), { dir: sandbox + '/current' });
+	assert(legacy.ok === true && current.ok === true, 'one of the applies failed');
+	for (let engine in ['upnp', 'cast']) {
+		let name = engine == 'upnp' ? 'airupnp.xml' : 'aircast.xml';
+		assert(readOrNull(sandbox + '/legacy/' + name) === readOrNull(sandbox + '/current/' + name),
+			name + ' differs between the legacy and the current default configuration');
+	}
+});
+test('a bad advanced field keeps the previous file through applyConfig', () => {
+	sandbox = newDir();
+	let previous = previousXml('upnp');
+	fs.writefile(sandbox + '/airupnp.xml', previous);
+	let result = runtime.applyConfig(rawConfig({ http_length: '4096' }), { dir: sandbox, engines: ['upnp'] });
+	assert(result.ok === false, 'expected ok:false');
+	assert(index(result.errors[0], 'main.http_length:') == 0, 'unexpected error: ' + result.errors[0]);
+	assert(readOrNull(sandbox + '/airupnp.xml') === previous, 'the previous file was modified');
 });
 
 // --- applyConfig: validation failure keeps the last good file ---------------

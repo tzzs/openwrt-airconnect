@@ -17,7 +17,14 @@ export function uciMain(overrides) {
 		latency: '1000:2000',
 		max_volume: '100',
 		media_volume: '0.5',
-		log_level: 'warn'
+		log_level: 'warn',
+		metadata: '1',
+		artwork: 'https://example.com/demo.png',
+		flush: '1',
+		drift: '0',
+		http_length: '-1',
+		upnp_max: '1',
+		stop_receiver: '0'
 	};
 	for (let key in overrides ?? {})
 		main[key] = overrides[key];
@@ -82,6 +89,23 @@ export function rawConfig(overrides) {
 	return { main: uciMain(overrides), devices: uciDevices() };
 }
 
+// A configuration written before the advanced options existed: the shipped
+// file from an older install simply lacks them. normalizeConfig must give the
+// same effective settings as the current default file, which is the backwards
+// compatibility promise for this change.
+export function legacyRawConfig() {
+	let main = uciMain();
+	for (let key in ['metadata', 'artwork', 'flush', 'drift', 'http_length', 'upnp_max', 'stop_receiver'])
+		delete main[key];
+	return { main: main, devices: [] };
+}
+
+export function currentDefaultRawConfig() {
+	// The shipped default file's advanced options, i.e. the upstream defaults.
+	let main = uciMain({ artwork: '' });
+	return { main: main, devices: [] };
+}
+
 // A normalized configuration with a PCM default for the UPnP engine only. This
 // is the asymmetric-render fixture: renderXml(config, 'upnp') succeeds while
 // renderXml(config, 'cast') throws, because Cast cannot use PCM and main.codec
@@ -91,16 +115,22 @@ export function pcmUpnpOnly() {
 		main: {
 			enabled: true, interface: 'br-lan', airupnp: true, aircast: false,
 			codec: 'pcm', latency: '1000:2000', max_volume: 100,
-			media_volume: 0.5, log_level: 'warn'
+			media_volume: 0.5, log_level: 'warn',
+			metadata: true, flush: true, drift: false, artwork: '',
+			http_length: -1, upnp_max: 1, stop_receiver: false
 		},
 		devices: [
 			{
 				engine: 'upnp', udn: 'uuid:demo-upnp', enabled: true, name: 'Demo UPnP Speaker',
-				max_volume: 60, media_volume: 0.5, codec: 'pcm', latency: '100:1000'
+				max_volume: 60, media_volume: 0.5, codec: 'pcm', latency: '100:1000',
+				metadata: true, flush: true, drift: false, artwork: '', http_length: -1,
+				stop_receiver: false
 			},
 			{
 				engine: 'cast', udn: 'uuid:demo-cast', enabled: true, name: 'Demo Cast Speaker',
-				max_volume: 100, media_volume: 0.4, codec: 'flac', latency: '500:2000'
+				max_volume: 100, media_volume: 0.4, codec: 'flac', latency: '500:2000',
+				metadata: true, flush: true, drift: false, artwork: '', http_length: -1,
+				stop_receiver: false
 			}
 		]
 	};

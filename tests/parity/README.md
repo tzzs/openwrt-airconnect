@@ -21,7 +21,8 @@ implementation: when a case fails, decide which side is wrong before touching
 anything.
 
 - `field` is one of `interface`, `log_level`, `latency`, `max_volume`,
-  `media_volume`, `name`.
+  `media_volume`, `name`, `metadata`, `flush`, `drift`, `stop_receiver`,
+  `http_length`, `upnp_max`, `artwork`.
 - `value` may be a string or a number (UCI can hold either).
 - `scope` is optional. It defaults to both `main` and a device override for the
   fields that exist in both, and to the only section that has the field
@@ -48,9 +49,15 @@ something other than a non-empty message string, or when the frontend and the
 backend disagree on any case.
 
 Empty values are the one place the scopes differ on purpose: on a device an
-empty `max_volume`, `media_volume` or `latency` means "inherit the global
-value" (`config.uc`'s `inherited()`), while in `main` an empty string is
-invalid. The table marks those cases `"scope": "main"`.
+empty `max_volume`, `media_volume`, `latency` or advanced parameter means
+"inherit the global value" (`config.uc`'s `inherited()`), while in `main` an
+empty string is invalid. The table marks those cases `"scope": "main"`.
+
+`upnp_max` is main-only, like `interface` and `log_level`, but for a source-level
+reason rather than a UI one: upstream parses it into the device struct yet only
+ever reads `glMRConfig.UPnPMax` when it builds the search topics, so a per-device
+value would be dead XML. A case that scopes it to a device fails the schema
+check on purpose.
 
 ## Adding a case
 

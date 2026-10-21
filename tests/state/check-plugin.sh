@@ -308,6 +308,20 @@ if (!check('valid', { main: { enabled: '1', airupnp: '1', aircast: '0' }, device
 // A field error, reported with its path exactly as config.uc writes it.
 if (!check('max_volume', { main: { max_volume: '0' } }, false, 'main.max_volume:')) failures++;
 if (!check('interface', { main: { interface: 'not an interface' } }, false, 'main.interface:')) failures++;
+// The advanced fields go through the same path, so a bad value is reported with
+// its own path rather than reaching apply time.
+if (!check('http_length', { main: { http_length: '4096' } }, false, 'main.http_length:')) failures++;
+if (!check('upnp_max', { main: { upnp_max: '10' } }, false, 'main.upnp_max:')) failures++;
+if (!check('artwork-scheme', { main: { artwork: 'ftp://example.com/a.png' } }, false, 'main.artwork:')) failures++;
+if (!check('artwork-control', { main: { artwork: 'http://example.com/a b.png' } }, false, 'main.artwork:')) failures++;
+if (!check('metadata', { main: { metadata: 'yes' } }, false, 'main.metadata:')) failures++;
+if (!check('device-http_length', { devices: [{ engine: 'upnp', udn: 'uuid:demo-upnp', http_length: '1' }] }, false, 'devices[0].http_length:')) failures++;
+if (!check('device-stop_receiver', { devices: [{ engine: 'cast', udn: 'uuid:demo-cast', stop_receiver: '2' }] }, false, 'devices[0].stop_receiver:')) failures++;
+// The advanced defaults are valid for both engines, so a payload that only sets
+// them must not be rejected.
+if (!check('advanced-defaults', { main: { enabled: '1', airupnp: '1', aircast: '1',
+		metadata: '1', artwork: 'https://example.com/a.png', flush: '1', drift: '0',
+		http_length: '-1', upnp_max: '1', stop_receiver: '0' }, devices: [] }, true, null)) failures++;
 // Both engines enabled with a codec both accept: validate must render both
 // without inventing an error.
 if (!check('both-engines', { main: { enabled: '1', airupnp: '1', aircast: '1', codec: 'flac' },
@@ -318,7 +332,14 @@ if (!check('cast-pcm-device', { main: { enabled: '1', aircast: '1' },
 		devices: [{ engine: 'cast', udn: 'uuid:demo-cast', codec: 'pcm' }] }, false, 'devices[0].codec:')) failures++;
 // The canonical default payload the LuCI view sends after a fresh install.
 if (!check('defaults', { main: { enabled: '0', interface: 'br-lan', airupnp: '1', aircast: '0', codec: 'flac',
-		latency: '1000:2000', max_volume: '100', media_volume: '0.5', log_level: 'warn' }, devices: [] }, true, null)) failures++;
+		latency: '1000:2000', max_volume: '100', media_volume: '0.5', log_level: 'warn',
+		metadata: '1', artwork: '', flush: '1', drift: '0', http_length: '-1', upnp_max: '1',
+		stop_receiver: '0' }, devices: [] }, true, null)) failures++;
+// A configuration that predates the advanced options must still validate: the
+// shipped file from an older install simply lacks these keys.
+if (!check('pre-advanced-config', { main: { enabled: '0', interface: 'br-lan', airupnp: '1',
+		aircast: '0', codec: 'flac', latency: '1000:2000', max_volume: '100',
+		media_volume: '0.5', log_level: 'warn' }, devices: [] }, true, null)) failures++;
 // A non-object payload must be a validation error, not an exception.
 if (!check('non-object', 'nonsense', false, 'config:')) failures++;
 exit(failures ? 1 : 0);
