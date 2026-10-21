@@ -31,22 +31,23 @@
 
 ### 已在这台主机上验证
 
-统一入口：`bash scripts/run-tests.sh`（14 个套件全部通过）。分套件结果：
+统一入口：`bash scripts/run-tests.sh`（15 个套件全部通过）。分套件结果：
 
 | 套件 | 命令 | 结果 |
 | --- | --- | --- |
-| config | `ucode tests/config/run.uc` | 402 通过，0 失败 |
+| config | `ucode tests/config/run.uc` | 661 通过，0 失败 |
 | discovery | `ucode tests/discovery/run.uc` | 103 项检查通过 |
-| parity（后端） | `ucode tests/parity/run.uc` | 893 通过，0 失败 |
-| parity（前端） | `node tests/parity/check-frontend.mjs` | 577 通过，0 失败 |
-| runtime | `ucode tests/runtime/run.uc` | 35 通过，0 失败 |
+| parity（后端） | `ucode tests/parity/run.uc` | 1388 通过，0 失败 |
+| parity（前端） | `node tests/parity/check-frontend.mjs` | 930 通过，0 失败 |
+| luci 视图 | `node tests/luci/run.mjs` | 43 通过，0 失败 |
+| runtime | `ucode tests/runtime/run.uc` | 38 通过，0 失败 |
 | state | `ucode tests/state/run.uc` | 70 通过，0 失败 |
 | state 插件 | `bash tests/state/check-plugin.sh` | 43 通过，0 失败 |
 | package 静态 | `bash tests/package/check-package.sh` | 67 通过，0 失败 |
 | init 脚本 | `bash tests/package/run-init-script.sh` | 148 项检查，0 失败 |
 | engine 配方 | `bash tests/engine/check-recipe.sh` | 30 通过，0 失败 |
 | migration | `bash tests/migration/run.sh` | 122 通过，0 失败 |
-| 性能：静态资源 | `bash tests/performance/measure-payload.sh` | 5 个文件，40,699 B / gzip 12,313 B，预算全部成立 |
+| 性能：静态资源 | `bash tests/performance/measure-payload.sh` | 5 个文件，47,775 B / gzip 14,646 B，预算全部成立 |
 | 性能：回复大小 | `bash tests/performance/measure-status.sh` | 10 通过，0 失败 |
 | 性能：轮询契约 | `node tests/performance/poll-contract.mjs` | 29 通过，0 失败 |
 

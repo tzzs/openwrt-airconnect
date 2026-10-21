@@ -32,7 +32,11 @@ Pure validation and XML render checks for `config.uc`.
 - Command: `~/.local/opt/ucode-host/bin/ucode -L ~/.local/opt/ucode-host/lib/ucode tests/config/run.uc`
 - Covers: `normalizeConfig` and `renderXml` — every accepted value, every
   rejected value (including control-byte and trailing-newline regressions), and
-  the exact default XML for both engines.
+  the exact default XML for both engines. It also covers the advanced engine
+  parameters: defaults, per-device overrides, empty-value inheritance, rejection
+  of out-of-range values, and the engine separation — a rendered `<airupnp>`
+  never contains `stop_receiver`, a rendered `<aircast>` never contains
+  `http_length` or `upnp_max`.
 
 ## parity
 
@@ -41,14 +45,30 @@ contract; both runners must agree with it.
 
 - Backend: `~/.local/opt/ucode-host/bin/ucode -L ~/.local/opt/ucode-host/lib/ucode tests/parity/run.uc`
 - Frontend: `node tests/parity/check-frontend.mjs`
-- Covers: every row of the interface/latency/max_volume/media_volume/name/log_level
-  mismatch table plus its boundary values (0/1/100/101, `1.5`, `0999:1`,
-  `10000:10000`, 63/64-byte names, whitespace-only names, `.` and `..`), in both
-  the `main` section and a device override. The backend runner decides each case
+- Covers: every row of the
+  interface/latency/max_volume/media_volume/name/log_level/metadata/flush/drift/
+  stop_receiver/http_length/upnp_max/artwork mismatch table plus its boundary
+  values (0/1/100/101, `1.5`, `0999:1`, `10000:10000`, 63/64-byte names,
+  whitespace-only names, `.` and `..`, `-3/-1/0` versus `-2/1/4096`, `1/3/9`
+  versus `0/10`, `http://` versus `ftp://`), in both the `main` section and a
+  device override. The backend runner decides each case
   with the real `normalizeConfig`; the node runner loads
   `airconnect-manager/rules.js` in a shim, asks the ucode runner for the backend
   verdicts and fails when the two disagree. It also proves `rules.js` loads
   without LuCI's `_()` and returns message strings, not `false`.
+
+## luci
+
+Which controls the production view offers for which engine.
+
+- Command: `node tests/luci/run.mjs`
+- Covers: the real, unmodified `overview.js` building both forms for a UPnP and a
+  Chromecast device. A Chromecast device never offers `http_length` or `upnp_max`,
+  a UPnP device never offers `stop_receiver`, every per-device advanced control
+  accepts an empty value (which means "inherit"), the `http_length`/`upnp_max`
+  selects offer exactly the values `config.uc` accepts, and the engine-specific
+  global fields carry an engine-specific label. **Does not cover** a real LuCI
+  render, a real browser or the resulting DOM.
 
 ## discovery
 
@@ -68,7 +88,9 @@ UCI loading, validation and atomic runtime-file writes for `runtime.uc`.
   writing both engines, the "keep the last good file" guarantee on validation
   and render failures, per-file atomicity when one engine fails, `dry_run`,
   0750/0640 modes, `status.json` shape and digest stability, and the CLI exit
-  codes for `apply`, `validate` and `show`.
+  codes for `apply`, `validate` and `show`. It also proves a configuration that
+  predates the advanced options renders byte-identical XML to the current
+  default configuration, which is the backwards-compatibility promise.
 
 ## state
 

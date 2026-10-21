@@ -41,16 +41,16 @@
 bash tests/performance/measure-payload.sh
 ```
 
-测量日期 2026-10-22 的结果：
+测量日期 2026-10-22 的结果（高级引擎参数接入后于同日重测）：
 
 | 文件 | 未压缩字节 | `gzip -9` 字节 | 上限 |
 | --- | ---: | ---: | ---: |
-| `.../resources/view/airconnect-manager/overview.js` | 25,566 | 7,657 | 49,152 |
+| `.../resources/view/airconnect-manager/overview.js` | 30,327 | 9,069 | 49,152 |
 | `.../resources/airconnect-manager/manager.css` | 9,388 | 2,172 | 24,576 |
-| `.../resources/airconnect-manager/rules.js` | 5,122 | 2,130 | 12,288 |
+| `.../resources/airconnect-manager/rules.js` | 7,437 | 3,051 | 12,288 |
 | `root/usr/share/luci/menu.d/luci-app-airconnect-manager.json` | 265 | 172 | 2,048 |
 | `root/usr/share/rpcd/acl.d/luci-app-airconnect-manager.json` | 358 | 182 | 2,048 |
-| **合计（5 个文件）** | **40,699**（39.7 KiB） | **12,313**（12.0 KiB） | 65,536 |
+| **合计（5 个文件）** | **47,775**（46.7 KiB） | **14,646**（14.3 KiB） | 65,536 |
 
 `gzip -9` 从标准输入读取，因此归档里不写入文件名与 mtime，同样的内容永远得到同样的
 字节数；直接按文件名压缩会把检出时间写进头部，数字就不可复现了。
@@ -63,11 +63,11 @@ bash tests/performance/measure-payload.sh
 
 | 上限 | 依据 | 余量 |
 | --- | --- | --- |
-| 合计 65,536 B | 实测 40,699 B | +61 % |
-| 合计 gzip 32,768 B | 实测 12,313 B | +166 % |
-| `overview.js` 49,152 B | 实测 25,566 B | +92 % |
+| 合计 65,536 B | 实测 47,775 B | +37 % |
+| 合计 gzip 32,768 B | 实测 14,646 B | +124 % |
+| `overview.js` 49,152 B | 实测 30,327 B | +62 % |
 | `manager.css` 24,576 B | 实测 9,388 B | +162 % |
-| `rules.js` 12,288 B | 实测 5,122 B | +140 % |
+| `rules.js` 12,288 B | 实测 7,437 B | +65 % |
 | menu/acl 各 2,048 B | 实测 265 / 358 B | 约 6× |
 | 任何其他文件 32,768 B | 默认上限 | — |
 
