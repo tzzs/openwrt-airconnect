@@ -136,11 +136,70 @@ function logLevel(value) {
 	return true;
 }
 
+// The 0/1 switches upstream reads with atoi()/atol() into a bool: metadata,
+// flush, drift and stop_receiver all go through this one rule, because they are
+// the same contract. config.uc's boolean() accepts "0", "1", 0 and 1 only, so
+// the browser must not accept "true", "yes" or an empty string either.
+function binaryFlag(value) {
+	var v = text(value);
+	if (v !== '0' && v !== '1')
+		return t('Choose off (0) or on (1).');
+	return true;
+}
+
+// The three transfer modes upstream documents for http_length (`-g -3|-1|0`,
+// README "HTTP content-length and transfer modes"). It is an enum, never a
+// free number: any other integer becomes a literal Content-Length header.
+function httpLength(value) {
+	var v = text(value);
+	if (['-3', '-1', '0'].indexOf(v) < 0)
+		return t('Choose -3 (chunked), -1 (no content-length) or 0 (fixed length).');
+	return true;
+}
+
+// airupnp builds the search topic in char[sizeof(URN) + 2], i.e. the URN, ':',
+// one digit and the terminating NUL, so 9 is the largest usable version.
+function upnpMax(value) {
+	var v = text(value);
+	if (!full(v, /^(0|[1-9][0-9]*)$/) || Number(v) < 1 || Number(v) > 9)
+		return t('Use a whole number from 1 to 9.');
+	return true;
+}
+
+// Byte set from config.uc's ARTWORK_BYTES: RFC 3986 unreserved + sub-delims +
+// ':' '@' '/' '?' '#' '-' '[' ']'. Checked per character rather than with one
+// large character class so the two implementations cannot drift on escaping.
+var ARTWORK_MAX = 512;
+var ARTWORK_BYTES = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789._~%!$&()*+,;=:@/?#-[]';
+
+function artwork(value) {
+	var v = text(value);
+	// Empty means "no artwork", which is the upstream default.
+	if (v === '')
+		return true;
+	if (utf8Length(v) > ARTWORK_MAX)
+		return t('Use at most 512 bytes for the artwork URL.');
+	var offset = v.indexOf('https://') === 0 ? 8 : v.indexOf('http://') === 0 ? 7 : 0;
+	if (offset === 0)
+		return t('Use a lowercase http:// or https:// URL.');
+	if (v.length === offset)
+		return t('Add a host after http:// or https://.');
+	for (var i = offset; i < v.length; i++) {
+		if (ARTWORK_BYTES.indexOf(v.charAt(i)) < 0)
+			return t('Remove spaces, quotes or control characters from the artwork URL.');
+	}
+	return true;
+}
+
 return {
 	interfaceValue: interfaceValue,
 	upnpVolume: upnpVolume,
 	castVolume: castVolume,
 	latency: latency,
 	airplayName: airplayName,
-	logLevel: logLevel
+	logLevel: logLevel,
+	binaryFlag: binaryFlag,
+	httpLength: httpLength,
+	upnpMax: upnpMax,
+	artwork: artwork
 };

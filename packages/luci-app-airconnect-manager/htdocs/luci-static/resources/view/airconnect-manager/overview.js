@@ -13,8 +13,8 @@ var callScan = rpc.declare({ object: 'airconnect.manager', method: 'scan', expec
 var callLogs = rpc.declare({ object: 'airconnect.manager', method: 'logs', expect: {} });
 var callValidate = rpc.declare({ object: 'airconnect.manager', method: 'validate', params: ['config'], expect: {} });
 var callAction = rpc.declare({ object: 'airconnect.manager', method: 'action', params: ['action'], expect: {} });
-var mainKeys = ['enabled', 'interface', 'airupnp', 'aircast', 'codec', 'latency', 'max_volume', 'media_volume', 'log_level'];
-var deviceKeys = ['engine', 'udn', 'enabled', 'name', 'max_volume', 'media_volume', 'codec', 'latency'];
+var mainKeys = ['enabled', 'interface', 'airupnp', 'aircast', 'codec', 'latency', 'max_volume', 'media_volume', 'log_level', 'metadata', 'flush', 'drift', 'artwork', 'http_length', 'upnp_max', 'stop_receiver'];
+var deviceKeys = ['engine', 'udn', 'enabled', 'name', 'max_volume', 'media_volume', 'codec', 'latency', 'metadata', 'flush', 'drift', 'artwork', 'http_length', 'stop_receiver'];
 
 function text(value) { return value == null || value === '' ? _('Not provided') : String(value); }
 function key(device) { return device.engine + '\n' + device.udn; }
@@ -53,6 +53,47 @@ function codecs(section, inherited) {
 	var o = option(section, form.ListValue, 'codec', _('Audio format'), _('FLAC can use more CPU. Choose a format supported by your speaker.'));
 	if (inherited) o.value('', _('Inherit global setting'));
 	['flac', 'pcm', 'wav', 'mp3', 'aac'].forEach(function(value) { o.value(value, value.toUpperCase()); });
+	return o;
+}
+// The four 0/1 switches the engines read with atoi() into a bool: metadata,
+// flush, drift and stop_receiver. A select keeps the stored value the exact
+// "0"/"1" config.uc accepts, so the browser cannot submit "true"/"yes" and
+// get a backend rejection round trip.
+//
+// `fallback` is the upstream default and is listed first, because LuCI selects
+// the first entry when the option is absent. A configuration that predates these
+// fields therefore shows the value the engine is actually using instead of an
+// arbitrary first choice, and saving it writes that same value.
+function binaryFlag(section, key, label, description, inherited, fallback) {
+	var o = option(section, form.ListValue, key, label, description);
+	if (inherited) o.value('', _('Inherit global setting'));
+	var entries = [['1', _('On (1)')], ['0', _('Off (0)')]];
+	if (fallback === '0') entries.reverse();
+	entries.forEach(function(pair) { o.value(pair[0], pair[1]); });
+	o.validate = validated(rules.binaryFlag, inherited);
+	return o;
+}
+// http_length is the transfer mode, not a size: upstream only defines -3, -1, 0
+// (README "HTTP content-length and transfer modes"). The default -1 is first for
+// the same reason as above.
+function httpLength(section, inherited) {
+	var o = option(section, form.ListValue, 'http_length', _('HTTP transfer mode (UPnP only)'),
+		_('Compatibility only. Change this when a UPnP speaker cannot play at all; the default works for most devices.'));
+	if (inherited) o.value('', _('Inherit global setting'));
+	o.value('-1', _('-1: no content-length (default)'));
+	o.value('-3', _('-3: chunked encoding'));
+	o.value('0', _('0: fixed dummy length'));
+	o.validate = validated(rules.httpLength, inherited);
+	return o;
+}
+// upnp_max is a search version, 1..9; a select is honest here because the range
+// is tiny and there is nothing else to type. 1 is the upstream default. It is
+// global only: upstream parses a device-level value but never reads it.
+function upnpMax(section) {
+	var o = option(section, form.ListValue, 'upnp_max', _('UPnP search version (UPnP only)'),
+		_('Highest UPnP MediaRenderer version to search. The Chromecast engine ignores this.'));
+	for (var version = 1; version <= 9; version++) o.value(String(version), String(version));
+	o.validate = validated(rules.upnpMax);
 	return o;
 }
 function canonicalConfig() {
@@ -104,6 +145,17 @@ return view.extend({
 		var advanced = new form.Map(configName), a = advanced.section(form.NamedSection, 'main', 'main');
 		codecs(a, false).rmempty = false;
 		o = option(a, form.Value, 'latency', _('Buffer and latency'), _('Format: 1000:2000. Lower values may cause audio dropouts.')); o.validate = validated(rules.latency); o.rmempty = false;
+		// Track metadata and cover art: both engines read these, and the engines
+		// decide whether a given speaker can display them.
+		binaryFlag(a, 'metadata', _('Send track information'), _('Sends the title and artist to the speaker. Both engines read this. A speaker may still show nothing.'), false, '1').rmempty = false;
+		o = option(a, form.Value, 'artwork', _('Cover art URL'), _('Optional http:// or https:// image the speaker fetches itself. Leave empty for none. The router never downloads it.'));
+		o.validate = validated(rules.artwork);
+		binaryFlag(a, 'flush', _('Handle FLUSH'), _('Compatibility option, both engines. Turning it off can change pause and track-change behaviour, so keep it on unless a speaker misbehaves.'), false, '1').rmempty = false;
+		binaryFlag(a, 'drift', _('Let the timing reference drift'), _('Both engines. Off adjusts timing by adding or dropping a frame, which can be audible as a click; on avoids the click but risks underruns.'), false, '0').rmempty = false;
+		// The next two are read only by airupnp; aircast has no such element.
+		httpLength(a, false).rmempty = false;
+		upnpMax(a).rmempty = false;
+		binaryFlag(a, 'stop_receiver', _('Stop the receiver (Chromecast only)'), _('Chromecast compatibility option. The UPnP engine ignores this.'), false, '0').rmempty = false;
 		o = option(a, form.ListValue, 'log_level', _('Log detail'));
 		['error', 'warn', 'info', 'debug'].forEach(function(v) { o.value(v, v); });
 		o.validate = validated(rules.logLevel); o.rmempty = false;
@@ -129,6 +181,20 @@ return view.extend({
 		var adv = new form.Map(configName), a = adv.section(form.NamedSection, sectionId, 'device');
 		codecs(a, true);
 		o = option(a, form.Value, 'latency', _('Buffer and latency'), _('Leave empty to inherit the global setting.')); o.validate = validated(rules.latency, true);
+		// Only the fields the device's own engine reads are offered. A Cast
+		// speaker never gets http_length or upnp_max, and a UPnP speaker never
+		// gets stop_receiver: those elements do not exist in the other parser.
+		binaryFlag(a, 'metadata', _('Send track information'), _('Leave empty to inherit the global setting.'), true, '1');
+		o = option(a, form.Value, 'artwork', _('Cover art URL'), _('Leave empty to inherit the global setting.'));
+		o.validate = validated(rules.artwork, true); o.placeholder = uci.get(configName, 'main', 'artwork') || _('No cover art');
+		binaryFlag(a, 'flush', _('Handle FLUSH'), _('Leave empty to inherit the global setting.'), true, '1');
+		binaryFlag(a, 'drift', _('Let the timing reference drift'), _('Leave empty to inherit the global setting.'), true, '0');
+		if (device.engine === 'upnp') {
+			httpLength(a, true);
+		}
+		else {
+			binaryFlag(a, 'stop_receiver', _('Stop the receiver'), _('Leave empty to inherit the global setting.'), true, '0');
+		}
 		this.maps.push(adv);
 		// Remembered separately so a committed edit can be re-staged without
 		// re-parsing the global settings, which have nothing to do with names.

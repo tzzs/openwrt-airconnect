@@ -2,12 +2,13 @@
 'use strict';
 (function() {
 var packageName = 'airconnect-manager', count = 0;
-var data = { main: { '.name': 'main', '.type': 'main', enabled: '1', interface: 'br-lan', airupnp: '1', aircast: '0', codec: 'flac', latency: '1000:2000', max_volume: '100', media_volume: '0.5', log_level: 'warn' },
-  example: { '.name': 'example', '.type': 'device', engine: 'upnp', udn: 'uuid:example-speaker-001', enabled: '1', name: '' } };
+var data = { main: { '.name': 'main', '.type': 'main', enabled: '1', interface: 'br-lan', airupnp: '1', aircast: '1', codec: 'flac', latency: '1000:2000', max_volume: '100', media_volume: '0.5', log_level: 'warn', metadata: '1', artwork: '', flush: '1', drift: '0', http_length: '-1', upnp_max: '1', stop_receiver: '0' },
+  example: { '.name': 'example', '.type': 'device', engine: 'upnp', udn: 'uuid:example-speaker-001', enabled: '1', name: '' },
+  example_cast: { '.name': 'example_cast', '.type': 'device', engine: 'cast', udn: 'uuid:example-cast-002', enabled: '1', name: '' } };
 var saved = JSON.stringify(data), committed = saved;
-var status = { enabled: true, interface: 'br-lan', version: 'development', services: { upnp: {enabled:true,running:true}, cast:{enabled:false,running:false} }, scan:{running:false,last_scan:Math.floor(Date.now()/1000)}, conflicts:[], devices:[
+var status = { enabled: true, interface: 'br-lan', version: 'development', services: { upnp: {enabled:true,running:true}, cast:{enabled:true,running:true} }, scan:{running:false,last_scan:Math.floor(Date.now()/1000)}, conflicts:[], devices:[
   {engine:'upnp',udn:'uuid:example-speaker-001',original_name:'Example living room speaker',name:null,model:'Demo speaker',manufacturer:'Example manufacturer',address:'192.0.2.20',last_seen:Math.floor(Date.now()/1000),online:true,configured:true},
-  {engine:'cast',udn:'uuid:example-cast-002',original_name:'Example study speaker',name:null,model:null,manufacturer:null,address:'192.0.2.21',last_seen:null,online:false,configured:false}
+  {engine:'cast',udn:'uuid:example-cast-002',original_name:'Example study speaker',name:null,model:null,manufacturer:null,address:'192.0.2.21',last_seen:null,online:false,configured:true}
 ]};
 var query = new URLSearchParams(location.search);
 if(query.has('empty')){data={main:data.main};status.devices=[];saved=JSON.stringify(data);committed=saved;}
