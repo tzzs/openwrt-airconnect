@@ -34,14 +34,14 @@
 # doubling of what exists today while still catching an accidental dependency,
 # a base64-encoded font, a committed source map or a copied-in framework.
 #
-#   measured total 40,699 bytes uncompressed -> cap 65,536 (64 KiB, +61 %)
-#   measured total 12,313 bytes gzip -9      -> cap 32,768 (32 KiB, +166 %)
+#   measured total 47,775 bytes uncompressed -> cap 65,536 (64 KiB, +37 %)
+#   measured total 14,646 bytes gzip -9      -> cap 32,768 (32 KiB, +124 %)
 #
 # Per-file caps, same rule (measured value in the comment):
 #
-#   view/airconnect-manager/overview.js  25,566 B -> 49,152 (48 KiB, +92 %)
+#   view/airconnect-manager/overview.js  30,327 B -> 49,152 (48 KiB, +62 %)
 #   airconnect-manager/manager.css        9,388 B -> 24,576 (24 KiB, +162 %)
-#   airconnect-manager/rules.js           5,122 B -> 12,288 (12 KiB, +140 %)
+#   airconnect-manager/rules.js           7,437 B -> 12,288 (12 KiB, +65 %)
 #   menu.d / acl.d JSON                    265/358 B -> 2,048 (2 KiB)
 #   any other file                                     32,768 (32 KiB)
 #
