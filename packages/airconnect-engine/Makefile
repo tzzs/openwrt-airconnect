@@ -13,7 +13,22 @@ PKG_HASH:=ae59d595be80db7f4e93c94c9029baff59dc7515ec03e44505ab2792bbcd1903
 PKG_BUILD_DIR:=$(BUILD_DIR)/airconnect-engine-$(PKG_VERSION)
 
 # This describes upstream AirConnect, not a blanket license for its dependencies.
-PKG_LICENSE:=MIT
+# The two shipped binaries are statically linked and embed third-party code whose
+# licenses were inventoried in docs/LICENSES.zh-CN.md (S5 audit). The set below is
+# the SPDX expression for what actually lands in the aarch64/x86_64 ELF binaries:
+#   MIT          - AirConnect app + philippe44 wrapper repos (libpupnp, libjansson,
+#                  libmdns, libcodecs, libraop, libopenssl, dmap-parser, curve25519)
+#   Apache-2.0   - OpenSSL (Apache-2.0 + SSLeay dual license), ALAC decoder
+#   BSD-3-Clause - ogg, vorbis, opus, opusfile, opusenc, mdnssvc, nanopb (Zlib-like),
+#                  dmap-parser, curve25519
+#   LGPL-2.0     - FAAC, SHINE (GNU Library General Public License v2)
+#   LGPL-2.1     - SoXR (conservatively listed; not yet proven absent from the ELF)
+#   GPL-2.0      - SHINE / FAAC Library GPL v2
+#   GPL-3.0      - upstream's own '-t' license string + mdnssd-min (in libmdnssd)
+# The full license texts and per-component evidence are shipped in
+# usr/share/airconnect/THIRD-PARTY-NOTICES (PKG_LICENSE_FILES below).
+PKG_LICENSE:=MIT AND Apache-2.0 AND BSD-3-Clause AND LGPL-2.0 AND LGPL-2.1 AND GPL-2.0 AND GPL-3.0
+PKG_LICENSE_FILES:=usr/share/airconnect/THIRD-PARTY-NOTICES
 
 # Upstream ships prebuilt ELF binaries named after short architecture tokens
 # (aarch64, x86_64, arm, ...). OpenWrt ARCH values are sometimes the same
@@ -111,6 +126,7 @@ define Package/airconnect-engine/install
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/airupnp-linux-$(AIRCONNECT_ARCH)-static $(1)/usr/libexec/airconnect/airupnp
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/aircast-linux-$(AIRCONNECT_ARCH)-static $(1)/usr/libexec/airconnect/aircast
 	$(INSTALL_DATA) ./files/UPSTREAM-LICENSE $(1)/usr/share/airconnect/UPSTREAM-LICENSE
+	$(INSTALL_DATA) ./files/THIRD-PARTY-NOTICES $(1)/usr/share/airconnect/THIRD-PARTY-NOTICES
 endef
 
 $(eval $(call BuildPackage,airconnect-engine))

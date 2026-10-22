@@ -1,0 +1,152 @@
+This file documents the third-party components that are statically linked into the
+two upstream binaries shipped by this package (airupnp and aircast, for aarch64 and
+x86_64). It is the machine-readable companion to docs/LICENSES.zh-CN.md (S5 audit).
+
+The package author's own wrapper code remains under the repository root MIT license.
+The binaries themselves are prebuilt by upstream philippe44/AirConnect and embed the
+licenses listed below. This is NOT a blanket "MIT" declaration.
+
+================================================================================
+1. INVENTORY — what is actually linked into the shipped ELF binaries
+================================================================================
+
+Evidence method (reproducible):
+  - Dependency set is taken from the pinned submodule SHAs at git tag 1.12.4
+    (.gitmodules + `git ls-tree -r 1.12.4 | awk '$1=="160000"').
+  - Actual linkage is proven by a relocation-insensitive byte-run match:
+    each .o's .text/.rodata relocation-free runs (>=24 bytes) must appear
+    verbatim in the statically linked ELF. Negative control against an unrelated
+    binary returns ~0; the known-linked SHINE library returns 98/98.
+  - Both binaries are confirmed fully static (`readelf -d` shows no dynamic section).
+
+Component                         License        In airupnp?  In aircast?  Note
+--------------------------------  ------------  -----------  -----------  ------------------------
+AirConnect app (upstream)         MIT *         -            -            *see conflict note below
+  program's own `-t` text         GPL-3.0       embedded     embedded     airupnp/src/airupnp.c:194
+OpenSSL (libssl + libcrypto)      Apache-2.0 /  yes          yes          3.5.4; branch openssl-3.5.4
+                                  SSLeay (dual)
+libpupnp / libupnp + libixml      MIT           yes (UPnP)   yes          philippe44/pupnp @5e1d8d9
+libmdns (mdnssvc)                 BSD-3-Clause yes          yes          Darell Tan
+libmdns (mdnssd-min)              GPL-3.0       yes          yes          Marc Juul; mdnssd.c:9
+libraop                           MIT           yes          yes          + dmap-parser (MIT),
+                                                                          curve25519 (MIT) embedded
+libcodecs aggregate (partial):
+  FLAC                             BSD-3-Clause yes          yes          libcodecs @0271a24
+  FAAC                             LGPL-2.0     yes          yes
+  SHINE (MP3 encoder)              LGPL-2.0     yes          yes
+  libogg                           BSD-3-Clause yes          yes
+  libopusenc                       BSD-3-Clause yes          yes
+  libaddons (FLAC/AAC/MP3 wrapper) MIT           yes          yes
+libjansson                         MIT           no           yes          aircast only
+nanopb                            Zlib          no           yes          aircast only (linked as .o)
+
+NOT linked (proven absent by byte-run match; does NOT create obligations here):
+  libmad (GPL-2.0-or-later), libfaad2 (GPL-2.0-only), libsoxr (LGPL-2.1, only a
+  noise-level 1/306 hit — conservatively kept below), libopus, libvorbis,
+  libalac (Apache-2.0), libvorbisfile, libopusfile/url/enc, libutf8.
+  These are aggregated into libcodecs.a but the linker did not pull them into
+  the shipped binaries.
+
+================================================================================
+2. OBLIGATIONS
+================================================================================
+
+Permissive (attribution only — keep copyright + license notice):
+  MIT, BSD-3-Clause, Zlib, Apache-2.0 (OpenSSL/ALAC: also keep NOTICE + copyright).
+
+Weak copyleft (LGPL-2.0 FAAC/SHINE, LGPL-2.1 SoXR if linked):
+  Ship the full license text (below) and allow the user to replace the library
+  (provide the linked object code / a relink mechanism, or the corresponding
+  source). The binaries are statically linked, so the LGPL "use a shared library"
+  option does not apply; provide the relevant source instead.
+
+Strong copyleft (GPL-2.0 SHINE/FAAC Library GPL v2, GPL-3.0 upstream `-t` + mdnssd-min):
+  Ship the full license text (below) and the corresponding source code.
+  Upstream publishes source per tag 1.12.4 with these pinned submodule commits:
+    AirConnect @ 1.12.4
+    libcodecs  @ 0271a24443658518264f1caac368d60accf1072c
+    libmdns    @ d7f58bf2791c3c25fd729d739a9267ce9db5b696
+    libpupnp   @ 11a9750e2fa6da392345fcc8868b307444e13341
+    libopenssl @ ac74d79efc7a702386fcf00d4b7e0a785721a3ed
+    libraop    @ f426d0f4896a48e12662abe46fa2c9ed4c190afb
+    libjansson @ 67f84ac026589a69d196fd54602debc3393fc9de
+    nanopb     @ fee3caf3e30c0ee3ba8c2addc531df0e5d662539
+    (and the transitive pins listed in docs/LICENSES.zh-CN.md)
+  Binary download: https://github.com/philippe44/AirConnect/releases/tag/1.12.4
+
+================================================================================
+3. KNOWN CONFLICT (unresolved — recorded, not adjudicated)
+================================================================================
+
+Upstream's repository root LICENSE says MIT, but the same binary embeds a '-t'
+help text that declares GPL-3.0, and embeds mdnssd-min under GPL-3.0. We do not
+relicense upstream code and make no legal determination; we surface both and rely
+on the full GPL-3.0 text below so the user is informed. If libfaad2 (GPL-2.0-only)
+were ever linked alongside the GPL-3.0 components, that combination would be
+incompatible; as of 1.12.4 it is NOT linked (proven absent).
+
+================================================================================
+4. FULL LICENSE TEXTS THAT MUST ACCOMPANY REDISTRIBUTION
+================================================================================
+
+--- GPL-2.0 (SHINE / FAAC use the "GNU LIBRARY GENERAL PUBLIC LICENSE" v2) ----------
+See GPL-2.0.txt (GNU General Public License v2, which the Library GPL v2 references
+and which governs redistribution of the combined work).
+[Full text: https://www.gnu.org/licenses/old-licenses/gpl-2.0.txt]
+
+--- GPL-3.0 (upstream '-t' string, mdnssd-min) -------------------------------------
+[Full text: https://www.gnu.org/licenses/gpl-3.0.txt]
+
+--- LGPL-2.1 (SoXR, conservative) -------------------------------------------------
+[Full text: https://www.gnu.org/licenses/lgpl-2.1.txt]
+
+--- OpenSSL (Apache-2.0 + SSLeay dual license) ------------------------------------
+Copyright (c) 1998-2024 The OpenSSL Project. All rights reserved.
+Redistribution and use in source and binary forms, with or without modification,
+are permitted provided that the conditions of the OpenSSL and SSLeay licenses are
+met. See https://www.openssl.org/source/license.html for the full texts.
+This product includes software developed by the OpenSSL Project
+(https://www.openssl.org/) and cryptographic software written by Eric Young
+(eay@cryptsoft.com) and Tim Hudson (tjh@cryptsoft.com).
+
+--- ALAC decoder (Apple Lossless, Apache-2.0) --------------------------------------
+Copyright (c) 2011, David Hammerton. Apache License 2.0.
+[Full text: https://www.apache.org/licenses/LICENSE-2.0]
+
+--- pthreads4w (Apache-2.0, source only; not in the Linux ELF) ---------------------
+Copyright 1998 John E. Bossom; 1999-2018 Pthreads4w contributors. Apache License 2.0.
+
+--- FLAC (BSD-3-Clause-like, Xiph) -------------------------------------------------
+Copyright (C) 2000-2009 Josh Coalson; 2001-2023 Xiph.Org Foundation.
+Redistribution and use in source and binary forms, with or without modification,
+are permitted provided that the above copyright notice and this list of conditions
+are met. (BSD-3-Clause.) [Full text: https://xiph.org/flac/license.html]
+
+--- Ogg / Vorbis / Opus / Opusfile / Opusenc (BSD-3-Clause, Xiph) -------------------
+Copyright (c) Xiph.org Foundation and contributors. Redistribution and use in source
+and binary forms, with or without modification, are permitted provided that the
+BSD-3-Clause conditions are met.
+
+--- mdnssvc (BSD-3-Clause, Darell Tan, 2011) ---------------------------------------
+Copyright (c) 2011, Darell Tan. All rights reserved. Redistribution and use in source
+and binary forms, with or without modification, are permitted provided that the
+BSD-3-Clause conditions are met.
+
+--- curve25519 (MIT, embedded in libraop) ------------------------------------------
+Copyright (c) 2015 mehdi sotoodeh. MIT License.
+
+--- dmap-parser (MIT, embedded in libraop) ------------------------------------------
+Copyright (c) 2011-2013 Matt Stevens. MIT License.
+
+--- nanopb (Zlib, Petteri Aimonen) ------------------------------------------------
+Copyright (c) 2011 Petteri Aimonen. Provided under the zlib license: redistribution
+and use are permitted freely, subject to the restrictions that the origin is not
+misrepresented, altered source versions are marked, and this notice is not removed.
+
+--- MIT (AirConnect app, libpupnp, libjansson, libmdns, libcodecs, libraop, etc.) ---
+Excerpts of the MIT text used by philippe44 wrapper repos:
+  MIT License. Copyright (c) 2022 philippe44. Permission is hereby granted, free of
+  charge, to any person obtaining a copy of this software ... (see standard MIT text).
+
+The AirConnect upstream MIT license statement as shipped (UPSTREAM-LICENSE) is
+reproduced in the same directory: usr/share/airconnect/UPSTREAM-LICENSE.

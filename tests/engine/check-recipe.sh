@@ -83,10 +83,21 @@ if [ -f "${extract}" ] && head -1 "${extract}" | grep -qx '#!/bin/sh'; then
 else
 	no 'extraction helper exists with a POSIX #!/bin/sh shebang' 'missing or wrong shebang'
 fi
-if grep -Eq '^[[:space:]]*PKG_LICENSE:=MIT' "${makefile}"; then
-	ok 'PKG_LICENSE stays MIT'
+if grep -Eq '^[[:space:]]*PKG_LICENSE:=MIT AND Apache-2.0 AND BSD-3-Clause AND LGPL-2.0 AND LGPL-2.1 AND GPL-2.0 AND GPL-3.0$' "${makefile}"; then
+	ok 'PKG_LICENSE lists the actual linked component set (S5 audit)'
 else
-	no 'PKG_LICENSE stays MIT' 'license line missing'
+	no 'PKG_LICENSE lists the actual linked component set (S5 audit)' 'license line no longer MIT-only'
+fi
+notices="${root}/packages/airconnect-engine/files/THIRD-PARTY-NOTICES"
+if [ -f "${notices}" ]; then
+	ok 'third-party notices file ships with the package'
+else
+	no 'third-party notices file ships with the package' 'THIRD-PARTY-NOTICES missing'
+fi
+if grep -Eq '^[[:space:]]*PKG_LICENSE_FILES:=' "${makefile}"; then
+	ok 'PKG_LICENSE_FILES points at the shipped notices'
+else
+	no 'PKG_LICENSE_FILES points at the shipped notices' 'no license-files metadata'
 fi
 if ! grep -q 'init.d' "${makefile}" && ! grep -q '/etc/config' "${makefile}"; then
 	ok 'engine package adds no init script or config'
