@@ -478,6 +478,16 @@ test('the scan worker records a failure, keeps the old snapshot and releases the
 	assert(type(cache.error) == 'string' && cache.error != '', 'the failure was not recorded');
 	assert(cache.scanned_at == previous.scanned_at, 'a failed scan must not claim a fresh scan time');
 	assert(length(cache.devices) == 1 && cache.devices[0].udn == 'uuid:demo-keep', 'the previous snapshot was lost');
+	// The mDNS observation has its own file and its own lifetime. A host has no
+	// multicast socket, so the observation must fail too - and the failure must be
+	// recorded as complete:false, which is what makes status render unknown rather
+	// than "not broadcasting".
+	let observation = json(fs.readfile(root + '/var/lib/airconnect-manager/broadcast.json'));
+	assert(type(observation) == 'object' && observation != null, 'the observation file was not written');
+	assert(observation.complete === false, 'a failed observation must not claim completeness');
+	assert(type(observation.reason) == 'string' && observation.reason != '', 'the reason was not recorded');
+	assert(type(observation.scanned_at) == 'int' && observation.scanned_at > 0, 'the attempt time was not recorded');
+	deepEqual(observation.instances, []);
 });
 
 test('the scan worker does not register an object when run as a program', () => {
@@ -494,6 +504,109 @@ test('the scan worker does not register an object when run as a program', () => 
 	// registered and stdout stays empty.
 	assert(output == '', 'the worker printed something: ' + output);
 	assert(fs.stat(root + '/var/lib/airconnect-manager/scan.lock') == null, 'the worker did not release the lock');
+});
+
+// --- broadcast observation --------------------------------------------------
+// The mDNS observation is written by the scan worker and read by status. These
+// tests drive the real plugin against a sandbox file, so the read path, the
+// staleness rule and the "failed scan is unknown" rule are exercised through the
+// code that ships, not only through state.uc.
+
+function broadcastFile(root) {
+	return root + '/var/lib/airconnect-manager/broadcast.json';
+}
+
+function writeBroadcastFile(root, value) {
+	writeFile(broadcastFile(root), sprintf('%J\n', value));
+}
+
+test('status reads the broadcast observation and reports it per engine', () => {
+	let root = sandbox();
+	stub({});
+	writeBroadcastFile(root, {
+		scanned_at: time() - 30, complete: true, reason: null,
+		instances: [{ name: 'BBBBA7A5DB92@Demo Speaker+', model: 'airupnp' }]
+	});
+	let reply = plugin().status.call({ args: {} });
+	assert(reply.broadcast.observed_at != null, 'the observation time must be reported');
+	assert(reply.broadcast.error === null, 'a completed scan has no error');
+	assert(reply.services.upnp.broadcasting === true, 'the airupnp instance must make upnp true');
+	assert(reply.services.cast.broadcasting === false, 'no aircast instance means cast is false');
+	// Playback is a constant: an advertisement never implies audio is flowing.
+	deepEqual(reply.playback, { known: false, reason: 'no documented engine status API' });
+});
+
+test('a device matches only its own derived MAC prefix', () => {
+	let root = sandbox();
+	stub({
+		devices: [configDevice('upnp', 'uuid:demo-synthetic-renderer', 'Configured')]
+	});
+	writeBroadcastFile(root, {
+		scanned_at: time() - 10, complete: true, reason: null,
+		instances: [{ name: 'BBBBA7A5DB92@Demo Speaker+', model: 'airupnp' }]
+	});
+	let reply = plugin().status.call({ args: {} });
+	assert(length(reply.devices) == 1, 'expected one device');
+	assert(reply.devices[0].broadcasting === true, 'the derived prefix must match its own device');
+});
+
+test('an empty completed observation is false, not unknown', () => {
+	let root = sandbox();
+	stub({ devices: [configDevice('upnp', 'uuid:demo-1', 'Configured')] });
+	writeBroadcastFile(root, { scanned_at: time() - 10, complete: true, reason: null, instances: [] });
+	let reply = plugin().status.call({ args: {} });
+	assert(reply.services.upnp.broadcasting === false, 'a completed scan with no instance is false');
+	assert(reply.devices[0].broadcasting === false, 'and false per device');
+});
+
+test('a failed observation is unknown, not false', () => {
+	let root = sandbox();
+	stub({ devices: [configDevice('upnp', 'uuid:demo-1', 'Configured')] });
+	writeBroadcastFile(root, { scanned_at: time() - 10, complete: false, reason: 'no reply', instances: [] });
+	let reply = plugin().status.call({ args: {} });
+	assert(reply.services.upnp.broadcasting === null, 'a failed scan must be unknown');
+	assert(reply.devices[0].broadcasting === null, 'a failed scan must be unknown per device');
+	assert(reply.broadcast.error == 'no reply', 'the reason is reported');
+});
+
+test('a stale observation expires to unknown', () => {
+	let root = sandbox();
+	stub({});
+	writeBroadcastFile(root, {
+		scanned_at: time() - 600, complete: true, reason: null,
+		instances: [{ name: 'BBBBA7A5DB92@Demo Speaker+', model: 'airupnp' }]
+	});
+	let reply = plugin().status.call({ args: {} });
+	assert(reply.services.upnp.broadcasting === null, 'a stale observation must be unknown');
+	assert(reply.broadcast.observed_at === null, 'and must report no timestamp');
+});
+
+test('a corrupt broadcast file degrades to unknown', () => {
+	let root = sandbox();
+	stub({});
+	writeFile(broadcastFile(root), '{not json');
+	let reply = plugin().status.call({ args: {} });
+	assert(reply.services.upnp.broadcasting === null, 'a corrupt file must be unknown');
+	assert(reply.broadcast.observed_at === null, 'a corrupt file reports no time');
+});
+
+test('an oversize broadcast file is refused rather than parsed', () => {
+	let root = sandbox();
+	stub({});
+	// 20 KiB of valid JSON is over the 16 KiB cap.
+	let huge = { scanned_at: time(), complete: true, instances: [] };
+	while (length(sprintf('%J', huge)) < 20000)
+		push(huge.instances, { name: 'BBBB00000000@Padding+', model: 'airupnp' });
+	writeFile(broadcastFile(root), sprintf('%J\n', huge));
+	let reply = plugin().status.call({ args: {} });
+	assert(reply.services.upnp.broadcasting === null, 'an oversize file must not be parsed into a state');
+});
+
+test('status never writes the broadcast file', () => {
+	let root = sandbox();
+	stub({});
+	plugin().status.call({ args: {} });
+	assert(fs.stat(broadcastFile(root)) == null, 'status must not create the observation file');
 });
 
 // --- logs ------------------------------------------------------------------
