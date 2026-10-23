@@ -332,5 +332,84 @@ if [ -f "$doc" ]; then
 fi
 
 # ---------------------------------------------------------------------------
+section 'the local build script matches the workflow'
+
+# scripts/build-local.sh is the manual counterpart of the workflow's build job.
+# If they drift, a package that builds locally can still fail in CI (or vice
+# versa), and the difference is invisible until one of them runs.
+local_script=scripts/build-local.sh
+if [ -f "$local_script" ]; then
+	ok "$local_script exists"
+else
+	no "$local_script exists" 'missing'
+fi
+
+if [ -f "$local_script" ]; then
+	# Same SDK version as the workflow's matrix.
+	wf_sdk=$(sed -n "s/^[[:space:]]*sdk_version: '\([0-9.]*\)'.*/\1/p" \
+		.github/workflows/release.yml | head -1)
+	ls_sdk=$(sed -n "s/^SDK_VERSION='\([0-9.]*\)'.*/\1/p" "$local_script" | head -1)
+	if [ -n "$wf_sdk" ] && [ "$wf_sdk" = "$ls_sdk" ]; then
+		ok "both build $wf_sdk"
+	else
+		no 'the local script and the workflow build the same SDK' \
+			"workflow=${wf_sdk} local=${ls_sdk}"
+	fi
+
+	# Same upstream hash. A script that verifies a different hash would accept
+	# an archive the recipe rejects.
+	recipe_hash=$(sed -n 's/^PKG_HASH:=//p' packages/airconnect-engine/Makefile | tr -d ' \t')
+	if grep -q "$recipe_hash" "$local_script"; then
+		ok 'the local script verifies the recipe hash'
+	else
+		no 'the local script verifies the recipe hash' 'hash absent'
+	fi
+
+	# Same TLS backend selection, or the local build fails where CI succeeds.
+	if grep -q 'CONFIG_LIBCURL_OPENSSL=y' "$local_script" &&
+		grep -q 'CONFIG_LIBCURL_OPENSSL=y' .github/workflows/release.yml; then
+		ok 'both select the curl TLS backend'
+	else
+		no 'both select the curl TLS backend' 'CONFIG_LIBCURL_OPENSSL differs'
+	fi
+
+	# It must build each package separately, so a failure names one package.
+	for pkg in airconnect-engine airconnect-manager luci-app-airconnect-manager; do
+		if grep -q "package/${pkg}/compile" "$local_script"; then
+			ok "the local script builds $pkg on its own"
+		else
+			no "the local script builds $pkg on its own" 'not built separately'
+		fi
+	done
+
+	# It must refuse to report success when nothing was produced.
+	if grep -q 'no APK was produced' "$local_script"; then
+		ok 'the local script fails when no APK was produced'
+	else
+		no 'the local script fails when no APK was produced' 'no emptiness guard'
+	fi
+
+	# It must be shellcheck-clean bash, or a typo only shows up mid-build.
+	if command -v shellcheck >/dev/null 2>&1; then
+		if shellcheck -S warning "$local_script" >/dev/null 2>&1; then
+			ok 'the local script passes shellcheck'
+		else
+			no 'the local script passes shellcheck' \
+				"$(shellcheck -S warning "$local_script" 2>&1 | head -3 | tr '\n' ' ')"
+		fi
+	else
+		printf 'skip - shellcheck unavailable, not linting the local build script\n'
+	fi
+
+	# bash -n is always available and catches the syntax errors that matter.
+	if bash -n "$local_script" 2>/dev/null; then
+		ok 'the local script is syntactically valid bash'
+	else
+		no 'the local script is syntactically valid bash' \
+			"$(bash -n "$local_script" 2>&1 | head -1)"
+	fi
+fi
+
+# ---------------------------------------------------------------------------
 printf '\ncheck-release: %d passed, %d failed\n' "$pass" "$fail"
 [ "$fail" -eq 0 ]

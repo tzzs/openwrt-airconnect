@@ -129,6 +129,34 @@ ssh router 'logread -f'
 
 这一步已经做过**部分**验证：把 `packages/airconnect-manager/files/` 按安装后的目录布局放到路由器上，`ubus call airconnect.manager.status` 返回了正确结构，五个 rpcd 方法全部注册成功。证据见 `docs/VERIFICATION.zh-CN.md` 的"真实设备验证"一节。**尚未做**的是通过 `apk add` 完整安装，因此 conffiles 处理、升级保留、`apk del` 卸载都还没验证。
 
+### 先在 x86_64 主机上本地编译
+
+发布产物由 CI 生成，但在第一次触发 CI 之前，先在本地把同样的步骤跑通会更省时间——CI 上一次失败要几分钟才知道，本地可以马上看到错误。
+
+`scripts/build-local.sh` 与 `release.yml` 的 `build` job 做**完全相同**的步骤、相同顺序：
+
+```bash
+# 任何 x86_64 Linux 主机都可以，包括 Windows 上的 WSL2 Ubuntu
+sudo apt install zstd apk-tools        # Debian/Ubuntu 的依赖
+
+bash scripts/build-local.sh
+```
+
+它做的事，以及为什么每件都不能省：
+
+| 步骤 | 为什么 |
+| --- | --- |
+| 固定 SDK 版本 `25.12.6 / gcc 14.3.0 / musl` | 用错版本会在几分钟后以难以理解的错误失败 |
+| 安装 packages + luci 两个 feed | 三个包依赖 ucode、rpcd、curl、luci-base |
+| `CONFIG_LIBCURL_OPENSSL=y` | 不选 TLS 后端，curl 的 configure 会以 "TLS not detected" 失败，而那不是 manager 的问题 |
+| 按 `PKG_HASH` 校验 95 MB 归档 | 那两个静态二进制是 `airconnect-engine` 的全部载荷 |
+| 三个包分别 `make compile` | 失败时能指名是哪个包，而不是停在某个匿名目标上 |
+| 用 `apk manifest` 回读产物 | 空的 `bin/packages` 会被当成成功发布 |
+
+产物在 `packages/output/`，可以直接 `scp` 到路由器上装。
+
+**Windows 用户**：装 WSL2 + Ubuntu 22.04，然后在 WSL 里运行上面的命令即可，不需要额外配置。x86_64 原生编译，没有虚拟化开销。
+
 ---
 
 ## 6. 发一个版本的完整步骤
