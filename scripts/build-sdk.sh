@@ -259,6 +259,38 @@ for name in $packages; do
 	copy_package "$name"
 done
 
+# set_config replaces an existing assignment, flips a "# symbol is not set" line, or
+# appends the symbol. The write is a complete temp file in the same directory plus
+# a rename, so an interrupted run never leaves a truncated .config.
+set_config() {
+	symbol="$1"
+	value="$2"
+	tmp="${sdk}/.config.build-sdk.$$"
+	if grep -q "^${symbol}=" "${sdk}/.config"; then
+		sed "s|^${symbol}=.*|${symbol}=${value}|" "${sdk}/.config" > "$tmp"
+	elif grep -q "^# ${symbol} is not set$" "${sdk}/.config"; then
+		sed "s|^# ${symbol} is not set$|${symbol}=${value}|" "${sdk}/.config" > "$tmp"
+	else
+		cat "${sdk}/.config" > "$tmp"
+		printf '%s=%s\n' "$symbol" "$value" >> "$tmp"
+	fi
+	mv "$tmp" "${sdk}/.config" || fail "cannot update ${sdk}/.config" 2
+}
+
+# unset_config turns a symbol off in the form Kconfig writes it, so a later
+# `make defconfig` keeps it off instead of re-enabling a selected default.
+unset_config() {
+	symbol="$1"
+	tmp="${sdk}/.config.build-sdk.$$"
+	if grep -q "^${symbol}=" "${sdk}/.config"; then
+		sed "s|^${symbol}=.*|# ${symbol} is not set|" "${sdk}/.config" > "$tmp"
+	else
+		cat "${sdk}/.config" > "$tmp"
+		printf '# %s is not set\n' "$symbol" >> "$tmp"
+	fi
+	mv "$tmp" "${sdk}/.config" || fail "cannot update ${sdk}/.config" 2
+}
+
 changed=0
 while IFS= read -r line; do
 	[ -n "$line" ] || continue
@@ -361,6 +393,20 @@ build_one() {
 	printf -- '--- last 30 lines ---\n' >&2
 	tail -n 30 "$log" >&2
 	return 1
+}
+
+# Newest matching APK for a package name, searched under bin/packages. The SDK
+# writes to bin/packages/<arch_packages>/<feed>/<name>-<version>.apk.
+find_apk() {
+	name="$1"
+	search_roots=''
+	if [ -n "$arch_packages" ] && [ -d "${sdk}/bin/packages/${arch_packages}" ]; then
+		search_roots="${sdk}/bin/packages/${arch_packages}"
+	else
+		search_roots="${sdk}/bin/packages"
+	fi
+	find "$search_roots" -type f -name "${name}-*.apk" -print 2>/dev/null |
+		LC_ALL=C sort | tail -n 1
 }
 
 failed=''
