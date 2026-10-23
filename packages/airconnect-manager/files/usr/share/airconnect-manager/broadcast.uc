@@ -29,6 +29,15 @@
 //
 // Everything here is bounded: one packet, one query, a short deadline, a record
 // cap and a pointer-loop guard. Every failure mode returns unknown.
+// Why `const f = function() {}` plus `export { }` instead of `export function f`
+// ---------------------------------------------------------------------------
+// The ucode runtime shipped by the target (libucode.so.20230711, as installed by
+// iStoreOS 25.12.5) rejects `export function` with "Syntax error: Unexpected
+// token / Expecting ';'". `export const` and a trailing `export { ... }` list do
+// compile there and the imported binding is callable, so that is the form every
+// module in this package uses. Do not "modernise" it back: it verifiably fails
+// to load on the device, and the host test runner uses a newer ucode that would
+// not catch the regression.
 
 import * as socket from 'socket';
 
@@ -62,21 +71,21 @@ function u16(data, pos) {
 // truncated to 32 bits, so the running value is kept below 2^32 explicitly; every
 // intermediate stays non-negative and below 2^32, which reproduces the C
 // uint32_t wrap exactly.
-export function hash32(value) {
+const hash32 = function(value) {
 	if (type(value) != 'string')
 		return null;
 	let hash = 5381;
 	for (let i = 0; i < length(value); i++)
 		hash = (hash * 33 + ord(value, i)) % 4294967296;
 	return hash;
-}
+};
 
 // The 12-hex-character prefix AirConnect puts at the front of every _raop
 // instance name, for the synthesised-MAC path. hash32(UDN) is stored
 // little-endian into MAC bytes 2..5 (airupnp.c:1020) and bytes 0..1 are set to
 // 0xbb for airupnp or 0xcc for aircast. Both spellings are returned because the
 // manager cannot tell which engine hosts a device from the advertisement alone.
-export function macPrefixes(udn) {
+const macPrefixes = function(udn) {
 	let h = hash32(udn);
 	if (h == null)
 		return null;
@@ -89,7 +98,7 @@ export function macPrefixes(udn) {
 	for (let i = 0; i < 4; i++)
 		suffix += sprintf('%02X', bytes[i]);
 	return { upnp: 'BBBB' + suffix, cast: 'CCCC' + suffix };
-}
+};
 
 // Read one DNS name, following compression pointers. Returns { name, end } where
 // end is the offset just past the name as first encountered. Returns null on a
@@ -216,7 +225,7 @@ function txtModel(strings) {
 // service-type listing can never be mistaken for a receiver. TXT records are
 // associated by instance name across all three sections, which is how mDNS
 // sends them (answer + additional).
-export function parseResponse(data) {
+const parseResponse = function(data) {
 	if (type(data) != 'string' || length(data) < 12 || length(data) > PACKET_LIMIT)
 		return null;
 	let flags = u16(data, 2);
@@ -293,30 +302,30 @@ export function parseResponse(data) {
 	for (let key in order)
 		push(instances, { name: names[key], model: exists(models, key) ? models[key] : null });
 	return { complete: true, instances: instances };
-}
+};
 
 // The MAC prefix carried by an instance name, uppercased, or null when the name
 // does not begin with 12 hex characters followed by "@".
-export function instancePrefix(name) {
+const instancePrefix = function(name) {
 	if (type(name) != 'string' || length(name) < 13)
 		return null;
 	let prefix = upper(substr(name, 0, 12));
 	if (!match(prefix, /^[0-9A-F]{12}$/) || substr(name, 12, 1) != '@')
 		return null;
 	return prefix;
-}
+};
 
 // Whether the configured interface lets the engine take the synthesised-MAC
 // path. Only then is the prefix derivable from the UDN. See the header.
-export function prefixIsDerivable(interfaceName) {
+const prefixIsDerivable = function(interfaceName) {
 	return type(interfaceName) == 'string' && interfaceName != '' &&
 		lower(interfaceName) != ARP_INTERFACE;
-}
+};
 
 // Reduce one completed scan to the per-engine service state. An engine is
 // broadcasting when an instance advertised with its own am= marker. Returns null
 // when the scan did not complete, which the caller must render as unknown.
-export function engineStates(scanResult) {
+const engineStates = function(scanResult) {
 	if (type(scanResult) != 'object' || scanResult == null || scanResult.complete !== true)
 		return null;
 	let instances = type(scanResult.instances) == 'array' ? scanResult.instances : [];
@@ -330,13 +339,13 @@ export function engineStates(scanResult) {
 			states.cast = true;
 	}
 	return states;
-}
+};
 
 // Reduce one completed scan to a per-device state. Returns true, false or null:
 // null means unknown and is returned whenever the answer would be a guess -
 // the scan did not complete, the interface makes the prefix ambiguous, the
 // device has no UDN, or two different instances claim the same prefix.
-export function deviceState(scanResult, interfaceName, udn) {
+const deviceState = function(scanResult, interfaceName, udn) {
 	if (type(scanResult) != 'object' || scanResult == null || scanResult.complete !== true)
 		return null;
 	if (!prefixIsDerivable(interfaceName))
@@ -364,14 +373,14 @@ export function deviceState(scanResult, interfaceName, udn) {
 	for (let name in hits)
 		distinct[lower(name)] = true;
 	return length(keys(distinct)) == 1 ? true : null;
-}
+};
 
 // One bounded mDNS query. The socket is non-blocking, the deadline is short, and
 // the loop stops at the first acceptable reply. Returns
 //   { complete: true,  instances: [...] }   when a reply was parsed, or
 //   { complete: false, reason: "..." }      for every other outcome.
 // The caller must treat complete:false as unknown, never as "not broadcasting".
-export function scan(address, interfaceName) {
+const scan = function(address, interfaceName) {
 	if (type(address) != 'string' || !match(address, /^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$/))
 		die('Broadcast scan requires a valid IPv4 address');
 	if (type(interfaceName) != 'string' || length(interfaceName) > 15 ||
@@ -427,4 +436,6 @@ export function scan(address, interfaceName) {
 	if (parsed == null)
 		return { complete: false, reason: 'unparsable reply' };
 	return parsed;
-}
+};
+
+export { hash32, macPrefixes, parseResponse, instancePrefix, prefixIsDerivable, engineStates, deviceState, scan };

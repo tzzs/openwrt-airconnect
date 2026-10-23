@@ -437,7 +437,11 @@ if grep -Eq "import .* from '(uci|ubus|fs|socket)'" "${state}"; then
 else
 	ok 'state.uc imports no runtime modules'
 fi
-if grep -q 'export function' "${state}"; then
+# The target's ucode (20230711, as shipped by iStoreOS 25.12.5) rejects
+# `export function`; only `const f = function() {}` plus an `export { }` list
+# compiles there. Accept either form so the assertion tracks "the helpers are
+# exported", not one particular spelling of it.
+if grep -q 'export function' "${state}" || grep -q '^export {' "${state}"; then
 	ok 'state.uc exports the pure helpers'
 else
 	no 'state.uc exports the pure helpers' 'no exports found'

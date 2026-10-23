@@ -6,6 +6,15 @@
 // (files/usr/share/rpcd/ucode/airconnect-manager) does the I/O and calls these
 // functions, which lets tests/state/run.uc drive the same code on a host that
 // has neither ubus nor uci.
+// Why `const f = function() {}` plus `export { }` instead of `export function f`
+// ---------------------------------------------------------------------------
+// The ucode runtime shipped by the target (libucode.so.20230711, as installed by
+// iStoreOS 25.12.5) rejects `export function` with "Syntax error: Unexpected
+// token / Expecting ';'". `export const` and a trailing `export { ... }` list do
+// compile there and the imported binding is callable, so that is the form every
+// module in this package uses. Do not "modernise" it back: it verifiably fails
+// to load on the device, and the host test runner uses a newer ucode that would
+// not catch the regression.
 
 // The reply bound. A hostile or broken cache must not be able to grow the ubus
 // message without limit, and the LuCI page renders one card per entry.
@@ -130,7 +139,7 @@ function configuredEntries(uciDevices) {
 // Discovered devices first, then configured speakers that discovery did not
 // see. A configured speaker stays visible (online:false) because it is the
 // user's own inventory, not a discovery result.
-export function mergeConfigured(discovered, uciDevices) {
+const mergeConfigured = function(discovered, uciDevices) {
 	let configured = configuredEntries(uciDevices);
 	let result = [], seen = {};
 	for (let device in discovered ?? []) {
@@ -174,11 +183,11 @@ export function mergeConfigured(discovered, uciDevices) {
 		});
 	}
 	return result;
-}
+};
 
 // A snapshot older than a day, or stamped in the future by more than a small
 // clock step, is not current state: report no scan and no devices.
-export function freshCache(cached, now) {
+const freshCache = function(cached, now) {
 	now = now ?? time();
 	let empty = { scanned_at: null, devices: [] };
 	if (type(cached) != 'object' || cached == null)
@@ -193,7 +202,7 @@ export function freshCache(cached, now) {
 		scanned_at: stamp,
 		devices: type(cached.devices) == 'array' ? cached.devices : []
 	};
-}
+};
 
 // The broadcast observation is much shorter lived than a discovery snapshot. A
 // discovery result is a fact about the speaker, which does not change minute to
@@ -209,7 +218,7 @@ const BROADCAST_FUTURE_SKEW = 60;
 // where `instances` is only carried through for a fresh, completed scan. A stale
 // or absent observation yields scanned_at:null and complete:false, which every
 // caller must render as unknown - never as "not broadcasting".
-export function freshBroadcast(cached, now) {
+const freshBroadcast = function(cached, now) {
 	now = now ?? time();
 	let empty = { scanned_at: null, complete: false, reason: null, instances: [] };
 	if (type(cached) != 'object' || cached == null)
@@ -230,7 +239,7 @@ export function freshBroadcast(cached, now) {
 		reason: complete ? null : stringOrNull(cached.reason, 128),
 		instances: complete && type(cached.instances) == 'array' ? cached.instances : []
 	};
-}
+};
 
 // The single status reply. `now`, `scanRunning` and `scanError` are injected as
 // well so the caller keeps the clock and the scan lock out of this module.
@@ -240,7 +249,7 @@ export function freshBroadcast(cached, now) {
 // mDNS or hash dependency, exactly the way the clock and the scan lock are
 // injected. It receives (observation, engine, udn) and returns true, false or
 // null, and the reply carries that value through unchanged.
-export function buildStatus(options) {
+const buildStatus = function(options) {
 	options = options ?? {};
 	let main = type(options.uciMain) == 'object' && options.uciMain != null ? options.uciMain : {};
 	let state = type(options.serviceState) == 'object' && options.serviceState != null ? options.serviceState : {};
@@ -308,7 +317,7 @@ export function buildStatus(options) {
 		conflicts: conflicts,
 		devices: devices
 	};
-}
+};
 
 // BusyBox `ps w` prints "PID USER VSZ STAT COMMAND"; procps prints
 // "PID USER TIME COMMAND" and toybox "PID USER VSZ STAT COMMAND" as well. Every
@@ -343,7 +352,7 @@ function basename(path) {
 // parsePsOutput(text, ownPids) returns [{ pid, name }] for every engine process
 // that is not one of ours. It only reports presence: nothing here may signal,
 // stop or delete a process.
-export function parsePsOutput(text, ownPids) {
+const parsePsOutput = function(text, ownPids) {
 	let found = [];
 	if (type(text) != 'string' || text == '')
 		return found;
@@ -371,7 +380,7 @@ export function parsePsOutput(text, ownPids) {
 		push(found, { pid: pid, name: name });
 	}
 	return found;
-}
+};
 
 function cleanLine(value) {
 	let out = '';
@@ -390,7 +399,7 @@ function cleanLine(value) {
 // command's output) rather than a log line. It keeps tabs and drops every other
 // control byte, including CR, because the result is shown in the page and never
 // re-emitted as a file.
-export function stripControl(value, maxBytes) {
+const stripControl = function(value, maxBytes) {
 	if (type(value) != 'string')
 		return '';
 	maxBytes = integerOrNull(maxBytes) ?? MAX_LINE_BYTES;
@@ -402,11 +411,11 @@ export function stripControl(value, maxBytes) {
 		out += chr(c);
 	}
 	return out;
-}
+};
 
 // tailLines(text, maxLines, maxBytes) keeps the newest lines, strips control
 // bytes, and respects both caps. `truncated` is true when anything was dropped.
-export function tailLines(text, maxLines, maxBytes) {
+const tailLines = function(text, maxLines, maxBytes) {
 	let result = { lines: [], truncated: false };
 	if (type(text) != 'string' || text == '')
 		return result;
@@ -444,7 +453,7 @@ export function tailLines(text, maxLines, maxBytes) {
 	}
 	result.lines = reverse(kept);
 	return result;
-}
+};
 
 // Whether procd reports the state the requested action was supposed to reach.
 // Returns true/false when the answer is known and null when it cannot be
@@ -453,7 +462,7 @@ export function tailLines(text, maxLines, maxBytes) {
 //
 // The expected state mirrors the init script exactly: with the service disabled
 // or no engine selected, start/restart publishes nothing, so nothing may run.
-export function actionSatisfied(action, serviceState, uciMain) {
+const actionSatisfied = function(action, serviceState, uciMain) {
 	let state = type(serviceState) == 'object' && serviceState != null ? serviceState : {};
 	if (state.upnp !== true && state.upnp !== false)
 		return null;
@@ -478,11 +487,11 @@ export function actionSatisfied(action, serviceState, uciMain) {
 			return false;
 	}
 	return true;
-}
+};
 
 // clampErrors bounds what validate() can send back: a configuration with many
 // bad fields must not turn into an unbounded ubus reply.
-export function clampErrors(list) {
+const clampErrors = function(list) {
 	let result = [];
 	if (type(list) != 'array')
 		return result;
@@ -497,4 +506,6 @@ export function clampErrors(list) {
 		push(result, message);
 	}
 	return result;
-}
+};
+
+export { mergeConfigured, freshCache, freshBroadcast, buildStatus, parsePsOutput, stripControl, tailLines, actionSatisfied, clampErrors };

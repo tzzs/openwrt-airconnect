@@ -1,5 +1,14 @@
 // SPDX-License-Identifier: MIT
 // SSDP only: this module never starts AirConnect or advertises an AirPlay service.
+// Why `const f = function() {}` plus `export { }` instead of `export function f`
+// ---------------------------------------------------------------------------
+// The ucode runtime shipped by the target (libucode.so.20230711, as installed by
+// iStoreOS 25.12.5) rejects `export function` with "Syntax error: Unexpected
+// token / Expecting ';'". `export const` and a trailing `export { ... }` list do
+// compile there and the imported binding is callable, so that is the form every
+// module in this package uses. Do not "modernise" it back: it verifiably fails
+// to load on the device, and the host test runner uses a newer ucode that would
+// not catch the regression.
 import * as socket from 'socket';
 import * as fs from 'fs';
 
@@ -28,7 +37,7 @@ function now() {
 // Canonical dotted IPv4 only. Refuse DNS, alternate numeric encodings and
 // link-local/metadata, loopback, multicast and public destinations. This first
 // release deliberately supports RFC1918 LANs only.
-export function privateAddress(address) {
+const privateAddress = function(address) {
 	if (type(address) != 'string' || !match(address, /^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$/))
 		return false;
 	let parts = split(address, '.');
@@ -38,9 +47,9 @@ export function privateAddress(address) {
 	return int(parts[0], 10) == 10 ||
 		(int(parts[0], 10) == 172 && int(parts[1], 10) >= 16 && int(parts[1], 10) <= 31) ||
 		(int(parts[0], 10) == 192 && int(parts[1], 10) == 168);
-}
+};
 
-export function validateLocation(location, peer) {
+const validateLocation = function(location, peer) {
 	if (type(location) != 'string' || length(location) > 1024 || !privateAddress(peer))
 		return null;
 	// The path whitelist also forbids whitespace, backslashes and fragments.
@@ -52,9 +61,9 @@ export function validateLocation(location, peer) {
 	if (port < 1 || port > 65535 || (m[2] && length(m[2]) > 6))
 		return null;
 	return { location, address: peer, port };
-}
+};
 
-export function parseSsdp(response, peer) {
+const parseSsdp = function(response, peer) {
 	if (type(peer) == 'object')
 		peer = peer.address;
 	if (type(response) != 'string' || length(response) > 8192 ||
@@ -82,7 +91,7 @@ export function parseSsdp(response, peer) {
 	if (!location || !usn || length(usn) > 255 || !match(usn, /^uuid:[A-Za-z0-9._:-]+$/))
 		return null;
 	return { location: location.location, address: peer, udn: usn };
-}
+};
 
 function codepoint(n) {
 	if (n < 32 || n == 127 || n > 0x10ffff || (n >= 0xd800 && n <= 0xdfff))
@@ -113,7 +122,7 @@ function decodeText(value) {
 // A deliberately small, bounded XML tokenizer, not a general XML interpreter.
 // No DTDs, entities, CDATA, processing instructions (except XML declaration),
 // namespace tricks in extracted fields, nested field markup or external loads.
-export function parseDescription(xml, candidate, seen) {
+const parseDescription = function(xml, candidate, seen) {
 	if (type(xml) != 'string' || length(xml) > BODY_LIMIT || !length(xml) ||
 		hasControl(xml) ||
 		type(candidate) != 'object' || !privateAddress(candidate.address))
@@ -197,9 +206,9 @@ export function parseDescription(xml, candidate, seen) {
 		};
 	}
 	return null;
-}
+};
 
-export function deduplicate(devices) {
+const deduplicate = function(devices) {
 	let seen = {}, result = [];
 	for (let d in devices)
 		if (d && d.engine == 'upnp' && d.udn && !seen[d.udn]) {
@@ -207,7 +216,7 @@ export function deduplicate(devices) {
 			push(result, d);
 		}
 	return result;
-}
+};
 
 function shellquote(value) {
 	return "'" + replace(value, "'", "'\\''") + "'";
@@ -241,7 +250,7 @@ function validInterface(value) {
 	return m != null && length(m[0]) == length(value);
 }
 
-export function discover(address, interfaceName) {
+const discover = function(address, interfaceName) {
 	if (!privateAddress(address) || type(interfaceName) != 'string' || !validInterface(interfaceName))
 		die('Discovery requires a private IPv4 address and a valid network interface');
 	let deadline = now() + 8;
@@ -287,4 +296,6 @@ export function discover(address, interfaceName) {
 		}
 	}
 	return deduplicate(devices);
-}
+};
+
+export { privateAddress, validateLocation, parseSsdp, parseDescription, deduplicate, discover };

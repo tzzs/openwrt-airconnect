@@ -1,5 +1,14 @@
 // SPDX-License-Identifier: MIT
 // Pure validation and serialization. This module does not read UCI or write files.
+// Why `const f = function() {}` plus `export { }` instead of `export function f`
+// ---------------------------------------------------------------------------
+// The ucode runtime shipped by the target (libucode.so.20230711, as installed by
+// iStoreOS 25.12.5) rejects `export function` with "Syntax error: Unexpected
+// token / Expecting ';'". `export const` and a trailing `export { ... }` list do
+// compile there and the imported binding is callable, so that is the form every
+// module in this package uses. Do not "modernise" it back: it verifiably fails
+// to load on the device, and the host test runner uses a newer ucode that would
+// not catch the regression.
 
 function invalid(path, reason) {
 	die(path + ': ' + reason);
@@ -185,7 +194,7 @@ function inherited(source, key, fallback) {
 	return !exists(source, key) || source[key] === '' ? fallback : source[key];
 }
 
-export function normalizeConfig(input) {
+const normalizeConfig = function(input) {
 	object(input, 'config');
 	let source = exists(input, 'main') ? object(input.main, 'main') : {};
 	let main = {
@@ -268,7 +277,7 @@ export function normalizeConfig(input) {
 		push(devices, device);
 	}
 	return { main: main, devices: devices };
-}
+};
 
 function escapeXml(value) {
 	value = replace('' + value, /&/g, '&amp;');
@@ -282,7 +291,7 @@ function element(lines, indent, tag, value) {
 	push(lines, indent + '<' + tag + '>' + escapeXml(value) + '</' + tag + '>');
 }
 
-export function renderXml(normalized, engine) {
+const renderXml = function(normalized, engine) {
 	if (engine !== 'upnp' && engine !== 'cast')
 		invalid('engine', 'expected upnp or cast');
 	// Revalidation makes callers unable to bypass limits with a hand-made object.
@@ -342,4 +351,6 @@ export function renderXml(normalized, engine) {
 	}
 	push(lines, '</' + root + '>');
 	return join('\n', lines) + '\n';
-}
+};
+
+export { normalizeConfig, renderXml };
