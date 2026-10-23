@@ -26,7 +26,7 @@ AirPlay 满音量映射及反馈；[ ] 界面状态与服务一致（仅在 `dev
 
 - [x] 展示发现的音箱、型号、UDN、地址、桥接状态和 AirPlay 名称。（`state.uc` 的 `buildStatus`，`discovery.uc` 的 `parseDescription`）
 - [x] 提供受限的重新扫描、日志查看与服务重启功能，按最小权限设计 RPC。（`rpcd/ucode/airconnect-manager` 与 `acl.d` 的读写分权）
-- [ ] 区分服务运行、发现 DLNA 音箱、AirPlay 广播和实际播放四种状态。（前两种来自 UCI/procd/发现缓存；广播与播放目前固定显示为未测量）
+- [x] 区分服务运行、发现 DLNA 音箱、AirPlay 广播和实际播放四种状态。（前两种来自 UCI/procd/发现缓存；广播由 `broadcast.uc` 观测 mDNS `_raop._tcp` 实例得到，按引擎用 TXT 的 `am=` 标记判定、按设备用 UDN 推出的 MAC 前缀判定，仅在接口使 `SendARP()` 必然失败（Linux 上即非 `eth0`）时可信，否则未知；播放仍为未知，上游没有文档化状态接口。观测缓存 5 分钟，`status` 只读缓存不发起 mDNS，未测量的状态一律显示未知。证据与逐条边界见[验证记录](docs/VERIFICATION.zh-CN.md)）
 - [x] 避免通过关闭防火墙、改 DNS 或自动更改网络来解决发现问题。（后端没有防火墙或 DNS 操作）
 - [x] 修复现有状态检查：仅启用 aircast 时也能正确显示运行状态。（`tests/package/run-init-script.sh` 的 cast only 用例，`tests/state/run.uc` 的服务状态合并）
 

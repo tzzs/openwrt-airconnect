@@ -36,10 +36,11 @@ procd 使用 `-Z`，不让引擎自行 daemonize；分别管理 UPnP/Cast 实例
 
 `files/usr/share/rpcd/ucode/airconnect-manager` 是 rpcd 的 ucode 插件，顶层 `return` 即签名对象，注册 `airconnect.manager` 的 `status`、`logs`、`scan`、`validate`、`action` 五个方法（ACL 已在 LuCI 包中，不在此重复）。
 
-- **复用而非重写**：`config.uc` 负责校验与渲染，`discovery.uc` 负责 SSDP，`runtime.uc` 负责读 UCI（该文件是 script 模式，只能经 `loadfile()` 取到 API），`state.uc` 与 `files.uc` 负责纯逻辑与有界 I/O。
+- **复用而非重写**：`config.uc` 负责校验与渲染，`discovery.uc` 负责 SSDP，`broadcast.uc` 负责 mDNS 广播观测，`runtime.uc` 负责读 UCI（该文件是 script 模式，只能经 `loadfile()` 取到 API），`state.uc` 与 `files.uc` 负责纯逻辑与有界 I/O。
 - **降级而不是失联**：`uci`、`ubus` 用 `require()` 在 try/catch 内加载。静态 `import` 一旦缺模块会让整个插件编译失败、所有方法消失，而 `status` 恰恰需要在 procd 读不到时仍能返回。
 - **状态与进程分离**：`enabled`/`interface` 来自 UCI，`running` 来自 procd 的 `service list`；ubus 问不到时为 `null`（未知），绝不写成 `false`。
 - **扫描显式且限时**：`status` 从不发起扫描。`scan` 取锁后立刻返回，工作进程是同一文件的 `scan-worker` 分支，不新增常驻进程，受 `discovery.uc` 自带 8 秒预算约束。
+- **四态分离**：`running` 来自 procd，`discovered` 来自 SSDP 缓存，`broadcasting` 来自 mDNS 对 `_raop._tcp` 实例的观测，`playback` 恒为未知。三种实测各有缓存与失效期（SSDP 24 小时、mDNS 5 分钟），互不推导。`broadcast.uc` 只做一次有界查询，`status` 只读缓存文件，因此轮询不产生组播流量。
 - **不做破坏性动作**：冲突检测只报告旧服务、旧二进制或外来进程的存在，绝不终止、删除或修改。`start`/`restart` 在存在冲突时拒绝。
 - **请求值不进 shell**：`action` 用请求值在固定表里选命令，命令本身是字面量。
 

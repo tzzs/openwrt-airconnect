@@ -42,19 +42,21 @@
 | --- | --- | --- |
 | config | `ucode tests/config/run.uc` | 661 通过，0 失败 |
 | discovery | `ucode tests/discovery/run.uc` | 103 项检查通过 |
+| broadcast | `ucode tests/broadcast/run.uc` | 37 项检查通过 |
 | parity（后端） | `ucode tests/parity/run.uc` | 1388 通过，0 失败 |
 | parity（前端） | `node tests/parity/check-frontend.mjs` | 930 通过，0 失败 |
 | luci 视图 | `node tests/luci/run.mjs` | 43 通过，0 失败 |
 | runtime | `ucode tests/runtime/run.uc` | 38 通过，0 失败 |
-| state | `ucode tests/state/run.uc` | 70 通过，0 失败 |
-| state 插件 | `bash tests/state/check-plugin.sh` | 43 通过，0 失败 |
-| package 静态 | `bash tests/package/check-package.sh` | 67 通过，0 失败 |
+| state | `ucode tests/state/run.uc` | 79 通过，0 失败 |
+| state 插件 | `bash tests/state/check-plugin.sh` | 43 通过，0 失败（其中插件 I/O 42 项） |
+| package 静态 | `bash tests/package/check-package.sh` | 69 通过，0 失败 |
 | init 脚本 | `bash tests/package/run-init-script.sh` | 148 项检查，0 失败 |
 | engine 配方 | `bash tests/engine/check-recipe.sh` | 30 通过，0 失败 |
 | migration | `bash tests/migration/run.sh` | 122 通过，0 失败 |
 | 性能：静态资源 | `bash tests/performance/measure-payload.sh` | 5 个文件，47,775 B / gzip 14,646 B，预算全部成立 |
 | 性能：回复大小 | `bash tests/performance/measure-status.sh` | 10 通过，0 失败 |
 | 性能：轮询契约 | `node tests/performance/poll-contract.mjs` | 29 通过，0 失败 |
+| luci 四态渲染 | `node tests/luci/diagnostics.mjs` | 26 通过，0 失败 |
 
 由此可以确认的具体事实：
 
@@ -278,3 +280,137 @@ libopenssl 的 TLS，不用这两个引擎，关掉它们把构建范围收敛�
   没有经过真实 rpcd/UCI 的保存与回滚。
 - **rpcd 注册**：`/usr/share/rpcd/ucode/airconnect-manager` 的权限与位置已核对，
   但没有在运行中的 rpcd 上确认 `airconnect.manager` 对象真的注册成功。
+
+## 四态区分：广播可测量性的证据（S4，2026-10-22）
+
+本节记录“AirPlay 广播”从固定文案变成实测值时，究竟测的是什么、证据在哪里，以及
+哪些情况下必须继续显示未知。**结论：广播可以测量，但只在合成 MAC 路径成立；
+播放仍然不可测量，保持未知。**
+
+### 上游对外暴露了什么（逐项证据）
+
+| 问题 | 结论 | 证据 |
+| --- | --- | --- |
+| 引擎注册哪些 mDNS 服务类型 | 只有 `_raop._tcp.local`。**没有** `_airplay._tcp`。 | `common/libraop/src/raop_server.c:155` 与 `:186` 都是 `mdnsd_register_svc(..., "_raop._tcp.local", ...)`；两个已发布静态二进制里 `strings` 只出现 `_raop._tcp.local`，`_airplay` 出现 0 次。 |
+| 实例名（instance name）的构成 | `"<MAC 6 字节大写十六进制>@<AirPlay 名称>"`，并截断到 63 字节 | `raop_server.c:146`：`for (i = 0; i < 6; i++) sprintf(id + i*2, "%02X", mac[i]);`，`:149` `sprintf(id + 12, "@%s", name);`，`:152` `if (strlen(id) > 63) id[63] = '\0';` |
+| TXT 记录里有什么 | 第一条是 `am=<model>`，`model` 由调用方传入：`"airupnp"` 或 `"aircast"` | `raop_server.c:138` `char *txt[] = { NULL, "tp=UDP", ... }`，`:141` `(void)!asprintf(&(txt[0]), "am=%s", model)`；调用点 `airupnp/src/airupnp.c:784,840` 传 `"airupnp"`，`aircast/src/aircast.c:550` 传 `"aircast"`。 |
+| MAC 从哪来 | 先用 `SendARP()` 读音箱真实 MAC；失败才用 `hash32(UDN)` 合成，并把前两字节置为 `0xbb`（airupnp）或 `0xcc`（aircast） | `airupnp.c:1014-1024`、`aircast.c:663-671`。`hash32` 是 djb2-33，见 `crosstools/src/cross_util.c:425`。 |
+| Linux 上 `SendARP()` 真能成功吗 | 不能，除非接口正好叫 `eth0`：它把 `areq.arp_dev` 硬编码成 `"eth0"` | `crosstools/src/cross_net.c:139-168`，其中 `:158` 是 `strncpy(areq.arp_dev, "eth0", 15);`，随后 `:160` `ioctl(s, SIOCGARP, ...)`；设备名不符时返回 `-1`，调用方就走 `hash32(UDN)` 分支。 |
+| 有没有状态 API | **没有**。CLI 只有日志等级、日志文件、PID 文件；内部有设备/播放状态但不对外 | 能力审计已记录（`docs/AIRCONNECT-CAPABILITIES.zh-CN.md`）；`-d all=debug` 只能读日志，日志匹配属于推断，设计禁止。 |
+
+### 在真实二进制上做的实测（不是读源码的推断）
+
+在 Linux x86_64 上运行**官方 1.12.4 静态二进制**
+`airupnp-linux-x86_64-static`（来自 `AirConnect-1.12.4.zip`，SHA256 已核对），
+配一个合成的 UPnP MediaRenderer（UDN `uuid:demo-synthetic-renderer`），用 `tcpdump`
+抓 `udp port 5353`：
+
+```
+_raop._tcp.local. PTR BBBBA7A5DB92@Demo Speaker+._raop._tcp.local.,
+_services._dns-sd._udp.local. PTR _raop._tcp.local.
+  BBBBA7A5DB92@Demo Speaker+._raop._tcp.local. TXT "am=airupnp" "tp=UDP" ... "txtvers=1"
+  BBBBA7A5DB92@Demo Speaker+._raop._tcp.local. SRV port=38609 target=colima.local
+  colima.local. A 192.168.5.1
+```
+
+引擎自己的日志同时打印 `adding renderer (Demo Speaker) with mac BBBB92DBA5A7`，
+即 `hash32("uuid:demo-synthetic-renderer") = 0x92dba5a7` 小端写入 MAC 第 2..5 字节、
+前两字节 `0xbb 0xbb`。**这条抓包就是 `tests/broadcast/run.uc` 里的
+`CAPTURED_UPNP` 夹具**，解析器因此是对着真实报文而不是自己造的报文测试的。
+
+### 因此“广播”能测到什么，不能测到什么
+
+- **能测到**：某个 `_raop._tcp` 实例正在被通告，且它的 MAC 前缀与本设备 UDN 推出的
+  前缀一致 → 这个设备的 AirPlay 接收端**已注册**。这就是“广播中”。
+- **测不到**：是否有人在推流、是否在出声。上游没有接口，日志匹配是推断，不做。
+- **只在合成 MAC 路径可靠**：接口名不是 `eth0` 时，Linux `SendARP()` 必定失败，
+  引擎必定走 `hash32(UDN)`，前缀可以从 UCI 里的 UDN 精确算出。接口名**正好是 `eth0`**
+  时前缀可能是音箱真实 MAC 的第 2..5 字节，管理器无法推出，此时
+  **按设备的状态一律报未知**（`broadcast.uc:prefixIsDerivable`）。
+- **服务级状态（`services.<engine>.broadcasting`）不依赖 MAC**：它只用 TXT 里的
+  `am=` 标记，因此在任何接口上都成立。
+
+### 三态规则（`false` 什么时候才允许）
+
+| 情况 | 结果 | 理由 |
+| --- | --- | --- |
+| 扫描完成，找到匹配实例 | `true` | 直接观测到通告 |
+| 扫描完成，没有匹配实例 | `false` | 真的测了，确实没有 |
+| 没有 socket / 没有回复 / 超时 | `unknown` | 没测到，不是“没有” |
+| 报文无法解析（截断、超限、指针环、记录数超限） | `unknown` | 同上 |
+| 观测超过 300 秒 | `unknown` | 进程可能已经停了，旧数据不是现状 |
+| 接口是 `eth0`（前缀不可推导） | `unknown` | 前缀算不出来，不能猜 |
+| 同一前缀下有两个不同实例名 | `unknown` | 无法归属到具体设备 |
+| 服务从未运行过 | `unknown` | 从未测量 |
+
+### 边界与不新增常驻进程
+
+- `broadcast.uc` 只做一次有界查询：一个 `_raop._tcp` 问题（QU 位置位，请对方单播回复，
+  避免把整个 LAN 的 mDNS 都惊动）、3 秒预算、4096 字节报文上限、64 条记录上限、
+  指针只允许向后跳且最多 64 跳。
+- 观测由**已有的** `scan` 工作进程在 SSDP 之后执行，写入独立的
+  `/var/lib/airconnect-manager/broadcast.json`（0640，原子替换）。`status` 只读这个文件，
+  **从不打开 socket**，所以 10 秒轮询不会产生任何 mDNS 流量。
+- 没有新增软件包依赖：只用 `ucode-mod-socket`，它已经在 `DEPENDS` 里。
+  `umdns` **不在** OpenWrt 25.12 的 `DEFAULT_PACKAGES`（`include/target.mk` 里没有），
+  所以没有采用 `ubus call umdns browse` 这条路，也没有把它加进依赖。
+
+### 仍未验证
+
+- **真实路由器上的 mDNS**：设备已验证 `broadcast.uc` 能编译并导入（见下一节），但
+  `scan()` 本身（唯一的 I/O 函数）没有在设备上执行过。`SO_BINDTODEVICE` +
+  `IP_MULTICAST_IF` 在 musl/内核上的行为、防火墙对 5353 的影响、真实音箱是否真的
+  出现 `_raop._tcp` 通告均未实测。主机测试只覆盖纯决策层。
+- **真实音箱**：没有接入任何音箱，因此“广播 true 与手机真的能看到接收端一致”未验证。
+- **`am=` 与真实固件的交互**：只验证了引擎写出的值，没有验证其他 mDNS 实现是否会
+  改写或丢弃该 TXT 记录。
+
+## 真实设备验证（iStoreOS 25.12.5 / aarch64，2026-10-23）
+
+前几节反复写着"没有在真实路由器上运行过"。这一节记录第一次在真实目标设备上跑起来的结果，
+它同时推翻了其中两条结论。
+
+### 设备
+
+| 项 | 值 |
+| --- | --- |
+| 发行版 | iStoreOS 25.12.5（`DISTRIB_REVISION=2026092410`） |
+| 目标 | `rockchip/armv8`，`aarch64_generic` |
+| 包格式 | `apk`（`/usr/bin/apk`） |
+| ucode | 包版本 `ucode-2026.01.16~85922056-r2`，但实际运行时是 `libucode.so.20230711` |
+| 已有旧包 | `/etc/config/airconnect` + `/etc/init.d/airconnect`（旧 UCI 服务，正在运行） |
+
+### 在这台设备上真正验证过的
+
+- **五个后端模块都能编译并 import**：`config.uc`、`discovery.uc`、`files.uc`、`state.uc`、
+  `broadcast.uc`，导出数量分别为 2 / 6 / 7 / 9 / 8。
+- **XML 渲染在设备上正确**：`renderXml(normalizeConfig({...}), 'upnp')` 产出以 `<airupnp>` 为根的
+  文档，`<binding>`、`<main_log>`、`<common>` 等元素按预期出现。
+- **rpcd 插件在设备上成功注册**：`airconnect.manager` 对象的
+  `status`、`logs`、`scan`、`validate`、`action` 五个方法全部存在且形状为 `{ call: fn }`。
+- **`status` 返回真实回复**（设备上的实际输出，节选）：
+  `{"enabled":false,"interface":null,...,"playback":{"known":false,"reason":"no documented engine
+  status API"},"broadcast":{"observed_at":null,"error":null},"conflicts":[],"devices":[]}`。
+  `broadcasting` 为 `null` 而不是 `false`，与"未测量即 unknown"的规则一致。
+
+### 设备验证推翻的两个结论
+
+1. **`export function` 在目标运行时上不可用。** 之前所有模块都用 `export function`，
+   在 `libucode.so.20230711` 上直接报
+   `Syntax error: Unexpected token / Expecting ';'`，**整个后端在设备上根本无法加载**。
+   已改为 `const f = function () {}` + 末尾 `export { }`，设备上验证可编译、可调用。
+   主机测试用的是较新的 ucode，两种写法都接受，所以这个缺陷在主机上完全看不出来。
+2. **迁移脚本硬编码了错误的 section 名。** 旧包用 `config_foreach` 遍历所有 `airconnect`
+   类型的 section，出厂文件里它叫 `config`；迁移脚本却固定读 `airconnect.main.*`。
+   在真机上表现为**每一次查找都落空**，然后把内置默认值写回配置——`max_volume` 从 30
+   变成 100，`interface`/引擎选择也被默认值覆盖。已改为从 `uci show` 解析 section 名，
+   找不到 section 时直接失败而不是"迁移一份没东西可迁的文件"。
+
+### 仍未验证（这一节不改变这些）
+
+- 包**没有**用 `apk add` 安装进设备（只在 `/tmp` 里按安装后的目录布局加载）。
+  因此 procd 启动、`/etc/init.d/airconnect-manager` 的真实行为、conffiles 处理仍未核对。
+- 没有接入真实音箱：SSDP 发现、`_raop._tcp` 观测、音量映射的实际效果都未验证。
+- 性能项（CPU、RSS、网络、播放中断）仍未测量。
+- `airconnect-manager` 与 `luci-app-airconnect-manager` 仍未编译出 APK
+  （构建 VM 在编译 curl/openssl 依赖链时 OOM，与代码无关）。

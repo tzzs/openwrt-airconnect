@@ -61,14 +61,18 @@ contract; both runners must agree with it.
 
 Which controls the production view offers for which engine.
 
-- Command: `node tests/luci/run.mjs`
+- Command: `node tests/luci/run.mjs` and `node tests/luci/diagnostics.mjs`
 - Covers: the real, unmodified `overview.js` building both forms for a UPnP and a
   Chromecast device. A Chromecast device never offers `http_length` or `upnp_max`,
   a UPnP device never offers `stop_receiver`, every per-device advanced control
   accepts an empty value (which means "inherit"), the `http_length`/`upnp_max`
   selects offer exactly the values `config.uc` accepts, and the engine-specific
-  global fields carry an engine-specific label. **Does not cover** a real LuCI
-  render, a real browser or the resulting DOM.
+  global fields carry an engine-specific label.
+- `diagnostics.mjs` covers how the Diagnostics panel renders the four states: an
+  unmeasured broadcast renders as unknown and never as a positive, a measured
+  positive shows its value and the mDNS observation time, a measured negative is
+  distinct from unknown, and a broadcast positive never changes the playback row.
+- **Does not cover** a real LuCI render, a real browser or the resulting DOM.
 
 ## discovery
 
@@ -78,6 +82,21 @@ Bounded SSDP and XML parser checks for `discovery.uc`.
 - Covers: `parseSsdp`, `parseDescription`, `validateLocation`, `privateAddress`
   and `deduplicate` — strict header/URL parsing, control-byte scanning, comment
   handling and the bounded XML tokenizer.
+
+## broadcast
+
+Bounded mDNS parsing and the three-state decision for the AirPlay advertisement.
+
+- Command: `~/.local/opt/ucode-host/bin/ucode -L ~/.local/opt/ucode-host/lib/ucode tests/broadcast/run.uc`
+- Covers: `hash32`/`macPrefixes` (the synthesised MAC the engine derives from the
+  UDN), `parseResponse` (DNS headers, name decompression, PTR/TXT records), and
+  `deviceState`/`engineStates`. The fixture is the packet the shipped
+  `airupnp` 1.12.4 emitted on the wire, captured with tcpdump, so the parser is
+  tested against a real advertisement rather than only one this file built.
+- The three-state distinction: a matching advertisement is `true`; a completed
+  scan with no match is `false`; a failed scan, an unparsable packet, an
+  oversize datagram, a stale observation or an interface where the prefix is
+  not derivable are all `unknown`.
 
 ## runtime
 
@@ -102,6 +121,10 @@ plugin itself.
 - Covers: the configured-but-offline merge, cache staleness, `ps` parsing,
   log tailing and truncation, error clamping, the plugin's rpcd signature, and
   every RPC method against a sandbox root with fake `uci`/`ubus` modules.
+- The four-state separation: a running engine and a discovered speaker never
+  imply broadcasting, a broadcast positive never implies playback, and the
+  broadcast observation's read path (per-engine, per-device, failed, stale,
+  corrupt and oversize) is driven through the real plugin.
 - See `tests/state/README.md` for what a host cannot verify (real rpcd, procd,
   netifd and SSDP).
 

@@ -67,10 +67,11 @@ ucode 套件需要**真实的** ucode 解释器。查找顺序：
 | --- | --- | --- |
 | `tests/config` | `run.uc` | `config.uc` 的校验与 XML 渲染：默认值、继承、数值边界、控制字节、结尾换行、UTF-8 字节上限、XML 转义、确定性输出；高级引擎参数的枚举、继承、按引擎分离（`http_length`/`upnp_max` 不进 `<aircast>`，`stop_receiver` 不进 `<airupnp>`） |
 | `tests/discovery` | `run.uc` | `discovery.uc` 的 SSDP/XML 有界解析、URL 与地址校验、去重、深度与体积上限 |
+| `tests/broadcast` | `run.uc` | `broadcast.uc` 的 mDNS 决策层：`hash32`/`macPrefixes` 与引擎合成的 MAC 一致、`parseResponse` 解析真实抓包、三态区分（匹配为 `true`、扫描完成无匹配为 `false`、失败/超时/无法解析/过期/前缀不可推导为 `unknown`）、垃圾与超限报文无法翻转状态 |
 | `tests/runtime` | `run.uc` | `runtime.uc` 的 UCI 读取、渲染、原子写、失败保留上一份有效 XML、`dry_run`、权限位、`status.json`、CLI 退出码；缺少高级选项的旧配置与当前默认配置渲染结果逐字节相同 |
-| `tests/state` | `run.uc` + `check-plugin.sh` | `state.uc`/`files.uc` 的纯逻辑与有界 I/O；rpcd 插件能编译、签名正确、五个方法永不返回 NO_DATA；插件在沙箱根目录 + 假 uci/ubus 下的真实 I/O 路径；`validate` 能报告新高级字段的错误路径 |
+| `tests/state` | `run.uc` + `check-plugin.sh` | `state.uc`/`files.uc` 的纯逻辑与有界 I/O；rpcd 插件能编译、签名正确、五个方法永不返回 NO_DATA；插件在沙箱根目录 + 假 uci/ubus 下的真实 I/O 路径；`validate` 能报告新高级字段的错误路径；四态分离（服务在跑与音箱被发现都不推出广播、广播为真不推出播放）；广播观测的读取路径（按引擎、按设备、失败、过期、损坏、超限）经由真实插件驱动 |
 | `tests/parity` | `run.uc` + `check-frontend.mjs` | `cases.json` 这张手写契约同时约束 `config.uc` 与 LuCI 的 `rules.js`，两边判定必须一致 |
-| `tests/luci` | `run.mjs` | 真实视图为两台引擎各建一份表单：Chromecast 设备不出现 `http_length`/`upnp_max`，UPnP 设备不出现 `stop_receiver`；每台设备的覆盖项都能留空继承；下拉项与 `config.uc` 接受的值一致 |
+| `tests/luci` | `run.mjs` + `diagnostics.mjs` | 真实视图为两台引擎各建一份表单：Chromecast 设备不出现 `http_length`/`upnp_max`，UPnP 设备不出现 `stop_receiver`；每台设备的覆盖项都能留空继承；下拉项与 `config.uc` 接受的值一致。`diagnostics.mjs` 覆盖四态渲染：未测量显示未知、已测量显示值与观测时间、已测定的否定与未知不同、广播为真不改变播放行 |
 | `tests/package` | `check-package.sh` + `run-init-script.sh` | 包清单与文件布局；init 脚本在 procd 替身下的实例注册、`-Z`/`-x`、先校验后发布、接口清洗 |
 | `tests/performance` | `measure-payload.sh` + `measure-status.sh` + `poll-contract.mjs` | 本包静态资源字节与 `gzip` 字节及其预算；`status`/`logs` 回复字节与文档化的条数/字节上限是否真的在执行；轮询间隔、隐藏暂停、单请求在途、失败退避、状态刷新不写表单 |
 | `tests/engine` | `check-recipe.sh` | 引擎配方的版本/摘要/架构归一化/提取脚本逻辑，用合成 ZIP 驱动 |
