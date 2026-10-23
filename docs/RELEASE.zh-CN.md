@@ -69,11 +69,14 @@ scope 只是给人看的，不影响版本号。当前使用的 scope：`manager
 | --- | --- | --- |
 | `armsr-armv8` / `aarch64_generic` | 25.12.6, gcc 14.3.0, musl | 启用 |
 
+已确认的参考设备：**EasePi R1**（RK3588 / ARMv8 / 4 GB / 5 网口），iStoreOS 25.12.5。
+它属于 armsr-armv8 目标，是本仓库目前唯一做过真机验证的架构。
+
 ### 尚未启用
 
 | 目标 | 原因 |
 | --- | --- |
-| `x86-64` / `x86_64_generic` | 没有在真实 x86_64 设备上验证过。`release.yml` 里已注释掉对应 matrix 项，启用前需先在设备上跑通 |
+| `x86-64` / `x86_64_generic` | 没有任何 x86_64 设备可以验证。当前唯一的参考设备是 RK3588 ARM 开发板，`release.yml` 里对应 matrix 项保持注释，直到有一台 x86_64 设备跑通为止 |
 | OpenWrt 24.10 的 IPK | 24.10 用 IPK 而不是 APK，包格式和依赖解析都不同，需要单独一条构建链 |
 
 > **不要把 SNAPSHOT 等同于稳定版。** 上游 AirConnect 的 CI 只构建 `openwrt-24.10` 和 `SNAPSHOT`，但这两者都不等于 25.12 的 SDK。发版必须用与目标版本号匹配的 SDK。

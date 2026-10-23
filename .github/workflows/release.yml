@@ -93,8 +93,9 @@ jobs:
             sdk_version: '25.12.6'
             gcc: '14.3.0'
             libc: musl
-          # Not yet verified on hardware. Adding a leg here without a device to
-          # test the result on would publish a package nobody has run.
+          # Not yet verified on hardware, and there is no x86_64 device to verify it
+          # on: the only reference device is an RK3588 ARM board (EasePi R1). Adding a
+          # leg here would publish a package nobody has run.
           # - target: x86-64
           #   arch: x86_64_generic
           #   sdk_version: '25.12.6'

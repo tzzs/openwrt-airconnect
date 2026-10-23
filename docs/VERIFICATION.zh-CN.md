@@ -374,9 +374,11 @@ _services._dns-sd._udp.local. PTR _raop._tcp.local.
 
 | 项 | 值 |
 | --- | --- |
+| 设备 | EasePi R1（`board.json` 的 `model.id` = `easepi,r1`，RK3588 / ARMv8） |
 | 发行版 | iStoreOS 25.12.5（`DISTRIB_REVISION=2026092410`） |
 | 目标 | `rockchip/armv8`，`aarch64_generic` |
-| 包格式 | `apk`（`/usr/bin/apk`） |
+| 内存 / 存储 | 4 GB / 1.9 GB overlay（可用约 1.1 GB） |
+| 包格式 | `apk`（`/usr/bin/apk`，apk-tools 3.0.5） |
 | ucode | 包版本 `ucode-2026.01.16~85922056-r2`，但实际运行时是 `libucode.so.20230711` |
 | 已有旧包 | `/etc/config/airconnect` + `/etc/init.d/airconnect`（旧 UCI 服务，正在运行） |
 
