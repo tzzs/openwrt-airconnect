@@ -1,0 +1,15 @@
+{
+  "name": "openwrt-airconnect",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Independent OpenWrt / iStoreOS adapter for philippe44/AirConnect",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/tzzs/openwrt-airconnect.git"
+  },
+  "scripts": {
+    "test": "bash scripts/run-tests.sh"
+  },
+  "//": "This file exists for release-please and CI only. The project has no npm dependencies and no Node build step: node runs the plain .mjs test suite on a host, never on the router."
+}

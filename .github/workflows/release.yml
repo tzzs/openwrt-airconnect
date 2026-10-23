@@ -1,0 +1,242 @@
+name: Release
+
+# The release pipeline.
+#
+# Two jobs, deliberately separated:
+#
+#   release-please  Opens (or updates) a release PR from Conventional Commits.
+#                   When that PR merges, it cuts the tag and the GitHub Release.
+#                   This is the only job that writes to the repository.
+#
+#   build            Runs on the tag release-please creates. Downloads a pinned
+#                   OpenWrt SDK, builds the three packages, and attaches the
+#                   APKs to the GitHub Release.
+#
+# The build is NOT run on every push: it needs a 260 MB SDK and compiles the
+# dependency chain, which is minutes of CI time for no benefit on a branch.
+# The host test suite in test.yml is the push-time gate instead.
+#
+# Why the SDK and not a hand-built APK
+# ------------------------------------
+# The packages contain no compiled code of their own, so an APK could in
+# principle be assembled by hand. It is still the wrong tool for a release: an
+# SDK build produces the package index entries, the signed package database and
+# the metadata that `apk add` from a repository expects. A hand-built APK is
+# only good for a local `apk add --allow-untrusted`, which is what
+# scripts/build-apk.sh is for. See docs/RELEASE.zh-CN.md.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  # -------------------------------------------------------------------------
+  # release-please
+  #
+  # Reads Conventional Commit messages since the last release, decides the next
+  # version, and opens a PR that updates the changelog and the version. Merging
+  # that PR creates the tag and the GitHub Release, which triggers `build`.
+  #
+  # It is a PR on a normal branch: nothing is published until a human merges it.
+  # -------------------------------------------------------------------------
+  release-please:
+    name: release-please
+    runs-on: ubuntu-latest
+    # Only ever run on main. A PR branch has no release to prepare, and running
+    # there would create a release PR from another release PR.
+    if: github.ref == 'refs/heads/main'
+    outputs:
+      release_created: ${{ steps.release.outputs.release_created }}
+      tag_name: ${{ steps.release.outputs.tag_name }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # release-please needs the full history to find the last tag and
+          # walk the commits since.
+          fetch-depth: 0
+
+      - uses: googleapis/release-please-action@v4
+        id: release
+        with:
+          # Manifest-driven, so each package can carry its own version later
+          # without changing this file.
+          config-file: release-please-config.json
+          manifest-file: .release-please-manifest.json
+
+  # -------------------------------------------------------------------------
+  # build
+  #
+  # Triggered by the tag release-please creates. Builds for the primary target
+  # first; a second matrix leg for x86_64 is added once that target has been
+  # verified on hardware, per docs/RELEASE.zh-CN.md.
+  # -------------------------------------------------------------------------
+  build:
+    name: build (${{ matrix.target }})
+    needs: release-please
+    if: needs.release-please.outputs.release_created
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - target: armsr-armv8
+            arch: aarch64_generic
+            sdk_version: '25.12.6'
+            gcc: '14.3.0'
+            libc: musl
+          # Not yet verified on hardware. Adding a leg here without a device to
+          # test the result on would publish a package nobody has run.
+          # - target: x86-64
+          #   arch: x86_64_generic
+          #   sdk_version: '25.12.6'
+          #   gcc: '14.3.0'
+          #   libc: musl
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # The SDK is 260 MB compressed and is the single largest cost in the job,
+      # so it is cached across runs of the same matrix leg. The key is the exact
+      # SDK version: a stale SDK silently produces packages for the wrong
+      # release.
+      - name: Cache the OpenWrt SDK
+        id: sdk-cache
+        uses: actions/cache@v4
+        with:
+          path: ~/sdk
+          key: sdk-${{ matrix.target }}-${{ matrix.sdk_version }}-${{ matrix.gcc }}-${{ matrix.libc }}-1
+
+      - name: Download the SDK
+        if: steps.sdk-cache.outputs.cache-hit != 'true'
+        env:
+          SDK_URL: >-
+            https://downloads.openwrt.org/releases/${{ matrix.sdk_version }}/targets/${{ matrix.target }}/openwrt-sdk-${{ matrix.sdk_version }}-${{ matrix.target }}_gcc-${{ matrix.gcc }}_musl.Linux-x86_64.tar.zst
+        run: |
+          set -eu
+          mkdir -p ~/sdk
+          curl -fsSL --retry 3 --retry-delay 2 -o /tmp/sdk.tar.zst "$SDK_URL"
+          # Verify the size before spending minutes extracting it: a truncated
+          # download otherwise fails deep inside tar.
+          test "$(wc -c < /tmp/sdk.tar.zst)" -gt 100000000
+          tar -I zstd -xf /tmp/sdk.tar.zst -C ~/sdk --strip-components=1
+          rm -f /tmp/sdk.tar.zst
+
+      - name: Verify the cached SDK
+        if: steps.sdk-cache.outputs.cache-hit == 'true'
+        run: |
+          set -eu
+          test -x ~/sdk/staging_dir/host/bin/../package/Makefile 2>/dev/null || \
+            test -f ~/sdk/include/package.mk
+          test -d ~/sdk/scripts
+
+      - name: Install the feeds
+        # The three packages need the packages feed (curl, ucode) and the luci
+        # feed (luci-base). The base feed supplies the toolchain packages the
+        # dependency chain links against.
+        run: |
+          set -eu
+          cd ~/sdk
+          ./scripts/feeds update -a
+          ./scripts/feeds install ucode ucode-mod-fs ucode-mod-socket \
+            ucode-mod-ubus ucode-mod-uci rpcd rpcd-mod-ucode curl \
+            luci-base libopenssl
+
+      - name: Link the packages into the SDK
+        # Copied, not symlinked: the SDK's package scanner follows real paths,
+        # and a symlink into the workspace makes the build depend on the
+        # checkout layout.
+        run: |
+          set -eu
+          for p in airconnect-engine airconnect-manager luci-app-airconnect-manager; do
+            rm -rf ~/sdk/package/"$p"
+            cp -a "$GITHUB_WORKSPACE/packages/$p" ~/sdk/package/"$p"
+          done
+
+      - name: Fetch the upstream engine archive
+        # Not downloaded by the recipe: the SDK build has no network access by
+        # default and the archive is 95 MB, so it is fetched once here and
+        # dropped into dl/ where the recipe already looks for it.
+        env:
+          AIRCONNECT_URL: https://github.com/philippe44/AirConnect/releases/download/1.12.4/AirConnect-1.12.4.zip
+          # The recipe's PKG_HASH. A mismatch must fail the build: the binaries
+          # are the entire payload of airconnect-engine.
+          AIRCONNECT_SHA256: ae59d595be80db7f4e93c94c9029baff59dc7515ec03e44505ab2792bbcd1903
+        run: |
+          set -eu
+          mkdir -p ~/sdk/dl
+          curl -fsSL --retry 3 --retry-delay 2 -o ~/sdk/dl/AirConnect-1.12.4.zip "$AIRCONNECT_URL"
+          echo "$AIRCONNECT_SHA256  ~/sdk/dl/AirConnect-1.12.4.zip" | sha256sum -c -
+
+      - name: Configure
+        run: |
+          set -eu
+          cd ~/sdk
+          cat >> .config <<'EOF'
+          CONFIG_PACKAGE_airconnect-engine=m
+          CONFIG_PACKAGE_airconnect-manager=m
+          CONFIG_PACKAGE_luci-app-airconnect-manager=m
+          CONFIG_LIBCURL_OPENSSL=y
+          EOF
+          make defconfig
+
+      - name: Build
+        # V=s so a failure shows the real error instead of the last few lines of
+        # a summary. Each package is built separately: one failure then names
+        # the package instead of stopping the whole run with a generic message.
+        run: |
+          set -eu
+          cd ~/sdk
+          for p in airconnect-engine airconnect-manager luci-app-airconnect-manager; do
+            echo "::group::make package/$p/compile"
+            make "package/$p/compile" V=s
+            echo "::endgroup::"
+          done
+
+      - name: Collect the packages
+        run: |
+          set -eu
+          mkdir -p "$GITHUB_WORKSPACE/dist"
+          find ~/sdk/bin/packages -name 'airconnect*.apk' -exec cp {} "$GITHUB_WORKSPACE/dist/" \;
+          # An empty dist/ means the build produced nothing, which would
+          # otherwise look like a successful release.
+          test -n "$(find "$GITHUB_WORKSPACE/dist" -name '*.apk' -print -quit)"
+          ls -la "$GITHUB_WORKSPACE/dist"
+
+      - name: Check the package contents
+        # The recipe's install rules are asserted by tests/engine/check-recipe.sh
+        # on the host; this is the runtime check that the APK actually contains
+        # what the recipe claims.
+        run: |
+          set -eu
+          cd "$GITHUB_WORKSPACE/dist"
+          for apk in airconnect-engine-*.apk; do
+            apk manifest --allow-untrusted "$apk" | grep -q 'usr/libexec/airconnect/airupnp' || {
+              echo "airupnp missing from $apk"; exit 1; }
+            apk manifest --allow-untrusted "$apk" | grep -q 'usr/libexec/airconnect/aircast' || {
+              echo "aircast missing from $apk"; exit 1; }
+            apk manifest --allow-untrusted "$apk" | grep -q 'usr/share/airconnect/THIRD-PARTY-NOTICES' || {
+              echo "licence notices missing from $apk"; exit 1; }
+          done
+          for apk in airconnect-manager-*.apk; do
+            apk manifest --allow-untrusted "$apk" | grep -q 'etc/init.d/airconnect-manager' || {
+              echo "init script missing from $apk"; exit 1; }
+            apk manifest --allow-untrusted "$apk" | grep -q 'usr/share/rpcd/ucode/airconnect-manager' || {
+              echo "rpcd plugin missing from $apk"; exit 1; }
+            apk manifest --allow-untrusted "$apk" | grep -q 'etc/config/airconnect-manager' || {
+              echo "conffile missing from $apk"; exit 1; }
+          done
+
+      - name: Upload the packages to the release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ needs.release-please.outputs.tag_name }}
+        run: |
+          set -eu
+          # --clobber so a re-run of the same tag replaces rather than fails.
+          gh release upload "$TAG" "$GITHUB_WORKSPACE/dist"/*.apk --clobber
