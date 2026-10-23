@@ -37,6 +37,7 @@ import {
 	stripControl
 } from '../../airconnect-manager/state.uc';
 import * as discovery from '../../airconnect-manager/discovery.uc';
+import * as broadcast from '../../airconnect-manager/broadcast.uc';
 import {
 	ensureDir, writeAtomic, readTail, commandTail, readJson, readText, pathExists
 } from '../../airconnect-manager/files.uc';
@@ -62,6 +63,12 @@ function rootPrefix() {
 const ROOT = rootPrefix();
 const STATE_DIR = ROOT + '/var/lib/airconnect-manager';
 const CACHE_FILE = STATE_DIR + '/devices.json';
+// The mDNS observation is kept in its own file: it expires on a minutes scale
+// while a discovery snapshot lives for a day, and mixing the two lifetimes into
+// one file would either make a speaker "go away" every five minutes or make a
+// stopped engine look like it is still broadcasting. A separate file also keeps
+// a failed broadcast scan from touching the discovery snapshot at all.
+const BROADCAST_FILE = STATE_DIR + '/broadcast.json';
 const LOCK_FILE = STATE_DIR + '/scan.lock';
 const VERSION_FILE = ROOT + '/usr/share/airconnect-manager/VERSION';
 const RUNTIME_FILE = '../../airconnect-manager/runtime.uc';
@@ -99,6 +106,10 @@ const TAIL_BYTES = 65536;
 const LOG_LINES = 200;
 const LOCK_MAX_AGE = 60;
 const CACHE_LIMIT = 262144;
+// A broadcast observation is a handful of instance names, so 16 KiB is already
+// far beyond a real reply. The bound exists so a corrupt or hostile file cannot
+// be parsed into an unbounded list.
+const BROADCAST_LIMIT = 16384;
 const MAX_TEXT = 512;
 
 let runtimeApi = null;
@@ -440,6 +451,26 @@ function interfaceAddress(connection, iface) {
 	die('no IPv4 address is available on the selected interface');
 }
 
+// The broadcast observation file. Written by the same scan worker, after SSDP,
+// and never by status. The shape is deliberately flat so a hand-edited file
+// cannot express anything the module would not: complete is the only field that
+// turns an observation into a measurement, and instances is the raw parsed list.
+function writeBroadcast(observation) {
+	let next = {
+		scanned_at: time(),
+		complete: observation != null && observation.complete === true,
+		reason: observation != null && type(observation.reason) == 'string'
+			? substr(cleanText(observation.reason, 128), 0, 128) : null,
+		instances: observation != null && type(observation.instances) == 'array'
+			? observation.instances : []
+	};
+	return writeAtomic(BROADCAST_FILE, sprintf('%J\n', next), 0640);
+}
+
+function readBroadcast() {
+	return readJson(BROADCAST_FILE, BROADCAST_LIMIT);
+}
+
 function runScanWorker() {
 	let failure = null;
 	try {
@@ -457,6 +488,20 @@ function runScanWorker() {
 		// The previous snapshot is kept: a failed scan is not evidence that the
 		// speakers went away, and status must not present it as a fresh result.
 		writeCache({ error: failure });
+	}
+	// The mDNS observation is independent of SSDP: a DLNA scan can fail while the
+	// engines are still advertising, and an AirPlay receiver can be registered for
+	// a speaker SSDP did not answer for. It gets its own try/catch so one failure
+	// cannot hide the other, and it always writes a record - a failed observation
+	// must replace the previous one, because the previous one has expired.
+	try {
+		let normalized = normalizeConfig(loadUciConfig());
+		let address = interfaceAddress(ubusConnect(), normalized.main.interface);
+		writeBroadcast(broadcast.scan(address, normalized.main.interface));
+	}
+	catch (error) {
+		let reason = cleanText(messageOf(error), MAX_TEXT);
+		writeBroadcast({ complete: false, reason: reason == '' ? 'broadcast scan failed' : reason });
 	}
 	// The lock is released last, so a poll that observes running:false also
 	// observes the outcome of this run.
@@ -499,6 +544,12 @@ function status() {
 			uciMain: raw.main,
 			devices: raw.devices,
 			cached: cached,
+			// The observation is read from disk and never produced here: status
+			// does not open a socket, and a missing or corrupt file degrades to
+			// unknown through freshBroadcast.
+			broadcast: readBroadcast(),
+			broadcastState: broadcast.engineStates,
+			broadcastDevice: broadcast.deviceState,
 			serviceState: service.state,
 			conflicts: detectConflicts(service),
 			version: readVersion(),

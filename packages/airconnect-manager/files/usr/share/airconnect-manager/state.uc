@@ -195,32 +195,118 @@ export function freshCache(cached, now) {
 	};
 }
 
+// The broadcast observation is much shorter lived than a discovery snapshot. A
+// discovery result is a fact about the speaker, which does not change minute to
+// minute; an mDNS advertisement is a fact about a running process, and the
+// engine withdraws it on shutdown. An observation older than this is no longer
+// evidence that anything is broadcasting, so it degrades to unknown instead of
+// being shown as a stale positive.
+const BROADCAST_MAX_AGE = 300;
+const BROADCAST_FUTURE_SKEW = 60;
+
+// Validate a stored broadcast observation. Returns
+//   { scanned_at, complete, reason, instances }
+// where `instances` is only carried through for a fresh, completed scan. A stale
+// or absent observation yields scanned_at:null and complete:false, which every
+// caller must render as unknown - never as "not broadcasting".
+export function freshBroadcast(cached, now) {
+	now = now ?? time();
+	let empty = { scanned_at: null, complete: false, reason: null, instances: [] };
+	if (type(cached) != 'object' || cached == null)
+		return empty;
+	let stamp = integerOrNull(cached.scanned_at);
+	if (stamp == null || stamp <= 0)
+		return empty;
+	let age = now - stamp;
+	if (age > BROADCAST_MAX_AGE || age < -BROADCAST_FUTURE_SKEW)
+		return empty;
+	// `complete` distinguishes "the scan ran and found nothing" (false is a real
+	// measurement) from "the scan failed" (unknown). It is only ever true when
+	// the worker recorded a parsed reply.
+	let complete = cached.complete === true;
+	return {
+		scanned_at: stamp,
+		complete: complete,
+		reason: complete ? null : stringOrNull(cached.reason, 128),
+		instances: complete && type(cached.instances) == 'array' ? cached.instances : []
+	};
+}
+
 // The single status reply. `now`, `scanRunning` and `scanError` are injected as
 // well so the caller keeps the clock and the scan lock out of this module.
+//
+// `broadcastState` is the one injected decision function: it is broadcast.uc's
+// deviceState/engineStates, passed in so state.uc stays a pure module with no
+// mDNS or hash dependency, exactly the way the clock and the scan lock are
+// injected. It receives (observation, engine, udn) and returns true, false or
+// null, and the reply carries that value through unchanged.
 export function buildStatus(options) {
 	options = options ?? {};
 	let main = type(options.uciMain) == 'object' && options.uciMain != null ? options.uciMain : {};
 	let state = type(options.serviceState) == 'object' && options.serviceState != null ? options.serviceState : {};
 	let cached = freshCache(options.cached, options.now);
+	let broadcast = freshBroadcast(options.broadcast, options.now);
 	let conflicts = [];
 	for (let conflict in options.conflicts ?? [])
 		if (type(conflict) == 'string' && conflict != '')
 			push(conflicts, conflict);
+	// The observation the decision functions see. A stale or absent observation
+	// is represented as complete:false, so every reduction below returns null and
+	// the page renders unknown.
+	let observation = broadcast.complete ? { complete: true, instances: broadcast.instances } : null;
+	let iface = interfaceOrNull(main.interface);
+	let reduceEngine = type(options.broadcastState) == 'function' ? options.broadcastState : null;
+	let reduceDevice = type(options.broadcastDevice) == 'function' ? options.broadcastDevice : null;
+	let engineBroadcasting = { upnp: null, cast: null };
+	if (reduceEngine != null && observation != null) {
+		let states = reduceEngine(observation);
+		if (type(states) == 'object' && states != null) {
+			engineBroadcasting.upnp = triState(states.upnp);
+			engineBroadcasting.cast = triState(states.cast);
+		}
+	}
+	let devices = mergeConfigured(cached.devices, options.devices);
+	for (let device in devices) {
+		// A device with no observation, no derivable key, or an ambiguous prefix
+		// stays null. false is only produced by a completed scan.
+		device.broadcasting = reduceDevice != null && observation != null && iface != null
+			? triState(reduceDevice(observation, iface, device.udn))
+			: null;
+	}
 	return {
 		enabled: truthy(main.enabled),
-		interface: interfaceOrNull(main.interface),
+		interface: iface,
 		version: stringOrNull(options.version, 64),
 		services: {
-			upnp: { enabled: truthy(main.airupnp), running: triState(state.upnp) },
-			cast: { enabled: truthy(main.aircast), running: triState(state.cast) }
+			upnp: {
+				enabled: truthy(main.airupnp),
+				running: triState(state.upnp),
+				broadcasting: engineBroadcasting.upnp
+			},
+			cast: {
+				enabled: truthy(main.aircast),
+				running: triState(state.cast),
+				broadcasting: engineBroadcasting.cast
+			}
 		},
 		scan: {
 			running: options.scanRunning === true,
 			last_scan: cached.scanned_at,
 			error: stringOrNull(options.scanError, 512)
 		},
+		// Playback has no documented upstream surface, so it is a constant
+		// unknown. It is emitted explicitly, next to broadcasting, so the page can
+		// never accidentally render one as the other.
+		playback: {
+			known: false,
+			reason: 'no documented engine status API'
+		},
+		broadcast: {
+			observed_at: broadcast.scanned_at,
+			error: broadcast.complete ? null : broadcast.reason
+		},
 		conflicts: conflicts,
-		devices: mergeConfigured(cached.devices, options.devices)
+		devices: devices
 	};
 }
 

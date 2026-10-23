@@ -245,7 +245,10 @@ else
 fi
 
 status_keys=$(printf '%s\n' "${call_out}" | sed -n 's/^CALL status OBJECT //p')
-expected_status='conflicts,devices,enabled,interface,scan,services,version'
+# The four states are separate sections on purpose: `services` carries running and
+# broadcasting per engine, `scan` carries discovery, `broadcast` carries the mDNS
+# observation timestamp, and `playback` is the constant unknown.
+expected_status='broadcast,conflicts,devices,enabled,interface,playback,scan,services,version'
 if [ "${status_keys}" = "${expected_status}" ]; then
 	ok 'status has the documented top-level shape'
 else

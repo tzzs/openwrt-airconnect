@@ -253,6 +253,7 @@ EOF
 		files/etc/uci-defaults/90-airconnect-manager \
 		files/usr/share/airconnect-manager/config.uc \
 		files/usr/share/airconnect-manager/discovery.uc \
+		files/usr/share/airconnect-manager/broadcast.uc \
 		files/usr/share/airconnect-manager/state.uc \
 		files/usr/share/airconnect-manager/files.uc \
 		files/usr/share/airconnect-manager/VERSION \

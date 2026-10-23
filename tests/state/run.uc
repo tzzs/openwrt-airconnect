@@ -7,7 +7,7 @@
 // Run: ucode -L ~/.local/opt/ucode-host/lib/ucode tests/state/run.uc
 import * as fs from 'fs';
 import {
-	mergeConfigured, buildStatus, freshCache, parsePsOutput, tailLines,
+	mergeConfigured, buildStatus, freshCache, freshBroadcast, parsePsOutput, tailLines,
 	clampErrors, actionSatisfied, stripControl
 } from '../../packages/airconnect-manager/files/usr/share/airconnect-manager/state.uc';
 import {
@@ -255,13 +255,17 @@ test('buildStatus reports enabled/interface from UCI and running from procd', ()
 		now: 1700000000
 	});
 	deepEqual(status.services, {
-		upnp: { enabled: true, running: true },
-		cast: { enabled: false, running: false }
+		upnp: { enabled: true, running: true, broadcasting: null },
+		cast: { enabled: false, running: false, broadcasting: null }
 	});
 	assert(status.enabled === true && status.interface == 'br-lan', 'main state not copied');
 	assert(status.version == '0.1.0', 'version not copied');
 	deepEqual(status.scan, { running: false, last_scan: null, error: null });
 	deepEqual(status.devices, []);
+	// No broadcast observation was supplied, so both new sections must report
+	// unknown rather than a measured negative.
+	deepEqual(status.broadcast, { observed_at: null, error: null });
+	deepEqual(status.playback, { known: false, reason: 'no documented engine status API' });
 });
 
 test('an unknown service state stays null, never false', () => {
@@ -324,11 +328,12 @@ test('conflicts are copied in order and non-strings are dropped', () => {
 
 test('buildStatus tolerates empty input and still returns the full shape', () => {
 	let status = buildStatus({});
-	deepEqual(keys(status), ['enabled', 'interface', 'version', 'services', 'scan', 'conflicts', 'devices']);
+	deepEqual(keys(status), ['enabled', 'interface', 'version', 'services', 'scan', 'playback',
+		'broadcast', 'conflicts', 'devices']);
 	assert(status.enabled === false && status.interface === null && status.version === null, 'empty state defaults');
 	deepEqual(status.services, {
-		upnp: { enabled: false, running: null },
-		cast: { enabled: false, running: null }
+		upnp: { enabled: false, running: null, broadcasting: null },
+		cast: { enabled: false, running: null, broadcasting: null }
 	});
 });
 
@@ -340,6 +345,177 @@ test('an invalid interface is reported as unknown rather than echoed back', () =
 	for (let value in ['br-lan', 'eth0', 'wlan0.1', 'br_lan', 'x'])
 		assert(buildStatus({ uciMain: { interface: value } }).interface === value,
 			'a valid interface was rejected: ' + sprintf('%J', value));
+});
+
+// --- the four states stay separate ------------------------------------------
+// service running / discovered / broadcasting / playing. Each is decided by its
+// own source and none may be derived from another; in particular an engine that
+// is running and a speaker that was discovered must not imply broadcasting, and
+// broadcasting must never imply playback.
+
+// A reduction standing in for broadcast.uc's deviceState/engineStates, injected
+// so state.uc stays free of the mDNS module. `known` models a completed scan.
+function fakeBroadcast(known, matches) {
+	return {
+		engine: function(observation) {
+			if (!known || observation == null)
+				return null;
+			return { upnp: matches.upnp === true, cast: matches.cast === true };
+		},
+		device: function(observation, iface, udn) {
+			if (!known || observation == null)
+				return null;
+			return matches[udn] === true ? true : false;
+		}
+	};
+}
+
+function observed(extra) {
+	let result = { scanned_at: 1700000000, complete: true, instances: [] };
+	for (let key in extra ?? {})
+		result[key] = extra[key];
+	return result;
+}
+
+test('a running engine and a discovered speaker do not imply broadcasting', () => {
+	// The strongest temptation in this feature is to show "broadcasting" because
+	// procd says the engine runs. Without an observation the answer must be null.
+	let status = buildStatus({
+		uciMain: { enabled: '1', interface: 'br-lan', airupnp: '1', aircast: '1' },
+		serviceState: { upnp: true, cast: true },
+		devices: [configured('upnp', 'uuid:demo-1')],
+		cached: { scanned_at: 1700000000, devices: [discovered('upnp', 'uuid:demo-1')] },
+		now: 1700000100
+	});
+	assert(status.services.upnp.running === true, 'the engine is running');
+	assert(status.devices[0].online === true, 'the speaker was discovered');
+	assert(status.services.upnp.broadcasting === null, 'broadcasting must stay unknown');
+	assert(status.devices[0].broadcasting === null, 'per-device broadcasting must stay unknown');
+});
+
+test('broadcasting is reported from the observation, independently of running', () => {
+	let reduce = fakeBroadcast(true, { upnp: true, cast: false, 'uuid:demo-1': true });
+	let status = buildStatus({
+		uciMain: { enabled: '1', interface: 'br-lan', airupnp: '1', aircast: '1' },
+		serviceState: { upnp: false, cast: false },
+		devices: [configured('upnp', 'uuid:demo-1')],
+		broadcast: observed(),
+		broadcastState: reduce.engine,
+		broadcastDevice: reduce.device,
+		now: 1700000100
+	});
+	// procd says stopped, the advertisement says otherwise. Both are reported as
+	// measured; neither is corrected to match the other.
+	assert(status.services.upnp.running === false, 'running stays what procd said');
+	assert(status.services.upnp.broadcasting === true, 'broadcasting comes from the observation');
+	assert(status.services.cast.broadcasting === false, 'a completed scan with no cast instance is false');
+	assert(status.devices[0].broadcasting === true, 'the device matched');
+	assert(status.broadcast.observed_at == 1700000000, 'the observation timestamp is reported');
+});
+
+test('a completed scan with no match is false, not unknown', () => {
+	let reduce = fakeBroadcast(true, { upnp: false, cast: false });
+	let status = buildStatus({
+		uciMain: { enabled: '1', interface: 'br-lan', airupnp: '1' },
+		devices: [configured('upnp', 'uuid:demo-1')],
+		broadcast: observed(),
+		broadcastState: reduce.engine,
+		broadcastDevice: reduce.device,
+		now: 1700000100
+	});
+	assert(status.services.upnp.broadcasting === false, 'expected a measured false');
+	assert(status.devices[0].broadcasting === false, 'expected a measured false per device');
+});
+
+test('a failed scan is unknown, never false', () => {
+	let reduce = fakeBroadcast(true, { upnp: false, cast: false });
+	let status = buildStatus({
+		uciMain: { enabled: '1', interface: 'br-lan', airupnp: '1' },
+		devices: [configured('upnp', 'uuid:demo-1')],
+		// complete:false is how the worker records a failure or a timeout.
+		broadcast: { scanned_at: 1700000000, complete: false, reason: 'no reply' },
+		broadcastState: reduce.engine,
+		broadcastDevice: reduce.device,
+		now: 1700000100
+	});
+	assert(status.services.upnp.broadcasting === null, 'a failed scan must be unknown');
+	assert(status.devices[0].broadcasting === null, 'a failed scan must be unknown per device');
+	assert(status.broadcast.observed_at == 1700000000, 'the attempt time is still reported');
+	assert(status.broadcast.error == 'no reply', 'the failure reason is reported');
+});
+
+test('a stale broadcast observation expires to unknown', () => {
+	let reduce = fakeBroadcast(true, { upnp: true, cast: false, 'uuid:demo-1': true });
+	let fresh = buildStatus({
+		uciMain: { enabled: '1', interface: 'br-lan', airupnp: '1' },
+		devices: [configured('upnp', 'uuid:demo-1')],
+		broadcast: observed(), broadcastState: reduce.engine, broadcastDevice: reduce.device,
+		now: 1700000000 + 299
+	});
+	assert(fresh.services.upnp.broadcasting === true, '299 seconds is still current');
+	let stale = buildStatus({
+		uciMain: { enabled: '1', interface: 'br-lan', airupnp: '1' },
+		devices: [configured('upnp', 'uuid:demo-1')],
+		broadcast: observed(), broadcastState: reduce.engine, broadcastDevice: reduce.device,
+		now: 1700000000 + 301
+	});
+	assert(stale.services.upnp.broadcasting === null, 'a stale observation must expire to unknown');
+	assert(stale.devices[0].broadcasting === null, 'a stale observation must expire per device');
+	assert(stale.broadcast.observed_at === null, 'an expired observation reports no timestamp');
+});
+
+test('a broadcast observation stamped in the future is discarded', () => {
+	let reduce = fakeBroadcast(true, { upnp: true, cast: false });
+	let status = buildStatus({
+		uciMain: { enabled: '1', interface: 'br-lan', airupnp: '1' },
+		broadcast: observed(), broadcastState: reduce.engine,
+		now: 1700000000 - 61
+	});
+	assert(status.services.upnp.broadcasting === null, 'a future stamp must not be trusted');
+});
+
+test('broadcasting and playback never imply one another', () => {
+	let reduce = fakeBroadcast(true, { upnp: true, cast: true });
+	let broadcasting = buildStatus({
+		uciMain: { enabled: '1', interface: 'br-lan', airupnp: '1', aircast: '1' },
+		broadcast: observed(), broadcastState: reduce.engine,
+		now: 1700000100
+	});
+	// Both engines advertise, yet playback stays a constant unknown: an
+	// advertisement says a receiver exists, never that audio is flowing.
+	assert(broadcasting.services.upnp.broadcasting === true, 'upnp broadcasts');
+	assert(broadcasting.services.cast.broadcasting === true, 'cast broadcasts');
+	deepEqual(broadcasting.playback, { known: false, reason: 'no documented engine status API' });
+	// And the reverse: with no observation, playback is still the same constant,
+	// so it is not derived from the broadcast section either.
+	let quiet = buildStatus({ uciMain: { enabled: '1', airupnp: '1' } });
+	deepEqual(quiet.playback, broadcasting.playback);
+});
+
+test('a device with an invalid UDN cannot become a broadcasting true', () => {
+	let reduce = fakeBroadcast(true, { upnp: true, cast: false });
+	let status = buildStatus({
+		uciMain: { enabled: '1', interface: 'br-lan', airupnp: '1' },
+		// Both are dropped by mergeConfigured, so neither can carry a state.
+		devices: [configured('upnp', ''), configured('upnp', null)],
+		broadcast: observed(), broadcastState: reduce.engine, broadcastDevice: reduce.device,
+		now: 1700000100
+	});
+	deepEqual(status.devices, []);
+});
+
+test('freshBroadcast is the only place the age rule lives', () => {
+	deepEqual(freshBroadcast(null, 1700000000),
+		{ scanned_at: null, complete: false, reason: null, instances: [] });
+	deepEqual(freshBroadcast({}, 1700000000),
+		{ scanned_at: null, complete: false, reason: null, instances: [] });
+	// A completed observation keeps its instances; an incomplete one carries none,
+	// so a caller cannot accidentally reduce a failed scan to false.
+	let complete = freshBroadcast({ scanned_at: 1700000000, complete: true, instances: [{ name: 'x' }] }, 1700000100);
+	assert(complete.complete === true && length(complete.instances) == 1, 'a completed observation keeps its instances');
+	let failed = freshBroadcast({ scanned_at: 1700000000, complete: false, reason: 'unparsable reply', instances: [{ name: 'x' }] }, 1700000100);
+	assert(failed.complete === false && length(failed.instances) == 0, 'a failed scan must carry no instances');
+	assert(failed.reason == 'unparsable reply', 'the reason is kept');
 });
 
 // --- parsePsOutput ----------------------------------------------------------
