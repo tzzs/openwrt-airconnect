@@ -116,6 +116,12 @@ fi
 cmd=${1:-}
 [ $# -gt 0 ] && shift
 
+# Section name declared by the file, mirroring the section lines `uci show`
+# prints. The legacy package iterates by type, so the name is not fixed.
+legacy_section_name() {
+	sed -n "s/^[[:space:]]*config[[:space:]][[:space:]]*airconnect[[:space:]][[:space:]]*'\([A-Za-z0-9_]*\)'.*/\1/p" "$cfg" | head -n 1
+}
+
 option_value() {
 	sed -n "s/^[[:space:]]*option[[:space:]][[:space:]]*$1[[:space:]][[:space:]]*'\(.*\)'[[:space:]]*\$/\1/p" "$cfg" | head -n 1
 }
@@ -128,7 +134,7 @@ case "$cmd" in
 		sec=${rest%%.*}
 		opt=${rest#*.}
 		[ "$pkg" = airconnect ] || exit 1
-		[ "$sec" = main ] || exit 1
+		[ "$sec" = "$(legacy_section_name)" ] || exit 1
 		[ -f "$cfg" ] || exit 1
 		value=$(option_value "$opt")
 		[ -n "$value" ] || exit 1
@@ -137,7 +143,10 @@ case "$cmd" in
 		;;
 	show)
 		[ -f "$cfg" ] || exit 1
-		sed -n "s/^[[:space:]]*option[[:space:]][[:space:]]*\([A-Za-z0-9_]*\)[[:space:]][[:space:]]*'\(.*\)'[[:space:]]*\$/${1:-airconnect}.main.\1='\2'/p" "$cfg"
+		# `uci show` prints the section line first, then its options; the
+		# migration reads the section line to learn the section name.
+		printf "airconnect.%s=airconnect\n" "$(legacy_section_name)"
+		sed -n "s/^[[:space:]]*option[[:space:]][[:space:]]*\([A-Za-z0-9_]*\)[[:space:]][[:space:]]*'\(.*\)'[[:space:]]*\$/${1:-airconnect}.$(legacy_section_name).\1='\2'/p" "$cfg"
 		exit 0
 		;;
 esac
@@ -529,6 +538,47 @@ do
 		no "absent-key line: ${expected}" 'missing'
 	fi
 done
+
+# --- (2d2) the section name is whatever the file declares -----------------
+# The legacy package iterates every section of type `airconnect` with
+# config_foreach, and the file it ships calls that section `config`. A
+# migration that reads a fixed name misses every option and quietly writes the
+# built-in defaults over the operator's settings, so this case pins the real
+# default name and the values that must survive it.
+
+section 'the shipped section name (config) is read, not assumed'
+make_sandbox shipped
+cat > "${SB}/etc/config/airconnect" <<'EOF'
+config airconnect 'config'
+	option enabled '1'
+	option interface 'br-lan'
+	option aircast '0'
+	option airupnp '1'
+	option stream_type 'broadcast'
+	option max_volume '30'
+EOF
+output=$(run_script "${SB}" --dry-run)
+status=$?
+check 'the shipped-name fixture exits 0' "${status}"
+for expected in \
+	'airconnect.config.enabled=1 -> airconnect-manager.main.enabled=1' \
+	'airconnect.config.interface=br-lan -> airconnect-manager.main.interface=br-lan' \
+	'airconnect.config.airupnp=1 -> airconnect-manager.main.airupnp=1' \
+	'airconnect.config.aircast=0 -> airconnect-manager.main.aircast=0' \
+	'airconnect.config.max_volume=30 -> airconnect-manager.main.max_volume=30'
+do
+	if printf '%s' "${output}" | grep -Fq -- "${expected}"; then
+		ok "shipped-name line: ${expected}"
+	else
+		no "shipped-name line: ${expected}" 'missing'
+	fi
+done
+# The defaults must NOT appear: a missed lookup is silent otherwise.
+if printf '%s' "${output}" | grep -Fq 'main.max_volume=100'; then
+	no 'the shipped-name fixture does not fall back to the default volume' 'saw max_volume=100'
+else
+	ok 'the shipped-name fixture does not fall back to the default volume'
+fi
 
 # --- (2e) a disabled legacy service stays disabled ------------------------
 

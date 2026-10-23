@@ -218,6 +218,18 @@ valid_container_name() {
 	return 0
 }
 
+# legacy_section
+# Prints the name of the section of type `airconnect` in the legacy config.
+# The legacy init script uses config_foreach over the type, so the name is not
+# part of the contract; the shipped default file calls it `config`. When more
+# than one exists the first is used, which matches config_foreach order.
+legacy_section() {
+	ls_section=$(uci -q show airconnect 2>/dev/null |
+		sed -n 's/^airconnect\.\([A-Za-z0-9_]*\)=airconnect$/\1/p' | head -n 1)
+	[ -n "${ls_section}" ] || return 1
+	printf '%s' "${ls_section}"
+}
+
 # uci_get <package>.<section>.<option>
 # Prints the value and returns 0 only when the option exists and is non-empty.
 # BusyBox `uci -q get` returns nonzero for a missing key, which is handled here
@@ -366,18 +378,28 @@ mapping() {
 	uci -q show airconnect >/dev/null 2>&1 ||
 		fail "cannot parse ${LEGACY_CONFIG}; fix or restore it before migrating"
 
+	# The legacy package iterates every section of type `airconnect` with
+	# config_foreach, so the section name is whatever the operator wrote -- the
+	# shipped default is `config`, but `main` or anything else is equally valid.
+	# Reading a fixed name would make every lookup miss and silently migrate the
+	# built-in defaults over the operator's real settings.
+	LEGACY_SECTION=$(legacy_section)
+	[ -n "${LEGACY_SECTION}" ] ||
+		fail "cannot find an 'airconnect' section in ${LEGACY_CONFIG}; nothing to migrate"
+	say "reading legacy section airconnect.${LEGACY_SECTION}"
+
 	# enabled. With no key in the legacy file the only evidence of intent is the
 	# legacy service itself, so its boot and run state decide. Never guess "on"
 	# from silence: a migration must not start broadcasting by itself.
 	mk_seen='0'
-	if mk_value=$(uci_get airconnect.main.enabled); then
+	if mk_value=$(uci_get "airconnect.${LEGACY_SECTION}.enabled"); then
 		mk_seen='1'
 		if mk_norm=$(normalize_bool "${mk_value}"); then
 			MAPPED_ENABLED="${mk_norm}"
 			MAPPED_ENABLED_SOURCE='legacy configuration'
-			say "airconnect.main.enabled=${mk_value} -> airconnect-manager.main.enabled=${mk_norm}"
+			say "airconnect.${LEGACY_SECTION}.enabled=${mk_value} -> airconnect-manager.main.enabled=${mk_norm}"
 		else
-			say "airconnect.main.enabled=${mk_value} -> skipped (not a boolean: 0/1, on/off, true/false, yes/no)"
+			say "airconnect.${LEGACY_SECTION}.enabled=${mk_value} -> skipped (not a boolean: 0/1, on/off, true/false, yes/no)"
 		fi
 	fi
 	if [ -z "${MAPPED_ENABLED}" ]; then
@@ -385,17 +407,17 @@ mapping() {
 			MAPPED_ENABLED='1'
 			MAPPED_ENABLED_SOURCE='legacy service enabled or running'
 			if [ "${mk_seen}" = '1' ]; then
-				say "airconnect.main.enabled=(no usable value) -> airconnect-manager.main.enabled=1 (the legacy service is enabled at boot or running)"
+				say "airconnect.${LEGACY_SECTION}.enabled=(no usable value) -> airconnect-manager.main.enabled=1 (the legacy service is enabled at boot or running)"
 			else
-				say "airconnect.main.enabled=(absent) -> airconnect-manager.main.enabled=1 (the legacy service is enabled at boot or running)"
+				say "airconnect.${LEGACY_SECTION}.enabled=(absent) -> airconnect-manager.main.enabled=1 (the legacy service is enabled at boot or running)"
 			fi
 		else
 			MAPPED_ENABLED='0'
 			MAPPED_ENABLED_SOURCE='default (legacy service disabled)'
 			if [ "${mk_seen}" = '1' ]; then
-				say "airconnect.main.enabled=(no usable value) -> airconnect-manager.main.enabled=0 (the legacy service is not enabled and not running)"
+				say "airconnect.${LEGACY_SECTION}.enabled=(no usable value) -> airconnect-manager.main.enabled=0 (the legacy service is not enabled and not running)"
 			else
-				say "airconnect.main.enabled=(absent) -> airconnect-manager.main.enabled=0 (the legacy service is not enabled and not running)"
+				say "airconnect.${LEGACY_SECTION}.enabled=(absent) -> airconnect-manager.main.enabled=0 (the legacy service is not enabled and not running)"
 			fi
 		fi
 	fi
@@ -404,27 +426,27 @@ mapping() {
 	mk_seen='0'
 	mk_used_key=''
 	for mk_key in interface iface binding; do
-		if mk_value=$(uci_get "airconnect.main.${mk_key}"); then
+		if mk_value=$(uci_get "airconnect.${LEGACY_SECTION}.${mk_key}"); then
 			mk_seen='1'
 			if valid_interface "${mk_value}"; then
 				if [ -z "${MAPPED_INTERFACE}" ]; then
 					MAPPED_INTERFACE="${mk_value}"
 					mk_used_key="${mk_key}"
-					say "airconnect.main.${mk_key}=${mk_value} -> airconnect-manager.main.interface=${mk_value}"
+					say "airconnect.${LEGACY_SECTION}.${mk_key}=${mk_value} -> airconnect-manager.main.interface=${mk_value}"
 				else
-					say "airconnect.main.${mk_key}=${mk_value} -> skipped (airconnect.main.${mk_used_key} was used)"
+					say "airconnect.${LEGACY_SECTION}.${mk_key}=${mk_value} -> skipped (airconnect.${LEGACY_SECTION}.${mk_used_key} was used)"
 				fi
 			else
-				say "airconnect.main.${mk_key}=${mk_value} -> skipped (not a bare interface token of 1..15 ASCII bytes)"
+				say "airconnect.${LEGACY_SECTION}.${mk_key}=${mk_value} -> skipped (not a bare interface token of 1..15 ASCII bytes)"
 			fi
 		fi
 	done
 	if [ -z "${MAPPED_INTERFACE}" ]; then
 		MAPPED_INTERFACE="${DEFAULT_INTERFACE}"
 		if [ "${mk_seen}" = '1' ]; then
-			say "airconnect.main.interface=(no usable value) -> airconnect-manager.main.interface=${DEFAULT_INTERFACE} (default)"
+			say "airconnect.${LEGACY_SECTION}.interface=(no usable value) -> airconnect-manager.main.interface=${DEFAULT_INTERFACE} (default)"
 		else
-			say "airconnect.main.interface=(absent) -> airconnect-manager.main.interface=${DEFAULT_INTERFACE} (default)"
+			say "airconnect.${LEGACY_SECTION}.interface=(absent) -> airconnect-manager.main.interface=${DEFAULT_INTERFACE} (default)"
 		fi
 	fi
 
@@ -432,65 +454,65 @@ mapping() {
 	mk_seen='0'
 	mk_used_key=''
 	for mk_key in upnp airupnp; do
-		if mk_value=$(uci_get "airconnect.main.${mk_key}"); then
+		if mk_value=$(uci_get "airconnect.${LEGACY_SECTION}.${mk_key}"); then
 			mk_seen='1'
 			if mk_norm=$(normalize_bool "${mk_value}"); then
 				if [ -z "${MAPPED_AIRUPNP}" ]; then
 					MAPPED_AIRUPNP="${mk_norm}"
 					mk_used_key="${mk_key}"
-					say "airconnect.main.${mk_key}=${mk_value} -> airconnect-manager.main.airupnp=${mk_norm}"
+					say "airconnect.${LEGACY_SECTION}.${mk_key}=${mk_value} -> airconnect-manager.main.airupnp=${mk_norm}"
 				else
-					say "airconnect.main.${mk_key}=${mk_value} -> skipped (airconnect.main.${mk_used_key} was used)"
+					say "airconnect.${LEGACY_SECTION}.${mk_key}=${mk_value} -> skipped (airconnect.${LEGACY_SECTION}.${mk_used_key} was used)"
 				fi
 			else
-				say "airconnect.main.${mk_key}=${mk_value} -> skipped (not a boolean)"
+				say "airconnect.${LEGACY_SECTION}.${mk_key}=${mk_value} -> skipped (not a boolean)"
 			fi
 		fi
 	done
 	if [ -z "${MAPPED_AIRUPNP}" ]; then
 		MAPPED_AIRUPNP="${DEFAULT_AIRUPNP}"
 		if [ "${mk_seen}" = '1' ]; then
-			say "airconnect.main.upnp=(no usable value) -> airconnect-manager.main.airupnp=${DEFAULT_AIRUPNP} (default)"
+			say "airconnect.${LEGACY_SECTION}.upnp=(no usable value) -> airconnect-manager.main.airupnp=${DEFAULT_AIRUPNP} (default)"
 		else
-			say "airconnect.main.upnp=(absent) -> airconnect-manager.main.airupnp=${DEFAULT_AIRUPNP} (default)"
+			say "airconnect.${LEGACY_SECTION}.upnp=(absent) -> airconnect-manager.main.airupnp=${DEFAULT_AIRUPNP} (default)"
 		fi
 	fi
 
 	mk_seen='0'
 	mk_used_key=''
 	for mk_key in aircast cast; do
-		if mk_value=$(uci_get "airconnect.main.${mk_key}"); then
+		if mk_value=$(uci_get "airconnect.${LEGACY_SECTION}.${mk_key}"); then
 			mk_seen='1'
 			if mk_norm=$(normalize_bool "${mk_value}"); then
 				if [ -z "${MAPPED_AIRCAST}" ]; then
 					MAPPED_AIRCAST="${mk_norm}"
 					mk_used_key="${mk_key}"
-					say "airconnect.main.${mk_key}=${mk_value} -> airconnect-manager.main.aircast=${mk_norm}"
+					say "airconnect.${LEGACY_SECTION}.${mk_key}=${mk_value} -> airconnect-manager.main.aircast=${mk_norm}"
 				else
-					say "airconnect.main.${mk_key}=${mk_value} -> skipped (airconnect.main.${mk_used_key} was used)"
+					say "airconnect.${LEGACY_SECTION}.${mk_key}=${mk_value} -> skipped (airconnect.${LEGACY_SECTION}.${mk_used_key} was used)"
 				fi
 			else
-				say "airconnect.main.${mk_key}=${mk_value} -> skipped (not a boolean)"
+				say "airconnect.${LEGACY_SECTION}.${mk_key}=${mk_value} -> skipped (not a boolean)"
 			fi
 		fi
 	done
 	if [ -z "${MAPPED_AIRCAST}" ]; then
 		MAPPED_AIRCAST="${DEFAULT_AIRCAST}"
 		if [ "${mk_seen}" = '1' ]; then
-			say "airconnect.main.aircast=(no usable value) -> airconnect-manager.main.aircast=${DEFAULT_AIRCAST} (default)"
+			say "airconnect.${LEGACY_SECTION}.aircast=(no usable value) -> airconnect-manager.main.aircast=${DEFAULT_AIRCAST} (default)"
 		else
-			say "airconnect.main.aircast=(absent) -> airconnect-manager.main.aircast=${DEFAULT_AIRCAST} (default)"
+			say "airconnect.${LEGACY_SECTION}.aircast=(absent) -> airconnect-manager.main.aircast=${DEFAULT_AIRCAST} (default)"
 		fi
 	fi
 
 	# UDN: the only device identity. A speaker name or an address is not one,
 	# so neither is ever copied into a device section.
-	if mk_value=$(uci_get airconnect.main.udn); then
+	if mk_value=$(uci_get "airconnect.${LEGACY_SECTION}.udn"); then
 		if valid_udn "${mk_value}"; then
 			MAPPED_UDN="${mk_value}"
-			say "airconnect.main.udn=${mk_value} -> airconnect-manager.device_legacy.udn=${mk_value} (device section only if a volume limit exists)"
+			say "airconnect.${LEGACY_SECTION}.udn=${mk_value} -> airconnect-manager.device_legacy.udn=${mk_value} (device section only if a volume limit exists)"
 		else
-			say "airconnect.main.udn=${mk_value} -> skipped (not a uuid: UDN of at most 255 bytes)"
+			say "airconnect.${LEGACY_SECTION}.udn=${mk_value} -> skipped (not a uuid: UDN of at most 255 bytes)"
 		fi
 	fi
 	if [ -z "${MAPPED_UDN}" ]; then
@@ -499,10 +521,10 @@ mapping() {
 		while IFS= read -r mk_key; do
 			[ -n "${mk_key}" ] || continue
 			[ "${mk_key}" = 'udn' ] && continue
-			if mk_value=$(uci_get "airconnect.main.${mk_key}"); then
+			if mk_value=$(uci_get "airconnect.${LEGACY_SECTION}.${mk_key}"); then
 				if valid_udn "${mk_value}"; then
 					MAPPED_UDN="${mk_value}"
-					say "airconnect.main.${mk_key}=${mk_value} -> airconnect-manager.device_legacy.udn=${mk_value} (found by uuid: prefix; used only with a volume limit)"
+					say "airconnect.${LEGACY_SECTION}.${mk_key}=${mk_value} -> airconnect-manager.device_legacy.udn=${mk_value} (found by uuid: prefix; used only with a volume limit)"
 					break
 				fi
 			fi
@@ -517,29 +539,29 @@ EOF
 	mk_seen='0'
 	mk_key=''
 	for mk_candidate in max_volume volume_limit volume; do
-		if mk_value=$(uci_get "airconnect.main.${mk_candidate}"); then
+		if mk_value=$(uci_get "airconnect.${LEGACY_SECTION}.${mk_candidate}"); then
 			mk_seen='1'
 			mk_key="${mk_candidate}"
 			if valid_volume "${mk_value}"; then
 				if [ -n "${MAPPED_UDN}" ]; then
 					MAPPED_DEVICE_VOLUME="${mk_value}"
 					MAPPED_DEVICE='1'
-					say "airconnect.main.${mk_key}=${mk_value} -> airconnect-manager.device_legacy.max_volume=${mk_value} (engine upnp, udn ${MAPPED_UDN})"
+					say "airconnect.${LEGACY_SECTION}.${mk_key}=${mk_value} -> airconnect-manager.device_legacy.max_volume=${mk_value} (engine upnp, udn ${MAPPED_UDN})"
 					if [ "${MAPPED_AIRUPNP}" != '1' ]; then
 						say '  note: main.airupnp is 0, so this device section stays inert until UPnP is enabled'
 					fi
 				else
 					MAPPED_MAX_VOLUME="${mk_value}"
-					say "airconnect.main.${mk_key}=${mk_value} -> airconnect-manager.main.max_volume=${mk_value} (no UDN found; per-device attribution needs a scan)"
+					say "airconnect.${LEGACY_SECTION}.${mk_key}=${mk_value} -> airconnect-manager.main.max_volume=${mk_value} (no UDN found; per-device attribution needs a scan)"
 				fi
 			else
-				say "airconnect.main.${mk_key}=${mk_value} -> skipped (expected an integer 1..100)"
+				say "airconnect.${LEGACY_SECTION}.${mk_key}=${mk_value} -> skipped (expected an integer 1..100)"
 			fi
 			break
 		fi
 	done
 	if [ -z "${MAPPED_DEVICE_VOLUME}" ] && [ "${mk_seen}" = '0' ]; then
-		say "airconnect.main.max_volume=(absent) -> airconnect-manager.main.max_volume=${DEFAULT_MAX_VOLUME} (default)"
+		say "airconnect.${LEGACY_SECTION}.max_volume=(absent) -> airconnect-manager.main.max_volume=${DEFAULT_MAX_VOLUME} (default)"
 	fi
 	if [ -n "${MAPPED_UDN}" ] && [ "${MAPPED_DEVICE}" != '1' ]; then
 		say 'device section: skipped (a UDN alone needs no override; no per-device volume limit was found)'
