@@ -21,9 +21,12 @@ name: Release
 # The packages contain no compiled code of their own, so an APK could in
 # principle be assembled by hand. It is still the wrong tool for a release: an
 # SDK build produces the package index entries, the signed package database and
-# the metadata that `apk add` from a repository expects. A hand-built APK is
-# only good for a local `apk add --allow-untrusted`, which is what
-# scripts/build-apk.sh is for. See docs/RELEASE.zh-CN.md.
+# the metadata that `apk add` from a repository expects.
+#
+# A hand-built APK was also measured to be unusable in practice: apk-tools 3.x
+# opens its v3 container with an ADBd signature block whose length is not a
+# plain 32-bit integer, and the payload is not gzip, so `apk add` rejects
+# anything assembled by hand. docs/RELEASE.zh-CN.md records the measurement.
 
 on:
   push:
