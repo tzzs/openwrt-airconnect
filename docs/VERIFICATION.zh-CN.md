@@ -1,12 +1,15 @@
 # 初始化验证记录
 
-本轮验证了独立项目结构和上游依赖来源，尚未完成 SDK 编译或设备安装。
+本轮验证了独立项目结构和上游依赖来源。归档下载与 SDK 编译的后续结果见下文
+“SDK 构建验证（S1）”：两者都已完成，本节保留的是当时的状态。
 
 - 独立 Git 根目录为 openwrt-airconnect，不含原 fork 的历史和远端。
 - 本地 Markdown 相对链接检查通过。
 - 发布源检查未发现现场音箱 IP、UDN 或登录凭据。
 - 官方 GitHub Releases API 返回 1.12.4 的 AirConnect-1.12.4.zip，大小 95,060,625 字节，digest 为 sha256:ae59d595be80db7f4e93c94c9029baff59dc7515ec03e44505ab2792bbcd1903，与新包配方一致。
-- 官方 ZIP 下载超时、未完成，未把残缺文件作为有效源或构建产物。后续 SDK 下载必须通过 PKG_HASH 验证；本轮没有做完整 ZIP 自计算 SHA256、ELF 检查或可执行性验证。
+- 官方 ZIP 下载当时超时、未完成，未把残缺文件作为有效源或构建产物。**该结论已过时**：
+  归档后来完整下载（95,060,625 字节），本地自算 SHA256 与 `PKG_HASH` 一致，详见
+  “SDK 构建验证（S1）”。
 - 许可证原文取自官方 1.12.4 标签，仅去除行尾空格；声明 AirConnect 为 MIT，第三方组件各自遵循原作者条件。依赖许可证审计仍属于发布前任务。
 
 来源：
@@ -16,7 +19,8 @@
 - https://github.com/philippe44/AirConnect/blob/1.12.4/LICENSE
 
 未部署新服务，路由器继续使用之前已安装的版本。独立管理层与新界面已写入仓库并在主机测试下运行，
-但尚未经 SDK 构建与真实设备验收；当时的这项结论对构建与设备仍然成立，具体状态见下一节。
+三个包后来也已用 SDK 成功编译出 APK（见“SDK 构建验证（S1）”），但**仍未安装到任何真实设备**；
+设备验收依然未做，具体状态见下一节。
 
 ## 主机验证现状（2026-10-21）
 
@@ -27,7 +31,8 @@
 - 机器：macOS 27.0（Darwin 27.0.0，arm64）。
 - ucode：`~/.local/opt/ucode-host/bin/ucode`（主机自建，含 `fs`/`socket`/`math` 等
   模块，`-L ~/.local/opt/ucode-host/lib/ucode`）；node v24.13.0；bash 3.2.57；`/bin/dash`。
-- 未使用 OpenWrt SDK、未联网、未安装任何路由器组件。
+- 这一轮主机测试未使用 OpenWrt SDK、未联网、未安装任何路由器组件。
+  （SDK 构建是后来单独做的一轮，见“SDK 构建验证（S1）”。）
 
 ### 已在这台主机上验证
 
@@ -71,9 +76,10 @@
 
 ### 仍未验证
 
-- **SDK 构建**：没有用 OpenWrt SDK 编译过任何一个包，也没有生成或安装过 APK 或 IPK。
-  仓库内不存在 `*.apk`、`*.ipk` 或构建产物。CI 中的 `sdk-build` 只是一个明确标注为
-  “未实现”的占位 job，不产出任何东西。
+- **SDK 构建**：本节记录的那一轮主机测试没有构建任何包。**后续已补做**：三个包都已用
+  OpenWrt SDK 编译出 APK，产物内容已逐项核对，详见“SDK 构建验证（S1）”。
+  仓库内仍不存放大体积构建产物（`.gitignore` 排除了 `*.apk`/`*.ipk`），CI 中的
+  `sdk-build` 仍是标注为“未实现”的占位 job，不产出任何东西。
 - **CI 执行**：`.github/workflows/test.yml` 的主机测试工作流已实现，但从未执行过；
   没有任何一次 CI 运行结果可查。本节表格中的全部数字来自上面的本地运行。
 - **真实设备**：没有任何东西在真实路由器上运行过。真实 rpcd 注册、procd/netifd 的 ubus
@@ -145,13 +151,130 @@
 
 ### 未验证
 
-- **归档内容**：95 MB 的 `AirConnect-1.12.4.zip` 在本环境中始终未能完成下载
-  （环境层两次超时），因此未对归档内实际文件名、ELF 内容或结构做任何本地核对。
-  提取脚本仅以合成归档做了逻辑验证，不代表真实归档已通过 `PKG_HASH` 校验。
-- **SDK 编译**：未执行 OpenWrt SDK 构建；`Build/Compile` 中的 ELF 校验
-  （`file` 优先，回退到 `od -An -tx1 -N4` 头字节检查）尚未在真实 SDK 容器中运行。
 - **设备端执行**：未在真实 aarch64/x86_64 路由器上安装或运行二进制。
 
-> 注意：`PKG_HASH` 与发布元数据来自 GitHub API，但 ZIP 本体从未在本环境完成下载，
-> 故不声称“归档已通过本地下载与摘要校验”。完整的 `PKG_HASH` 自计算、ELF 检查与
-> 可执行性验证仍属 SDK/设备验收阶段的任务。
+## SDK 构建验证（S1，2026-10-22）
+
+本节记录一次真实的 OpenWrt SDK 构建结果，取代上文“未执行 SDK 构建”与“归档未能下载”两条
+已过时的结论。**本节只证明“能编译、产物内容已核对”，不证明包能运行。**
+
+### 证据来源
+
+- 构建机：macOS arm64 宿主上的 colima/QEMU **x86_64** Linux 虚拟机
+  （`Linux 6.8.0 x86_64`，4 vCPU，8 GB RAM，60 GB 磁盘）。SDK 只有 Linux-x86_64 版本，
+  在 arm64 虚拟机上会段错误，故必须用 x86_64 虚拟机。
+- SDK：`openwrt-sdk-25.12.6-armsr-armv8_gcc-14.3.0_musl.Linux-x86_64`，
+  `REVISION:=r33311-981c978eff`，目标 `armsr/armv8`，`CONFIG_TARGET_ARCH_PACKAGES="aarch64_generic"`。
+- 工具链：`aarch64-openwrt-linux-musl-gcc (OpenWrt GCC 14.3.0 r33311-981c978eff) 14.3.0`，musl libc。
+- 产物格式：**APK**（`CONFIG_USE_APK`，OpenWrt 25.12 默认），不是 IPK。
+- feeds：`packages`、`luci`、`base`（另有 routing/telephony）。luci feed 的 `video` 源在本网络下
+  TLS 握手失败，故从 `feeds.conf` 移除后重建索引；这是 feed 侧网络问题，与本仓库无关，
+  且三个包都不依赖它。
+
+### 上游归档
+
+- `dl/AirConnect-1.12.4.zip` 已完整下载，大小 **95,060,625 字节**。
+- 本地自算 SHA256：`ae59d595be80db7f4e93c94c9029baff59dc7515ec03e44505ab2792bbcd1903`，
+  与 `packages/airconnect-engine/Makefile` 的 `PKG_HASH` **逐字符相同**，因此 `Build/Prepare`
+  的摘要校验通过，不是“仅凭 API 元数据声明”。
+- `unzip -l` 确认归档内存在 `airupnp-linux-aarch64-static` 与 `aircast-linux-aarch64-static`
+  （另有 x86_64 等架构），共 64 个条目。
+
+### 逐包结果
+
+| 包 | 编译 | APK 路径（相对 SDK 根） | 大小 |
+| --- | --- | --- | --- |
+| `airconnect-engine` | 是 | `bin/packages/aarch64_generic/base/airconnect-engine-1.12.4-r1.apk` | 6,047,428 字节 |
+| `airconnect-manager` | 是 | `bin/packages/aarch64_generic/base/airconnect-manager-0.1.0-r1.apk` | 32,090 字节 |
+| `luci-app-airconnect-manager` | 是 | `bin/packages/aarch64_generic/base/luci-app-airconnect-manager-0.261022.81988.apk` | 11,533 字节 |
+
+三个包均用 `$SDK/staging_dir/host/bin/apk extract --allow-untrusted` 解开核对过内容。
+
+**airconnect-engine 文件清单**（`file` 输出附后）：
+
+```
+/usr/libexec/airconnect/airupnp           -rwxr-xr-x  6,659,893 字节
+/usr/libexec/airconnect/aircast           -rwxr-xr-x  7,729,021 字节
+/usr/share/airconnect/UPSTREAM-LICENSE
+/usr/share/airconnect/THIRD-PARTY-NOTICES
+```
+
+两个二进制均为 `ELF 64-bit LSB executable, ARM aarch64, version 1 (SYSV), for GNU/Linux 4.4.255,
+statically linked, no section header`，即上游静态构建，不依赖路由器 musl。
+
+**airconnect-manager 文件清单**：
+
+```
+/etc/config/airconnect-manager               (conffiles 已声明)
+/etc/init.d/airconnect-manager               -rwxr-xr-x
+/etc/uci-defaults/90-airconnect-manager
+/usr/share/airconnect-manager/VERSION
+/usr/share/airconnect-manager/config.uc
+/usr/share/airconnect-manager/discovery.uc
+/usr/share/airconnect-manager/files.uc
+/usr/share/airconnect-manager/runtime.uc     -rwxr-xr-x
+/usr/share/airconnect-manager/state.uc
+/usr/share/rpcd/ucode/airconnect-manager     -rwxr-xr-x
+```
+
+**luci-app-airconnect-manager 文件清单**：
+
+```
+/usr/share/luci/menu.d/luci-app-airconnect-manager.json
+/usr/share/rpcd/acl.d/luci-app-airconnect-manager.json
+/www/luci-static/resources/airconnect-manager/manager.css
+/www/luci-static/resources/airconnect-manager/rules.js
+/www/luci-static/resources/view/airconnect-manager/overview.js
+```
+
+`rules.js` 落在 `/www/luci-static/resources/airconnect-manager/rules.js`，正是视图里
+`'require airconnect-manager.rules'` 需要的路径（luci.mk 整体安装 `htdocs/`，未逐文件列举，
+故没有被漏掉）。
+
+### 构建过程中修复的两个真实配方缺陷
+
+两者都不是“为了让包编译而删功能”，而是配方本身写错：
+
+1. **`packages/luci-app-airconnect-manager/Makefile` 的 include 路径**。原来写
+   `include $(TOPDIR)/feeds/luci/luci.mk`。SDK 的包扫描器会以**未设置 `TOPDIR`** 的方式
+   读取每个 Makefile 来建索引，此时该路径解析成 `/feeds/luci/luci.mk`，dump 直接失败，
+   包因此不在 `tmp/.packageinfo` 里。改为相对路径 `include ../../feeds/luci/luci.mk`
+   （与 feed 内 `luci-app-acl` 等包一致），扫描与真实构建都能解析。
+2. **同一文件缺少 `$(eval $(call BuildPackage,luci-app-airconnect-manager))`**。
+   扫描器（`include/scan.mk`）是靠 `find | grep 'call BuildPackage'` 发现包的；
+   `luci.mk` 只提供宏定义、不负责调用，所以本包对扫描器完全不可见，
+   `make defconfig` 会**静默丢弃** `CONFIG_PACKAGE_luci-app-airconnect-manager`，
+   最终表现为“没有产出 APK”而无任何有用报错。补上这一行后正常注册。
+
+（`airconnect-engine` 的两个缺陷——无条件 `$(error)` 破坏包扫描、`$(file ...)` 被 make
+当作内建函数——已在更早的提交中修复，本轮构建验证了修复有效。）
+
+### 可复现构建脚本
+
+新增 `scripts/build-sdk.sh`（主机/Linux 工具，不在路由器上运行）。它把本轮的步骤固化下来：
+校验 SDK 目录、缺 feed 时用本地 `feeds/` 离线安装、检测同目录并发构建、用
+`bsdtar --exclude '._*'` 拷贝包（避开 macOS AppleDouble 头导致 GNU tar 解包错位）、
+写入并复核 `CONFIG_*`、`make defconfig`、逐包 `make package/<name>/compile V=s`、
+打印 APK 路径与大小，任一包没有 APK 则非零退出。它**从不**下载 AirConnect 归档，
+只检查 `$SDK/dl/` 是否已有并在缺失时打印获取命令与期望 SHA256。
+
+默认关闭 `libopenssl-afalg` / `libopenssl-devcrypto`（`--keep-openssl-engines` 可保留）：
+这两个可选引擎会让 `libopenssl` 依赖 `kernel/linux/compile`，在 SDK 自带的
+`CONFIG_ALL_KMODS=y` 下会连带交叉编译目标平台**全部一千多个内核模块**。本项目只用
+libopenssl 的 TLS，不用这两个引擎，关掉它们把构建范围收敛到实际发布的包。
+
+一次完整运行的结果：`build-sdk.sh: all 3 package(s) built`，退出码 0。
+
+### 仍未验证（本轮明确不做）
+
+- **路由器安装**：没有任何 APK 被安装到真实设备，`apk add` 的实际解析、依赖满足、
+  conffiles 升级保留都未验证。
+- **开机与服务启动**：没有开机，没有 `service airconnect-manager start`，
+  procd 实例注册、`/var/etc/airconnect-manager/` 的生成、init 脚本在设备上的行为均未验证。
+- **音频**：没有接入音箱，没有播放，AirPlay 广播与满音量映射都未验证。
+- **24.10 / IPK**：没有为 OpenWrt 24.10 构建，也没有产出任何 IPK。
+- **x86_64**：只构建了 `aarch64_generic`；`x86_64` 目标未构建。
+- **LuCI 运行时**：`luci-app-airconnect-manager` 只验证了文件落位，没有在真实 LuCI 里加载，
+  没有经过真实 rpcd/UCI 的保存与回滚。
+- **rpcd 注册**：`/usr/share/rpcd/ucode/airconnect-manager` 的权限与位置已核对，
+  但没有在运行中的 rpcd 上确认 `airconnect.manager` 对象真的注册成功。
