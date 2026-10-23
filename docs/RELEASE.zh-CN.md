@@ -93,30 +93,38 @@ CI 能保证"包能编译、内容完整"，不能保证"包在设备上是对�
 
 ---
 
-## 5. 路由器上的本地构建（不是发布包）
+## 5. 在路由器上直接安装验证（不是构建）
 
-`scripts/build-apk.sh` 在**路由器本机**直接组装 APK，用于本地安装验证，**不用于发布**。
+发布包**只能**来自 CI 的 SDK 构建。路由器上不构建 APK，原因见下。
 
-为什么需要它：这三个包都不编译代码——`airconnect-engine` 只是解包上游静态二进制并校验，另两个只装文件。所以在目标架构的机器上手工组装 APK 是可行的，而且能立刻 `apk add` 安装，把 init 脚本、rpcd 插件、conffiles 真正跑起来。
+### 为什么不在路由器上手工组装 APK
 
-为什么不能用于发布：手工 APK 没有 SDK 生成的包索引、签名和元数据，只能 `apk add --allow-untrusted` 安装，无法作为仓库源分发。
+这三个包确实都不编译代码——`airconnect-engine` 只解包上游静态二进制并校验，另两个只安装文件。所以曾经尝试过在路由器上按 `.PKGINFO` + `data.tar.gz` 的结构直接拼 APK。
+
+**实测结论：行不通。** apk-tools 3.x 的 APK v3 容器以一个 `ADBd` 签名块开头，其长度字段既不是大端也不是小端的 32 位整数（在真实包上读出 3,973,805,168 这种值），且整个包里**找不到任何 gzip 魔数**——说明 data 段用的不是 gzip。手工拼出来的文件 `apk add` 一律报 `file format is invalid or inconsistent`。
+
+这不是值得继续投入的方向：收益只是省掉一次 CI 运行，而代价是要逆向一个没有公开规范的容器格式。脚本已从仓库删除，不做保留。
+
+### 路由器上真正该做的事
+
+路由器（iStoreOS 25.12.5 / aarch64_generic）的价值在于**运行**验证，不是构建。把 CI 产出的 APK 拷上去安装：
 
 ```sh
-# 把仓库拷上路由器
-COPYFILE_DISABLE=1 tar czf /tmp/ac.tgz -C <repo> packages scripts
-scp /tmp/ac.tgz router:/tmp/
-ssh router 'tar xzf /tmp/ac.tgz -C /tmp && mkdir -p /tmp/airconnect-src && \
-            tar xzf /tmp/ac.tgz -C /tmp/airconnect-src'
+# CI 产物下载到本地后推上路由器
+scp airconnect-engine-*.apk airconnect-manager-*.apk luci-app-*.apk router:/tmp/
 
-# 暂存上游二进制（从 SDK 构建产物或手动拷贝）
-ssh router 'mkdir -p /tmp/airconnect-src/engine-binaries && \
-            cp airupnp-linux-aarch64-static aircast-linux-aarch64-static /tmp/airconnect-src/engine-binaries/'
+# 安装（本地构建的未签名包）
+ssh router 'apk add --allow-untrusted /tmp/airconnect-engine-*.apk \
+                                      /tmp/airconnect-manager-*.apk \
+                                      /tmp/luci-app-*.apk'
 
-# 构建并安装
-ssh router 'sh /tmp/airconnect-src/scripts/build-apk.sh --install'
+# 然后真正跑起来
+ssh router '/etc/init.d/airconnect-manager start'
+ssh router 'ubus call airconnect.manager.status "{}"'
+ssh router 'logread -f'
 ```
 
-产物在路由器的 `/tmp/airconnect-apk/`。
+这一步已经做过**部分**验证：把 `packages/airconnect-manager/files/` 按安装后的目录布局放到路由器上，`ubus call airconnect.manager.status` 返回了正确结构，五个 rpcd 方法全部注册成功。证据见 `docs/VERIFICATION.zh-CN.md` 的"真实设备验证"一节。**尚未做**的是通过 `apk add` 完整安装，因此 conffiles 处理、升级保留、`apk del` 卸载都还没验证。
 
 ---
 

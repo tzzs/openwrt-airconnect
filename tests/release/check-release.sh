@@ -312,6 +312,23 @@ if [ -f "$doc" ]; then
 	else
 		no "$doc records that x86_64 is not built yet" 'missing the caveat'
 	fi
+	# The doc must not promise a build path that does not exist. A hand-built
+	# APK was attempted and measured to be unusable: apk-tools 3.x opens its v3
+	# container with an ADBd signature block whose length is not a plain 32-bit
+	# integer, and the payload is not gzip. The script was removed, so a stale
+	# reference here would send someone down a dead end.
+	if grep -q 'build-apk.sh' "$doc"; then
+		no "$doc does not reference the removed build-apk.sh" \
+			'that script was deleted; the doc still points at it'
+	else
+		ok "$doc does not reference the removed build-apk.sh"
+	fi
+	if [ -f scripts/build-apk.sh ]; then
+		no 'the unusable on-device APK builder is gone' \
+			'scripts/build-apk.sh still exists and produces packages apk rejects'
+	else
+		ok 'the unusable on-device APK builder is gone'
+	fi
 fi
 
 # ---------------------------------------------------------------------------
