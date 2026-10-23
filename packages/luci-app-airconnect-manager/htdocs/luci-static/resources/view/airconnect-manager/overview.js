@@ -301,12 +301,57 @@ return view.extend({
 		var card = this.cards[key(device)];
 		if (!card) return;
 		var online = device.online === true ? _('Discovered') : device.online === false ? _('Not currently discovered') : _('Discovery unknown');
-		replace(card.status, [badge(device.engine === 'cast' ? 'Chromecast' : 'UPnP / DLNA'), badge(online, device.online === true ? 'positive' : 'neutral')]);
+		var status = [badge(device.engine === 'cast' ? 'Chromecast' : 'UPnP / DLNA'), badge(online, device.online === true ? 'positive' : 'neutral')];
+		// Broadcasting is its own badge, never folded into "Discovered": a speaker
+		// can be discovered while nothing is advertised for it, and the other way
+		// round. A true badge is the only positive; null stays neutral and says so.
+		if (device.broadcasting === true)
+			status.push(badge(_('AirPlay advertised'), 'positive'));
+		else if (device.broadcasting === false)
+			status.push(badge(_('No AirPlay advertisement'), 'neutral'));
+		else
+			status.push(badge(_('AirPlay broadcast unknown'), 'neutral'));
+		replace(card.status, status);
+		var broadcast = this.snapshot && this.snapshot.broadcast ? this.snapshot.broadcast : {};
 		var values = [
 			[_('Original name'), device.original_name], [_('IP address'), device.address], [_('Model'), device.model],
-			[_('Manufacturer'), device.manufacturer], [_('Device identifier (UDN)'), device.udn], [_('Last discovered'), time(device.last_seen)]
+			[_('Manufacturer'), device.manufacturer], [_('Device identifier (UDN)'), device.udn],
+			[_('Last discovered'), time(device.last_seen)],
+			// The observation time is the mDNS scan, not the discovery scan above.
+			[_('AirPlay broadcast'), device.broadcasting === true
+				? _('Yes') + (broadcast.observed_at ? ' (' + _('observed') + ' ' + time(broadcast.observed_at) + ')' : '')
+				: device.broadcasting === false
+					? _('No') + (broadcast.observed_at ? ' (' + _('observed') + ' ' + time(broadcast.observed_at) + ')' : '')
+					: _('Unknown — not measured')]
 		];
 		replace(card.facts, values.reduce(function(nodes, pair) { nodes.push(E('dt', {}, pair[0]), E('dd', {}, text(pair[1]))); return nodes; }, []));
+	},
+	// The four states are rendered from four different facts and never from each
+	// other. `broadcasting` is a measurement (true / false / null), `playback` is
+	// always the constant unknown, and the two are given separate rows with
+	// separate wording so a positive broadcast can never read as playback.
+	// `broadcast.observed_at` is the time of the mDNS observation, not the time of
+	// the last discovery scan: they are different measurements.
+	broadcastText: function(value, observedAt, reason) {
+		if (value === true)
+			return _('Yes — an AirPlay receiver is advertised') + (observedAt ? ' (' + _('observed') + ' ' + time(observedAt) + ')' : '');
+		if (value === false)
+			return _('No — the scan found no advertisement') + (observedAt ? ' (' + _('observed') + ' ' + time(observedAt) + ')' : '');
+		// Never a positive: an unmeasured or failed observation states what would
+		// have to be true for the answer to be known, and why it is not.
+		var why = reason ? ' ' + _('Last attempt:') + ' ' + reason + '.' : '';
+		return _('Unknown — no completed mDNS observation. This needs the engine running and its receiver advertised on this LAN.') + why;
+	},
+	playbackText: function(data) {
+		// Playback is not measurable through the documented upstream surface. It is
+		// kept as its own row with its own reason, deliberately never derived from
+		// the broadcast row above.
+		var playback = data.playback || {};
+		if (playback.known === true && playback.playing === true)
+			return _('Playing');
+		if (playback.known === true && playback.playing === false)
+			return _('Not playing');
+		return _('Unknown — the engines expose no documented playback status, so this is never inferred from the broadcast state.');
 	},
 	updateStatus: function(data) {
 		this.snapshot = data;
@@ -315,6 +360,9 @@ return view.extend({
 		var services = data.services || {}, statuses = [];
 		['upnp', 'cast'].forEach(function(engine) {
 			var service = services[engine] || {};
+			// The badge reports the service process only. Broadcasting is a separate
+			// fact and gets its own row below, so a running process cannot be read as
+			// an AirPlay advertisement.
 			statuses.push(badge((engine === 'cast' ? 'Chromecast' : 'UPnP') + ': ' + (!service.enabled ? _('Disabled') : service.running === true ? _('Running') : service.running === false ? _('Stopped') : _('Unknown')), service.running ? 'positive' : 'neutral'));
 		});
 		replace(this.serviceStatus, statuses);
@@ -347,7 +395,17 @@ return view.extend({
 		this.scanButton.textContent = scan.running ? _('Scanning…') : _('Scan for speakers');
 		this.scanStatus.textContent = scan.error ? _('Scan failed: ') + scan.error : scan.running ? _('Discovery is in progress.') : scan.last_scan ? _('Last scan: ') + time(scan.last_scan) : _('No scan has been completed.');
 		this.scanStatus.setAttribute('role', scan.error ? 'alert' : 'status');
-		replace(this.diagnosticFacts, [E('dt', {}, _('Interface')), E('dd', {}, text(data.interface)), E('dt', {}, _('Manager version')), E('dd', {}, text(data.version)), E('dt', {}, _('AirPlay broadcast')), E('dd', {}, _('Unknown — not measured')), E('dt', {}, _('Playback')), E('dd', {}, _('Unknown — not measured'))]);
+		var broadcast = data.broadcast || {};
+		var upnpService = services.upnp || {}, castService = services.cast || {};
+		// Each row is one fact from one source. The broadcast rows carry the mDNS
+		// observation time; the playback row never does, because it has none.
+		replace(this.diagnosticFacts, [
+			E('dt', {}, _('Interface')), E('dd', {}, text(data.interface)),
+			E('dt', {}, _('Manager version')), E('dd', {}, text(data.version)),
+			E('dt', {}, _('AirPlay broadcast (UPnP)')), E('dd', {}, this.broadcastText(upnpService.broadcasting, broadcast.observed_at, broadcast.error)),
+			E('dt', {}, _('AirPlay broadcast (Chromecast)')), E('dd', {}, this.broadcastText(castService.broadcasting, broadcast.observed_at, broadcast.error)),
+			E('dt', {}, _('Playback')), E('dd', {}, this.playbackText(data))
+		]);
 	},
 	refresh: function() {
 		var self = this;

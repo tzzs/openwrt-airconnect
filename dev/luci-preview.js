@@ -6,13 +6,44 @@ var data = { main: { '.name': 'main', '.type': 'main', enabled: '1', interface: 
   example: { '.name': 'example', '.type': 'device', engine: 'upnp', udn: 'uuid:example-speaker-001', enabled: '1', name: '' },
   example_cast: { '.name': 'example_cast', '.type': 'device', engine: 'cast', udn: 'uuid:example-cast-002', enabled: '1', name: '' } };
 var saved = JSON.stringify(data), committed = saved;
-var status = { enabled: true, interface: 'br-lan', version: 'development', services: { upnp: {enabled:true,running:true}, cast:{enabled:true,running:true} }, scan:{running:false,last_scan:Math.floor(Date.now()/1000)}, conflicts:[], devices:[
-  {engine:'upnp',udn:'uuid:example-speaker-001',original_name:'Example living room speaker',name:null,model:'Demo speaker',manufacturer:'Example manufacturer',address:'192.0.2.20',last_seen:Math.floor(Date.now()/1000),online:true,configured:true},
-  {engine:'cast',udn:'uuid:example-cast-002',original_name:'Example study speaker',name:null,model:null,manufacturer:null,address:'192.0.2.21',last_seen:null,online:false,configured:true}
+// The four states are separate in the mock exactly as they are in the backend, so
+// the page can be inspected in every combination without a router. The default is
+// a completed observation in which the UPnP speaker is advertised and the
+// Chromecast one is not; ?broadcast=unknown and ?broadcast=failed switch to the
+// two ways the state can be unmeasured.
+var observedAt = Math.floor(Date.now()/1000);
+var broadcastMode = 'measured';
+var status = { enabled: true, interface: 'br-lan', version: 'development',
+  services: { upnp: {enabled:true,running:true,broadcasting:true}, cast:{enabled:true,running:true,broadcasting:false} },
+  scan:{running:false,last_scan:observedAt},
+  broadcast:{observed_at:observedAt,error:null},
+  playback:{known:false,reason:'no documented engine status API'},
+  conflicts:[], devices:[
+  {engine:'upnp',udn:'uuid:example-speaker-001',original_name:'Example living room speaker',name:null,model:'Demo speaker',manufacturer:'Example manufacturer',address:'192.0.2.20',last_seen:observedAt,online:true,configured:true,broadcasting:true},
+  {engine:'cast',udn:'uuid:example-cast-002',original_name:'Example study speaker',name:null,model:null,manufacturer:null,address:'192.0.2.21',last_seen:null,online:false,configured:true,broadcasting:false}
 ]};
 var query = new URLSearchParams(location.search);
 if(query.has('empty')){data={main:data.main};status.devices=[];saved=JSON.stringify(data);committed=saved;}
 if(query.has('conflict')) status.conflicts=['Example legacy AirConnect process is active.'];
+if(query.has('broadcast')){
+  broadcastMode = query.get('broadcast');
+  if(broadcastMode==='unknown'){
+    // No completed observation at all: every broadcast value must be null.
+    status.broadcast={observed_at:null,error:null};
+    status.services.upnp.broadcasting=null; status.services.cast.broadcasting=null;
+    status.devices.forEach(function(d){ d.broadcasting=null; });
+  } else if(broadcastMode==='failed'){
+    // The observation ran and could not be parsed: unknown, with a reason.
+    status.broadcast={observed_at:observedAt,error:'no reply'};
+    status.services.upnp.broadcasting=null; status.services.cast.broadcasting=null;
+    status.devices.forEach(function(d){ d.broadcasting=null; });
+  } else if(broadcastMode==='none'){
+    // A completed scan that found nothing: false everywhere, which is a real
+    // measurement and must render differently from unknown.
+    status.services.upnp.broadcasting=false; status.services.cast.broadcasting=false;
+    status.devices.forEach(function(d){ d.broadcasting=false; });
+  }
+}
 function E(tag,attrs,children){if(attrs==null)attrs={};var node=document.createElement(tag);Object.keys(attrs).forEach(function(k){var v=attrs[k];if(typeof v==='function')node.addEventListener(k,v);else if(v===true)node.setAttribute(k,'');else if(v!==false&&v!=null)node.setAttribute(k,v);});function add(c){if(c==null)return;if(Array.isArray(c))c.forEach(add);else node.appendChild(c instanceof Node?c:document.createTextNode(String(c)));}add(children);return node;}
 var uci={load:function(){return Promise.resolve();},get:function(c,s,k){return data[s]&&(k?data[s][k]:data[s]);},set:function(c,s,k,v){data[s][k]=v;},unset:function(c,s,k){delete data[s][k];},add:function(c,type){var id='demo'+(++count);data[id]={'.name':id,'.type':type};return id;},sections:function(c,type,fn){var sections=Object.values(data).filter(function(s){return s['.type']===type;});if(fn)sections.forEach(fn);return sections;},save:function(){saved=JSON.stringify(data);return Promise.resolve();}};
 function Map(config){this.config=config;this.sections=[];}
