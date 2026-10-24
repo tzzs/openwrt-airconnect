@@ -1,52 +1,91 @@
 # OpenWrt AirConnect
 
-直接面向 [philippe44/AirConnect](https://github.com/philippe44/AirConnect) 的独立 OpenWrt/iStoreOS 适配项目。原生引擎负责音频桥接，本项目维护软件包、服务管理、配置转换和 LuCI 界面。
+<div align="center">
 
-本项目使用独立 Git 历史，不基于 `sbwml/luci-app-airconnect` 的 fork 继续开发。该项目仅作为 OpenWrt 封装方式的参考，见 [架构决策](docs/ARCHITECTURE.zh-CN.md)。
+English Version | [中文版本](README.zh-CN.md)
 
-## 当前状态
+</div>
 
-- 已迁入界面、设备管理、原生能力审计和性能需求。
-- 三个包的代码都已写入仓库：`airconnect-engine` 是引擎包配方（固定官方 1.12.4 发布包及 SHA256，
-  安装到独立的 libexec 路径，不注册服务）；`airconnect-manager` 包含 UCI 校验、原子生成 XML、
-  procd 启动脚本和 `airconnect.manager` rpcd 后端；`luci-app-airconnect-manager` 是音箱、设置、
-  诊断三个页签的静态 LuCI 页面。
-- 目前只有主机验证：`bash scripts/run-tests.sh` 的 11 个套件全部通过（2465 项断言），命令与结果
-  记录在 [验证记录](docs/VERIFICATION.zh-CN.md)，说明见 [测试运行与 CI](docs/TESTING.zh-CN.md)。
-- CI 工作流（`.github/workflows/test.yml`）已实现，但从未执行过：没有任何一次 CI 运行结果可查。
-- 以下事情都还没有发生：没有用 SDK 构建过任何 APK 或 IPK；没有在真实路由器上安装或运行；
-  没有接入真实音箱，AirPlay 满音量映射与播放未经验证；LuCI 页面只在 `dev/` 的模拟后端下检查过，
-  没有在真实 rpcd/UCI 中加载；旧实例迁移与回退脚本只有主机测试，从未在路由器上执行。
-- 本地开发不会替换路由器现有服务。首次切换需要备份、停用旧实例、迁移配置、验证并提供回退。
-- 旧实例的检测、配置映射、停用与回退步骤见 [旧实例迁移手册](docs/MIGRATION.zh-CN.md)（未在真实硬件上执行）。
+---
 
-## 三层结构
+A standalone OpenWrt/iStoreOS adaptation project directly targeting [philippe44/AirConnect](https://github.com/philippe44/AirConnect). The native engine handles audio bridging, while this project maintains packaging, service management, configuration conversion, and the LuCI interface.
 
-| 层 | 职责 | 状态 | 未完成 |
-| --- | --- | --- | --- |
-| `airconnect-engine` | 官方 airupnp/aircast 二进制、版本与来源追踪 | 已实现并有主机测试 | 只有配方静态检查（`tests/engine/check-recipe.sh`）；未经 SDK 构建，95 MB 上游归档未在本环境完整下载 |
-| `airconnect-manager` | UCI 校验、原子生成 XML、procd、受限诊断 RPC | 已实现并有主机测试 | 真实 rpcd 注册、procd/netifd 返回形状、真实 SSDP 发现、设备上的 init 脚本行为均未验证 |
-| `luci-app-airconnect-manager` | shadcn 风格静态 LuCI 页面，设备和常用设置优先 | 已实现，未经真实设备验证 | 只有 `rules.js` 有主机测试；页面本身只在 `dev/` 的模拟后端下检查过，未在真实 LuCI 与 rpcd/UCI 中加载 |
-| `tests/` | 主机测试与静态检查 | 已实现并有主机测试 | 没有在 CI 上跑过：工作流已写好但从未触发 |
+This project uses an independent Git history and is not developed as a fork of `sbwml/luci-app-airconnect`. It serves as a reference for OpenWrt packaging approaches. See [Architecture Decisions](docs/ARCHITECTURE.en-US.md).
 
-状态只按仓库里的文件判定：没有对应代码或没有对应测试的层不写成已实现；构建与设备验收的结果见 [验证记录](docs/VERIFICATION.zh-CN.md)。
+## Current Status
 
-首版验证目标：OpenWrt/iStoreOS 25.12、aarch64_generic；随后验证 x86_64。24.10/IPK 单独构建。不能将 SNAPSHOT 的可安装性替代稳定版 SDK 构建与设备验收。
+- ✅ Migrated UI, device management, native capability auditing, and performance requirements.
+- ✅ All three packages are implemented in the repository:
+  - `airconnect-engine`: Engine package recipe (fixed official release 1.12.4 with SHA256, installed to independent libexec path, no service registration)
+  - `airconnect-manager`: Contains UCI validation, atomic XML generation, procd startup scripts, and `airconnect.manager` rpcd backend
+  - `luci-app-airconnect-manager`: Static LuCI pages with three tabs: speakers, settings, and diagnostics
+- ✅ Only host verification available: all 11 test suites pass (2465 assertions) via `bash scripts/run-tests.sh`. Command and results recorded in [Verification Record](docs/VERIFICATION.zh-CN.md), with details in [Testing & CI](docs/TESTING.zh-CN.md).
+- ⚠️ CI workflow (`.github/workflows/test.yml`) is implemented but never executed: no CI run results available.
+- ❌ Not yet completed:
+  - No APK or IPK built using SDK
+  - Not installed or running on real routers
+  - Not connected to actual speakers; AirPlay volume mapping and playback unverified
+  - LuCI pages only checked under `dev/` mock backend, not loaded in real LuCI with rpcd/UCI
+  - Old instance migration and rollback scripts only have host testing, never executed on routers
+- Local development does not replace existing router services. Initial switching requires backup, disabling old instances, migrating configuration, validation, and providing rollback options.
+- See [Old Instance Migration Guide (Chinese)](docs/MIGRATION.zh-CN.md) for detection, configuration mapping, disabling, and rollback steps (not yet executed on real hardware).
 
-## 开发入口
+## Three-Layer Architecture
 
-- [产品定位](PRODUCT.md)
-- [实施计划](ROADMAP.zh-CN.md)
-- [封装参考与独立架构](docs/ARCHITECTURE.zh-CN.md)
-- [UI 与设备信息需求](docs/UI-REQUIREMENTS.zh-CN.md)
-- [上游原生能力映射](docs/AIRCONNECT-CAPABILITIES.zh-CN.md)
-- [性能约束](docs/PERFORMANCE.zh-CN.md)
-- [验证记录](docs/VERIFICATION.zh-CN.md)
-- [测试运行与 CI](docs/TESTING.zh-CN.md)
-- [旧实例迁移手册](docs/MIGRATION.zh-CN.md)
+| Layer | Responsibility | Status | Pending |
+|-------|----------------|--------|---------|
+| `airconnect-engine` | Official airupnp/aircast binaries, version & source tracking | Implemented with host tests | Only recipe static checks (`tests/engine/check-recipe.sh`); not built via SDK, 95 MB upstream archive not fully downloaded |
+| `airconnect-manager` | UCI validation, atomic XML generation, procd, restricted diagnostic RPC | Implemented with host tests | Real rpcd registration, procd/netifd response shapes, real SSDP discovery, init script behavior on device not verified |
+| `luci-app-airconnect-manager` | shadcn-style static LuCI pages, devices & common settings priority | Implemented, unverified on real devices | Only `rules.js` has host tests; pages only checked under `dev/` mock backend, not loaded in real LuCI with rpcd/UCI |
+| `tests/` | Host tests & static checks | Implemented with host tests | Never run on CI: workflow written but never triggered |
 
-使用匹配目标版本的 OpenWrt SDK，将 `packages/airconnect-engine` 链接到 SDK 的 `package/` 下，再运行 `make defconfig` 和 `make package/airconnect-engine/compile V=s`。后续 CI 必须固定 SDK 和 Action 版本，并记录实际验证过的架构；目前没有发布构建成功声明。
+Status determined by files in repository: layers without corresponding code or tests marked as not implemented. Build and device acceptance results in [Verification Record (Chinese)](docs/VERIFICATION.zh-CN.md).
 
-## 来源与许可
+**Initial verification targets:** OpenWrt/iStoreOS 25.12, aarch64_generic; followed by x86_64. 24.10/IPK builds separately. SNAPSHOT installability cannot substitute stable SDK build and device acceptance.
 
-独立编写的封装使用根目录 MIT 许可证。AirConnect 根 LICENSE 声明 MIT，并要求第三方组件遵守各自条件；保留的原文见 `packages/airconnect-engine/files/UPSTREAM-LICENSE`。原生发布包包含的依赖许可及分发义务须在正式发布前完成核对，不以包元数据代替依赖许可审计。
+## Getting Started
+
+### Development Setup
+
+Use the OpenWrt SDK matching your target version. Link `packages/airconnect-engine` to SDK's `package/` directory, then run:
+
+```bash
+make defconfig
+make package/airconnect-engine/compile V=s
+```
+
+Future CI must fix SDK and Action versions, documenting actually verified architectures. Currently no published successful build claims exist.
+
+### Run Tests Locally
+
+```bash
+bash scripts/run-tests.sh
+```
+
+All 11 test suites should pass with 2465 assertions.
+
+## Documentation
+
+| Document | Description |
+|----------|-------------|
+| [Product Positioning](PRODUCT.md) | Core product goals and positioning |
+| [Implementation Plan](ROADMAP.en-US.md) | Development roadmap and milestones |
+| [Architecture Decisions](docs/ARCHITECTURE.en-US.md) | Independent architecture reference |
+| [UI & Device Requirements (Chinese)](docs/UI-REQUIREMENTS.zh-CN.md) | User interface and device information needs |
+| [Native Capabilities Mapping (Chinese)](docs/AIRCONNECT-CAPABILITIES.zh-CN.md) | Upstream native feature mapping |
+| [Performance Constraints (Chinese)](docs/PERFORMANCE.zh-CN.md) | Performance requirements and constraints |
+| [Verification Record (Chinese)](docs/VERIFICATION.zh-CN.md) | Test verification results |
+| [Testing & CI (Chinese)](docs/TESTING.zh-CN.md) | Test execution and CI setup |
+| [Old Instance Migration (Chinese)](docs/MIGRATION.zh-CN.md) | Migration guide from previous versions |
+
+## License
+
+The independent packaging uses MIT license at root directory. AirConnect root LICENSE states MIT and requires third-party components to comply with their own conditions; original text preserved in `packages/airconnect-engine/files/UPSTREAM-LICENSE`. Dependencies and distribution obligations in native release packages must be verified before official release, not replaced by package metadata.
+
+---
+
+<div align="center">
+
+[中文文档](README.zh-CN.md) | English Version
+
+</div>
