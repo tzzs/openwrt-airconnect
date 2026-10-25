@@ -79,13 +79,16 @@
 ### 仍未验证
 
 - **SDK 构建**：本节记录的那一轮主机测试没有构建任何包。**后续已补做**：三个包都已用
-  OpenWrt SDK 编译出 APK，产物内容已逐项核对，详见“SDK 构建验证（S1）”。
+  OpenWrt SDK 编译出 APK，产物内容已逐项核对，详见“SDK 构建验证（S1）”与
+  “SDK 构建与设备安装验证（S2）”。
   仓库内仍不存放大体积构建产物（`.gitignore` 排除了 `*.apk`/`*.ipk`），CI 中的
   `sdk-build` 仍是标注为“未实现”的占位 job，不产出任何东西。
 - **CI 执行**：`.github/workflows/test.yml` 的主机测试工作流已实现，但从未执行过；
   没有任何一次 CI 运行结果可查。本节表格中的全部数字来自上面的本地运行。
-- **真实设备**：没有任何东西在真实路由器上运行过。真实 rpcd 注册、procd/netifd 的 ubus
-  返回形状、设备上的 `/etc/init.d/airconnect-manager` 行为均未核对。
+- **真实设备**：本节记录时没有任何东西在真实路由器上运行过。**后续已补做**：
+  三个包已用 `apk add` 装进设备，真实 rpcd 注册与 RPC 调用已核对，详见 S2。
+  仍未核对的是 procd/netifd 的 ubus 返回形状、设备上的 `/etc/init.d/airconnect-manager`
+  启动路径与迁移/回退流程。
 - **真实音箱**：没有接入任何音箱，因此播放、发现真实设备、以及“AirPlay 满音量映射”
   都未验证。音量上限只验证了数值边界与 XML 渲染，没有验证音箱端的实际响度。
 - **LuCI 集成**：`overview.js` 只在 `dev/` 的模拟后端（`dev/luci-preview.js`）下检查过，
@@ -145,15 +148,18 @@
 
 #### 未验证
 
-- **真实 rpcd 注册**：只在主机上校验了签名对象的结构，未在运行中的 rpcd 上确认注册成功。
+- **真实 rpcd 注册**：本节记录时只在主机上校验了签名对象的结构。**后续已补做**：
+  在真实设备上 `airconnect.manager` 注册成功，五个方法齐全，详见 S2。
 - **procd / netifd**：`service list`、`network.device status`、`network.interface dump`
   的返回形状来自文档与源码，未在真实 ubusd 上核对。
 - **SSDP 与设备发现**：只覆盖了工作进程的失败路径，未在真实接口上完成发现。
-- **init 脚本调用**：`/etc/init.d/airconnect-manager <action>` 在设备上的实际行为未验证。
+- **init 脚本调用**：`/etc/init.d/airconnect-manager <action>` 在设备上的实际行为未验证
+  （只有 `action` RPC 的冲突拒绝路径在设备上跑过）。
 
 ### 未验证
 
-- **设备端执行**：未在真实 aarch64/x86_64 路由器上安装或运行二进制。
+- **设备端执行**：本节记录时未在真实 aarch64/x86_64 路由器上安装或运行二进制。
+  后续已补做，见“SDK 构建与设备安装验证（S2）”。
 
 ## SDK 构建验证（S1，2026-10-22）
 
@@ -416,3 +422,186 @@ _services._dns-sd._udp.local. PTR _raop._tcp.local.
 - 性能项（CPU、RSS、网络、播放中断）仍未测量。
 - `airconnect-manager` 与 `luci-app-airconnect-manager` 仍未编译出 APK
   （构建 VM 在编译 curl/openssl 依赖链时 OOM，与代码无关）。
+
+> 上面四条已由下一节（S2，2026-10-26）取代。保留原文是因为它记录了当时的状态；
+> 下面两节记录了实际的构建、安装与验证结果。
+
+## SDK 构建与设备安装验证（S2，2026-10-26）
+
+本节记录一次完整的“本地 SDK 构建 → 装机 → 真机调用”验证。它取代 S1 之后那些关于
+“没有用 SDK 构建过 APK”“包没有用 `apk add` 装进设备”“真实 rpcd 注册未验证”的结论。
+
+### 构建机
+
+- 宿主：macOS arm64（Darwin 27.0.0）。
+- 构建环境：colima 的 **x86_64** QEMU 虚拟机里的 Ubuntu 24.04 容器，限制为 2 vCPU / 4 GB。
+  SDK 只有 `Linux-x86_64` 版本，arm64 上会段错误，所以必须是 x86_64。
+- SDK：`openwrt-sdk-25.12.6-armsr-armv8_gcc-14.3.0_musl.Linux-x86_64`，
+  `REVISION:=r33311-981c978eff`，目标 `armsr/armv8`，`CONFIG_TARGET_ARCH_PACKAGES="aarch64_generic"`，
+  产物格式为 APK（`CONFIG_USE_APK`）。
+- 上游归档：`dl/AirConnect-1.12.4.zip`，95,060,625 字节；本地自算 SHA256 与
+  `packages/airconnect-engine/Makefile` 的 `PKG_HASH` **逐字符相同**（`ae59d595…cd1903`），
+  构建前用 `sha256sum -c` 校验通过。
+
+### 三个包都编译成功
+
+| 包 | APK | 大小 |
+| --- | --- | --- |
+| `airconnect-engine` | `airconnect-engine-1.12.4-r1.apk` | 6,047,428 字节 |
+| `airconnect-manager` | `airconnect-manager-0.1.0-r1.apk` | 39,572 字节 |
+| `luci-app-airconnect-manager` | `luci-app-airconnect-manager-0.1.0-r1.apk` | 12,004 字节 |
+
+产物用 `apk extract` 解开逐个核对：
+
+- `airconnect-engine`：`/usr/libexec/airconnect/airupnp` 与 `aircast` 均为
+  `ELF 64-bit LSB executable, ARM aarch64, statically linked`，另有
+  `usr/share/airconnect/UPSTREAM-LICENSE` 与 `THIRD-PARTY-NOTICES`。
+- `airconnect-manager`：`etc/config/airconnect-manager`、`etc/init.d/airconnect-manager`、
+  `etc/uci-defaults/90-airconnect-manager`、`usr/share/airconnect-manager/` 下 6 个 `.uc`
+  与 `VERSION`、`usr/share/rpcd/ucode/airconnect-manager`；`conffiles` 正确声明
+  `/etc/config/airconnect-manager`。
+- `luci-app-airconnect-manager`：`menu.d` 与 `acl.d` 的 JSON、`manager.css`、`rules.js`、
+  `view/airconnect-manager/overview.js`。
+
+### 构建过程中定位并修掉的两个真实缺陷
+
+1. **`cp -a` 的 mtime 会让包对扫描器消失。** `include/scan.mk` 用 Makefile 的 mtime
+   与上次扫描留下的戳比较，决定要不要重读这个包。`cp -a` 保留了检出时的旧 mtime，
+   而戳更新，于是新包被当作“已扫描过”：`tmp/.packageinfo` 里没有它，`make defconfig`
+   **静默丢弃** `CONFIG_PACKAGE_luci-app-airconnect-manager`，最终表现为“没有产出 APK”
+   而不指名是哪个包。`scripts/build-local.sh` 与 `.github/workflows/release.yml` 都改用
+   `cp -r`，并在 defconfig 之后校验必需符号没被丢弃，丢弃即按名字失败。
+   CI 缓存了整个 `~/sdk`（含 `tmp/`），所以缓存命中时同样会中招。
+2. **OOM 的根因是 libopenssl 的两个可选引擎。** `CONFIG_PACKAGE_libopenssl-afalg` 与
+   `CONFIG_PACKAGE_libopenssl-devcrypto` 各自让 `libopenssl` 依赖 `kernel/linux/compile`，
+   在 SDK 默认的 `CONFIG_ALL_KMODS=y` 下连带交叉编译目标平台全部内核模块。
+   `scripts/build-sdk.sh` 早就默认关掉它们，但 `scripts/build-local.sh` 与
+   `release.yml` 都没有——这正是本节之前记的“编译 curl/openssl 依赖链时 OOM”的原因。
+   现在两条路径都关闭它们，`tests/release/check-release.sh` 也加了断言防止再次漂移。
+
+### 设备安装与真机调用
+
+设备：iStoreOS 25.12.5（`DISTRIB_REVISION=2026092410`），aarch64，apk-tools 3.0.5，
+overlay 剩余约 1.1 GB。安装前设备上已装并运行着旧包 `airconnect-1.12.4-r1`
+（`/etc/config/airconnect` + `/etc/init.d/airconnect`，`/usr/bin/airupnp` 在跑）。
+
+`apk add --allow-untrusted` 装上三个包，退出码 0。随后在设备上验证通过：
+
+- **引擎二进制真实可执行**：`/usr/libexec/airconnect/airupnp -h` 输出 `v1.12.4 (Sep 26 2026 @ 20:05:21)`。
+  这是二进制在目标架构上真的跑起来了，不只是静态检查。
+- **rpcd 真实注册**：`ubus -v list airconnect.manager` 显示 `status`、`logs`、`scan`、
+  `validate`、`action` 五个方法，签名与设计一致（`validate` 收 `{config: Table}`，
+  `action` 收 `{action: String}`）。
+- **`status` 返回真实回复**：`enabled:false`、`interface:"br-lan"`、`version:"0.1.0"`、
+  `services.upnp.running:false`、`services.upnp.broadcasting:null`、
+  `playback.known:false`、`broadcast.observed_at:null`、空的 `devices`。
+  `broadcasting` 是 `null` 而不是 `false`，与“未测量即未知”一致。
+- **冲突检测在真机上生效**：`conflicts` 同时报出
+  `Legacy service 'airconnect' is running.`、`Legacy binaries found in /usr/bin.`、
+  `AirConnect engine processes are running outside this manager (1).`。
+- **`validate` 区分合法与非法**：非法 `codec` 返回
+  `main.codec: use wav, pcm (UPnP), flac[:0..9], mp3[:32..320] or aac[:16..320]`，合法输入 `ok:true`。
+- **`action` 的安全闸门生效**：`action {"action":"start"}` 返回
+  `ok:false`、`error:"Conflicting AirConnect instance detected"`，且 `pgrep` 确认没有新引擎进程。
+- **`logs`**：返回空 `lines` 与 `truncated:false`。
+- **LuCI 静态资源可访问**：`http://127.0.0.1/luci-static/resources/view/airconnect-manager/overview.js`
+  返回 HTTP 200（24900 字节），`rules.js` 同样 200；`menu.d` 与 `acl.d` 的 JSON 经 `jsonfilter` 解析通过。
+- **安装没有干扰旧服务**：旧 `airconnect` 仍 enabled 且 running（PID 27874），
+  新服务 `enabled=0`、未运行，两套没有同时广播。
+
+### 安装时发现的一处文档与行为不符
+
+包内两处文档写“服务默认禁用，必须显式 enable”。真机事实是：OpenWrt 的 `default_postinst`
+（`/lib/functions.sh` 里的 `rc.common ... enable`）在安装时就建好了
+`/etc/rc.d/S95airconnect-manager`，所以 `/etc/init.d/airconnect-manager enabled` 一直返回 0。
+真正决定是否广播的是 UCI 的 `airconnect-manager.main.enabled`——为 0 时 `start_service`
+不注册任何 procd 实例，因此“装完不广播”这个保证仍然成立，只是“开关”不是 init 脚本。
+配方描述、配置文件注释、init 脚本注释和迁移手册都已按这个事实改写。
+
+### 这一节仍然没有验证的
+
+- ~~**服务切换**：旧实例尚未停用并卸载，新服务尚未启动（`enabled` 仍为 0）~~
+  **已完成**，见下面的 S3 一节（2026-10-26）：旧包已卸载、新服务在运行并开机自启。
+  `--apply` 已跑过；`--rollback` 仍未演练。
+- **真实音箱**：SSDP 发现、`_raop._tcp` 观测、音量映射的实际效果都未验证。
+- **LuCI 页面本身**：只验证了静态资源可访问，页面没有在登录后的浏览器会话里打开过，
+  真实的 rpcd/UCI 保存与回滚未走通。
+- **设备侧性能**：CPU、RSS、网络流量、播放中断仍未测量。
+- **升级保留设置**：`conffiles` 已声明，但“升级一个已安装的旧版本后配置保留”需要一次真实升级。
+- **CI**：工作流从未执行过，仓库还没有 git remote。
+
+## 服务切换与旧包卸载验证（S3，2026-10-26）
+
+第一台真实设备上的完整切换，设备同 S2：iStoreOS 25.12.5、`rockchip/armv8`、`aarch64_generic`、APK。
+
+### 切换前的现场
+
+- 旧包 `airconnect-1.12.4-r1`、`luci-app-airconnect-1.0.3-r1`、
+  `luci-i18n-airconnect-zh-cn-26.216.59507~71e1bd6`；
+- `/etc/config/airconnect` 与 `/etc/init.d/airconnect` 都在，服务 enabled 且 running；
+- 引擎进程 `/usr/bin/airupnp -x /var/etc/airconnect-airupnp.xml -l 1000:2000 -Z -b br-lan
+  -S broadcast`（PID 27874）；
+- 新包已装，但 `airconnect-manager.main.enabled=0`，新服务未运行。
+
+### 迁移脚本的执行
+
+`--dry-run` 与 `--apply` 都在设备上跑通，映射结果见
+[旧实例迁移手册](MIGRATION.zh-CN.md)的“首次执行记录”。关键点：旧配置的 `stream_type=broadcast` 被
+报告为 `skipped (no equivalent option in airconnect-manager; not carried over)` —— 这条报告本身是本次
+新增的，此前脚本对不认识的键完全沉默，报告读起来像无损迁移。
+
+`--apply` 写出 `/etc/config/airconnect-manager`（mode 600），备份目录
+`/etc/airconnect-manager-backup/20261025T173836Z` 含完整 `manifest.txt`；旧服务被 `stop` +
+`disable`，`/etc/rc.d` 中的旧链接消失。
+
+### 冲突拦截只在 RPC 路径生效（本次最重要的实测）
+
+旧二进制仍在 `/usr/bin` 时，两条启动路径的行为不同：
+
+| 路径 | 结果 |
+| --- | --- |
+| `/etc/init.d/airconnect-manager start` | 返回 0，引擎**真的启动了**（PID 26929） |
+| `ubus call airconnect.manager action '{"action":"start"}'` | `{"ok":false,"error":"Conflicting AirConnect instance detected"}` |
+
+同时 `status.conflicts` 报 `Legacy binaries found in /usr/bin.`。也就是说：冲突检测是**报告 + RPC
+拦截**，init 脚本不受约束。跳过卸载旧包不会报错，只会留下一个“进程在跑、LuCI 点重启必定失败”的
+服务。`docs/MIGRATION.zh-CN.md` 第 4 步与 `scripts/migrate-legacy.sh` 的 `next_steps` 已按此改写。
+
+### 卸载旧包
+
+`apk del luci-i18n-airconnect-zh-cn* airconnect luci-app-airconnect` 三个一起删。通配符是必需的：
+带 `~` 的全名会被 apk 当成版本运算符而报 `No such package`，而单独删另两个又会被 i18n 包的依赖
+拒绝（`not removed due to: luci-i18n-airconnect-zh-cn`）。
+
+卸载后：
+
+- `apk list --installed` 只剩 `airconnect-engine` / `airconnect-manager` /
+  `luci-app-airconnect-manager`；
+- `/usr/bin/airupnp`、`/usr/bin/aircast` 消失，`/usr/libexec/airconnect` 保留；
+- `/etc/rc.d` 只剩 `K10airconnect-manager` 与 `S95airconnect-manager`；
+- **`status.conflicts` 变为空**；
+- **RPC `start` 恢复为 `{"ok":true}`**，procd 报 `airupnp` 实例 `running: true`（PID 30545）。
+
+两点副作用：`apk del` 会把新服务一起停掉（procd 实例消失、`init status` 变 `inactive`），必须重新
+启动；`apk` 保留了 `/etc/config/airconnect` 与 `/etc/init.d/airconnect` 这两个 conffile，但因为
+`/etc/rc.d` 里没有旧链接，它们不会开机自启，也不触发 `conflicts`。
+
+### 切换后的运行状态
+
+- `ubus call airconnect.manager status`：`enabled=true`、`interface=br-lan`、
+  `upnp {enabled:true, running:true}`、`cast {enabled:false}`、`conflicts` 为空；
+- `/var/etc/airconnect-manager/airupnp.xml` 与 `runtime.uc show upnp` 逐字节一致，`binding=br-lan`、
+  `max_volume=30`（迁移自旧配置）、`latency=1000:2000`、`codec=flac`；
+- 开机自启：`/etc/rc.d/S95airconnect-manager` 存在，`uci get airconnect-manager.main.enabled` 为 1；
+- `ubus call airconnect.manager scan` 返回 `{"ok":true,"running":true}`，完成后 `last_scan` 与
+  `broadcast.observed_at` 都写入了时间戳 —— `broadcast.uc` 的 mDNS 观测在真机上确实工作。
+
+### 这一节仍然没有验证的
+
+- **真实音箱**：扫描跑完但 `devices` 为空，该网段没有 AirConnect 能发现的 UPnP/DLNA 渲染器；
+  AirPlay 菜单与播放无从验证，`broadcasting` 仍为 `null`。
+- **`--rollback`**：没有演练过。备份目录按约定保留。
+- **升级保留设置**：未做真实升级。
+- **LuCI 页面**：仍未在登录会话中打开。
+- **设备侧性能**：仍未测量。
+

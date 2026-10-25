@@ -1,8 +1,9 @@
 # 从旧 AirConnect 迁移到 airconnect-manager
 
-状态：**未在真实硬件上执行过**。本文件是可执行的迁移手册，脚本有主机测试，但整条流程从未在
-路由器、真实音箱或真实 Docker 主机上跑过一遍。第一次现场执行时请按“首次执行”一节记录结果，
-并把偏差补回本文件。
+状态：**已于 2026-10-26 在一台真实设备上执行过一次**（iStoreOS 25.12.5、rockchip/armv8、
+aarch64_generic、APK）：`--dry-run` 与 `--apply` 跑通，旧包及其依赖已卸载，新服务已在运行并
+设为开机自启。**仍未验证**：真实音箱的发现与播放（本次扫描未发现任何 UPnP/DLNA 渲染器）、
+`--rollback` 的实际执行、真实 Docker 现场。完整记录见文末“首次执行记录”。
 
 适用对象：
 
@@ -119,13 +120,39 @@ sh /path/to/scripts/migrate-legacy.sh --apply
 
 ### 4. 移除旧包（脚本不做）
 
-`airconnect.manager` 后端在检测到旧服务、旧二进制或外来引擎进程时会拒绝 `start`/`restart`，所以
-必须先把旧包卸掉：
+`airconnect.manager` 后端在检测到旧服务、旧二进制或外来引擎进程时会拒绝 `start`/`restart`，
+所以必须先把旧包卸掉。**注意拦截只发生在 RPC 路径**（也就是 LuCI 页面发出的操作），init 脚本
+本身不检查：2026-10-26 在 iStoreOS 25.12.5 上实测，旧包仍在时 `/etc/init.d/airconnect-manager
+start` 返回 0 并真的启动了引擎，而 `ubus call airconnect.manager action '{"action":"start"}'`
+返回 `{"ok":false,"error":"Conflicting AirConnect instance detected"}`。
+
+后果是：跳过这一步不会报错，只会得到一个"进程在跑、但 LuCI 页面点重启必定失败"的服务。
+`status` 的 `conflicts` 字段会一直显示 `Legacy binaries found in /usr/bin.`。
 
 ```sh
 opkg list-installed | grep -i airconnect     # 24.10 / IPK
 apk list --installed | grep -i airconnect    # 25.12 / APK
-opkg remove luci-app-airconnect airconnect   # 按上一步查到的实际包名
+
+# 24.10 / IPK，按上一步查到的实际包名
+opkg remove luci-app-airconnect airconnect
+
+# 25.12 / APK，同样按实际包名（翻译包名带版本后缀，用通配符）
+apk del luci-i18n-airconnect-zh-cn-* luci-app-airconnect airconnect
+```
+
+**卸载前先把旧包的安装文件复制到持久位置。** 回退（`--rollback`）只能恢复配置，不能重装已被
+卸载的包；而现场通常只在 `/tmp` 里留着一份 APK，`/tmp` 在重启后会清空。复制一份到 `/root` 或
+U 盘，回退路径才算真的留着：
+
+```sh
+mkdir -p /root/legacy-airconnect-apk
+cp /tmp/airconnect-*.apk /tmp/luci-*airconnect*.apk /root/legacy-airconnect-apk/ 2>/dev/null
+```
+
+需要重装时：
+
+```sh
+apk add --allow-untrusted /root/legacy-airconnect-apk/*.apk
 ```
 
 Docker 现场不需要卸载任何包，但容器要保持 `stopped`（脚本已经停过）。
@@ -133,11 +160,17 @@ Docker 现场不需要卸载任何包，但容器要保持 `stopped`（脚本已
 ### 5. 启动新实例
 
 ```sh
-/etc/init.d/airconnect-manager enable
+uci set airconnect-manager.main.enabled='1'
+uci commit airconnect-manager
 /etc/init.d/airconnect-manager start
 ```
 
-`enable` 与 `start` 分开执行，是为了让“开机自启”和“本次运行”两个状态都能单独观察。
+**开关是 UCI 的 `enabled`，不是 init 脚本的 `enable`。** OpenWrt 的 `default_postinst` 在安装时
+已经把 init 脚本加进 `/etc/rc.d`（`S95airconnect-manager`），所以 `/etc/init.d/airconnect-manager
+enabled` 一直返回 0。真正决定是否广播的是 `airconnect-manager.main.enabled`：为 0 时
+`start_service` 不注册任何 procd 实例，装完也不会广播。
+
+`uci set` 与 `start` 分开执行，是为了让“持久设置”和“本次运行”两个状态都能单独观察。
 
 ### 6. 验证并保留备份
 
@@ -272,13 +305,70 @@ docker inspect --format '{{.HostConfig.RestartPolicy.Name}}' <容器名>
 - **没有做的事**：不检测“旧进程是否真的退出”（只信 init 脚本与 `docker stop` 的返回值）；不验证
   生成的 XML 能被引擎接受（需要真机）；不清理旧包的残留文件（`/usr/bin/airupnp` 等由包管理器负责）。
 
-## 首次执行记录（待填）
+## 首次执行记录（2026-10-26）
 
-第一次在真实设备上执行后，请把以下内容补到本节，并把状态从“未在真实硬件上执行过”改为实测结论：
+### 设备与旧安装形态
 
-- 路由器型号、OpenWrt/iStoreOS 版本、架构；
-- 旧安装形态（UCI 包 / Docker / 旧二进制），`--dry-run` 的完整输出；
-- `--apply` 是否成功，`manifest.txt` 是否完整；
-- 四条验证的实际结果（服务、扫描、AirPlay 菜单、播放）；
-- 是否触发过 `--rollback`，回退是否完整；
-- 与本文件的偏差。
+- iStoreOS 25.12.5，`DISTRIB_TARGET=rockchip/armv8`，`DISTRIB_ARCH=aarch64_generic`，APK 包管理。
+- 旧安装形态是 **UCI 包**：`airconnect-1.12.4-r1`、`luci-app-airconnect-1.0.3-r1`、
+  `luci-i18n-airconnect-zh-cn-26.216.59507~71e1bd6`；`/etc/config/airconnect` +
+  `/etc/init.d/airconnect` 都在，服务 enabled 且 running，引擎进程为
+  `/usr/bin/airupnp -x /var/etc/airconnect-airupnp.xml -l 1000:2000 -Z -b br-lan -S broadcast`。
+- 没有匹配 `airconnect` 的 Docker 容器（设备上确实装了 docker，跑的是 homeassistant）。
+
+### `--dry-run` 与 `--apply`
+
+旧配置只有六个键，映射结果：
+
+| 旧键 | 结果 |
+| --- | --- |
+| `enabled=1` | → `main.enabled=1` |
+| `interface=br-lan` | → `main.interface=br-lan` |
+| `airupnp=1` | → `main.airupnp=1` |
+| `aircast=0` | → `main.aircast=0` |
+| `max_volume=30` | → `main.max_volume=30 (no UDN found; per-device attribution needs a scan)` |
+| `stream_type=broadcast` | → `skipped (no equivalent option in airconnect-manager; not carried over)` |
+
+`--apply` 成功，备份 `/etc/airconnect-manager-backup/20261025T173836Z`，`manifest.txt` 记录了
+`legacy_config=etc/config/airconnect mode=600`、`target_config=etc/config/airconnect-manager
+mode=600`、`legacy_enabled=yes`、`legacy_running=yes`，与旧文件一致（旧配置原本就是 600）。
+旧服务被 `stop` 并 `disable`，`/etc/rc.d` 里的旧链接消失。
+
+### 四条验证
+
+1. **服务运行**：通过。`ubus call service list '{"name":"airconnect-manager"}'` 报 `airupnp`
+   实例 `running: true`，命令为 `/usr/libexec/airconnect/airupnp -Z -x
+   /var/etc/airconnect-manager/airupnp.xml`；`runtime.uc show upnp` 与磁盘上的
+   `/var/etc/airconnect-manager/airupnp.xml` 逐字节一致，`binding=br-lan`、`max_volume=30`、
+   `latency=1000:2000` 都带对了。旧实例不在了：`/etc/init.d/airconnect running` 返回非 0。
+2. **扫描**：**部分通过**。`ubus call airconnect.manager scan` 返回 `{"ok":true,"running":true}`，
+   随后 `last_scan` 与 `broadcast.observed_at` 都写入了时间戳——说明 `broadcast.uc` 的 mDNS
+   观测在真机上真的工作。但 `devices` 为空：该网段没有 AirConnect 能发现的 UPnP/DLNA 渲染器。
+3. **iOS AirPlay 菜单**：**未验证**（没有音箱，无从对照）。
+4. **播放一首**：**未验证**（同上）。
+
+### 是否回退
+
+没有触发 `--rollback`。备份目录按约定保留，未删除。
+
+### 与本文件的偏差（实测与文档不符之处）
+
+1. **冲突拦截只发生在 RPC 路径，不在 init 脚本路径。** 旧包尚未卸载时：
+   `/etc/init.d/airconnect-manager start` 返回 0 并真的启动了引擎，而
+   `ubus call airconnect.manager action '{"action":"start"}'` 返回
+   `{"ok":false,"error":"Conflicting AirConnect instance detected"}`；`status.conflicts`
+   显示 `Legacy binaries found in /usr/bin.`。本文件第 4 步已按此改写。**现实含义**：跳过卸载
+   不会报错，只会得到一个"进程在跑、LuCI 点重启必定失败"的服务。
+2. **卸载旧包会把新服务一起停掉。** `apk del` 之后 `init status` 变 `inactive`、procd 实例消失。
+   需要重新 `start`（卸载后 `conflicts` 已清空，RPC 的 `start` 恢复返回 `{"ok":true}`）。
+3. **`apk del` 删不掉名字里带 `~` 的翻译包。** `apk del luci-i18n-airconnect-zh-cn-26.216.59507~71e1bd6`
+   报 `No such package`（`~` 是 apk 的版本运算符）。而 `airconnect` 与 `luci-app-airconnect`
+   又被它依赖，单独删会被拒绝（`not removed due to: luci-i18n-airconnect-zh-cn`）。
+   可行做法是一次性用通配符删三个：`apk del luci-i18n-airconnect-zh-cn* airconnect luci-app-airconnect`。
+4. **`/etc/config/airconnect` 与 `/etc/init.d/airconnect` 卸载后仍留在磁盘上**（apk 保留 conffile）。
+   `/etc/rc.d` 里没有旧链接，所以不会开机自启，`status.conflicts` 也不再报它；留着反而方便回退。
+5. **`stream_type` 静默丢失**。迁移脚本此前对不认识的键完全沉默，报告读起来像无损迁移。
+   现已改为把这类键命名为 `skipped`；本设备的 `broadcast` 因此才第一次可见。该键未接入属于
+   [能力审计](AIRCONNECT-CAPABILITIES.zh-CN.md) 记录的既定范围，不是本次新发现的功能缺失。
+6. **旧 APK 只存在于 `/tmp`**（重启即失），而 `--rollback` 无法重装已卸载的包。执行前已把三个
+   旧 APK 复制到持久位置 `/root/legacy-airconnect-apk/`。本文件第 4 步已补上这一步。
