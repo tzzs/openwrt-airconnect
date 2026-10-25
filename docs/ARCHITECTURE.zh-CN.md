@@ -64,5 +64,7 @@ procd 使用 `-Z`，不让引擎自行 daemonize；分别管理 UPnP/Cast 实例
 
 已完成：独立项目初始化、文档迁移、引擎包配方、UCI → XML 适配层（`config.uc`、`runtime.uc`）、
 有界发现解析（`discovery.uc`）、procd 启动脚本、`airconnect.manager` rpcd 后端、三个页签的
-LuCI 页面与旧实例迁移脚本（`scripts/migrate-legacy.sh`）。这些均有主机测试（见 `tests/`），
-但未在 SDK 中构建、未在路由器上运行、也未接入真实音箱；构建与设备验收仍属后续步骤。
+LuCI 页面与旧实例迁移脚本（`scripts/migrate-legacy.sh`）。这些均有主机测试（见 `tests/`）。
+**2026-10-26 补充**：三个包已用 OpenWrt SDK 25.12.6 构建成 APK 并装到真实设备，服务切换也已
+完成（旧包及依赖卸载、新服务运行并设为开机自启）；仍未接入真实音箱。构建与设备验收的完整结果
+见[验证记录](VERIFICATION.zh-CN.md) 的 S2、S3 两节。

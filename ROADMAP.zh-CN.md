@@ -32,11 +32,11 @@ AirPlay 满音量映射及反馈；[ ] 界面状态与服务一致（仅在 `dev
 
 ## 构建与发布
 
-- [ ] 优先验证 aarch64_generic / OpenWrt 25.12 APK；再扩展 x86_64，单独维护 24.10 IPK。（构建链已就位：`.github/workflows/release.yml` 目前只启用 armsr-armv8 一条 matrix，x86_64 与 24.10 IPK 是注释掉的占位。**仍未验证**：工作流从未执行过，也没有任何构建产物被安装到设备上）
+- [ ] 优先验证 aarch64_generic / OpenWrt 25.12 APK；再扩展 x86_64，单独维护 24.10 IPK。（构建链已就位：`.github/workflows/release.yml` 目前只启用 armsr-armv8 一条 matrix，x86_64 与 24.10 IPK 是注释掉的占位。**已验证**：2026-10-26 在本地用 SDK 25.12.6 把三个包编译成 APK 并用 `apk add` 装进 iStoreOS 25.12.5 设备，rpcd 注册与五个 RPC 方法都在真机上跑过；证据见 [验证记录](docs/VERIFICATION.zh-CN.md) 的 S2 一节。**仍未验证**：CI 工作流从未执行过，x86_64 未构建。服务切换已于 2026-10-26 完成：旧包及依赖卸载、配置迁移、新服务运行并设为开机自启，真实音箱的发现与播放仍未验证）
 - [ ] 当前上游工作流只有 openwrt-24.10 与 SNAPSHOT。稳定版构建应使用对应 SDK，不能把 SNAPSHOT 自动等同于稳定版兼容。（`release.yml` 固定 `sdk_version: 25.12.6` + `gcc 14.3.0` + `musl`，与目标版本号显式对应；SDK 按完整版本串做缓存键，避免陈旧 SDK 悄悄为错误版本出包）
 - [x] 添加配置生成及校验测试。（`tests/config/`、`tests/runtime/`、`tests/parity/`）
 - [x] 主机测试的 CI 工作流与统一入口。（`.github/workflows/test.yml`、`scripts/run-tests.sh`；工作流已实现但从未执行过）
-- [x] 固定构建 Action 版本，发布校验和与明确的兼容列表。（`release.yml` 用 `googleapis/release-please-action@v4` 与 `actions/checkout@v4`、`actions/cache@v4` 固定大版本；上游 AirConnect 归档按 `PKG_HASH` 的 SHA256 校验后解包，不匹配即失败；构建目标与 SDK 组合在 `docs/RELEASE.zh-CN.md` 第 3 节列出。**仍未发布过任何构建产物**）
+- [x] 固定构建 Action 版本，发布校验和与明确的兼容列表。（`release.yml` 用 `googleapis/release-please-action@v4` 与 `actions/checkout@v4`、`actions/cache@v4` 固定大版本；上游 AirConnect 归档按 `PKG_HASH` 的 SHA256 校验后解包，不匹配即失败；构建目标与 SDK 组合在 `docs/RELEASE.zh-CN.md` 第 3 节列出。2026-10-26 修掉了两处会让构建静默出错的问题：包拷贝改用 `cp -r` 以刷新 mtime（否则 `cp -a` 会让扫描器跳过新包、defconfig 静默丢掉它的 `CONFIG_PACKAGE_*`），并关闭 `libopenssl-afalg`/`libopenssl-devcrypto`（这两个引擎会把全部内核模块拉进编译，正是此前 OOM 的根因）；`tests/release/check-release.sh` 已加断言防止再次漂移。**仍未发布过任何构建产物**）
 - [x] 接入 release-please 与自动发版。（`release-please-config.json` + `.release-please-manifest.json` + `release.yml`：提交信息决定版本号，release PR 合并后自动打 tag、编译并上传 APK 到 GitHub Release。`package.json` 仅为 release-please 存在，无 npm 依赖。流程、版本号写入位置与人工确认清单见 [docs/RELEASE.zh-CN.md](docs/RELEASE.zh-CN.md)）
 - [ ] 在本地验证及真实设备验证后发布测试版；实际升级路由器前保留可回退的软件包与配置。（`docs/RELEASE.zh-CN.md` 第 4 节列出了发版前必须人工确认的六项，其中升级保留设置、迁移演练两项尚未执行）
 - [x] 发布前核对各文件及 AirConnect 分发内容的许可证，保留原版权声明；不把混合组件武断地统一声明为一种许可证。（`docs/LICENSES.zh-CN.md` 的逐组件证据表；`PKG_LICENSE` 已改为正确的 SPDX 表达式；`THIRD-PARTY-NOTICES` 随包分发并由 `release.yml` 的 `Check the package contents` 步骤断言存在）
@@ -47,7 +47,7 @@ AirPlay 满音量映射及反馈；[ ] 界面状态与服务一致（仅在 `dev
 
 - [x] 按 UDN 的通用 UCI 设备段与继承规则（`config.uc` 的 `inherited`、`tests/config/fixtures.uc`）。
 - [x] 旧服务与外来引擎进程的只读冲突检测（`rpcd/ucode/airconnect-manager` 的 `detectConflicts`；只报告，不终止、不删除）。
-- [x] 迁移脚本本身：把旧单音箱配置映射为 UCI 设备段（`scripts/migrate-legacy.sh`，先备份再写临时文件再改名）。已实现且只有主机测试，从未在路由器上运行。
+- [x] 迁移脚本本身：把旧单音箱配置映射为 UCI 设备段（`scripts/migrate-legacy.sh`，先备份再写临时文件再改名）。**已于 2026-10-26 在真实设备上执行**（iStoreOS 25.12.5 / aarch64 / APK）：`--dry-run` 与 `--apply` 跑通，旧包及依赖卸载，新服务启动并设为开机自启；完整记录见[旧实例迁移手册](docs/MIGRATION.zh-CN.md)的“首次执行记录”。这次执行纠正了两处文档偏差：冲突拦截只在 RPC 路径生效（init 脚本不检查），以及卸载旧包会把新服务一起停掉、需要重新启动；脚本对没有对应项的旧键（本机是 `stream_type`）也改为明确报告 `skipped`，不再静默丢弃。
 - [ ] 回退流程的实际执行。步骤见 [旧实例迁移手册](docs/MIGRATION.zh-CN.md)，但整条流程从未演练。
 
 本文件是开发计划；`[x]` 只表示对应代码与主机测试已存在，不代表已在路由器或真实音箱上验收。

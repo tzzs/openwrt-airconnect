@@ -19,24 +19,37 @@ This project uses an independent Git history and is not developed as a fork of `
   - `airconnect-engine`: Engine package recipe (fixed official release 1.12.4 with SHA256, installed to independent libexec path, no service registration)
   - `airconnect-manager`: Contains UCI validation, atomic XML generation, procd startup scripts, and `airconnect.manager` rpcd backend
   - `luci-app-airconnect-manager`: Static LuCI pages with three tabs: speakers, settings, and diagnostics
-- ✅ Only host verification available: all 11 test suites pass (2465 assertions) via `bash scripts/run-tests.sh`. Command and results recorded in [Verification Record](docs/VERIFICATION.zh-CN.md), with details in [Testing & CI](docs/TESTING.zh-CN.md).
-- ⚠️ CI workflow (`.github/workflows/test.yml`) is implemented but never executed: no CI run results available.
+- ✅ Host verification: all 18 test suites pass via `bash scripts/run-tests.sh`. Command and results recorded in [Verification Record](docs/VERIFICATION.zh-CN.md), with details in [Testing & CI](docs/TESTING.zh-CN.md).
+- ✅ SDK build: all three packages compile to APK with OpenWrt SDK 25.12.6 (`armsr-armv8` / `aarch64_generic`). The upstream archive's SHA256 was verified against the recipe's `PKG_HASH` before the build, and each APK's file list was read back from the built container.
+- ✅ Device install: the three APKs were installed on a real iStoreOS 25.12.5 / aarch64 router with `apk add --allow-untrusted`. The `airconnect.manager` object registers on the real rpcd with all five methods, and `status`, `validate`, `logs` and `action` were exercised on the device. The engine binaries run there and report `v1.12.4`.
+- ⚠️ CI workflow (`.github/workflows/test.yml`) is implemented but never executed: no CI run results available. The repository has no git remote yet, so the workflows have never run.
+- ✅ Service switchover done (2026-10-26, first real device): the legacy `airconnect`,
+  `luci-app-airconnect` and `luci-i18n-airconnect-zh-cn` packages were removed together with their
+  dependency chain, the configuration was mapped into UCI, and `airconnect-manager` runs and is set
+  to start at boot. `status.conflicts` is empty and the RPC start/restart actions work again.
 - ❌ Not yet completed:
-  - No APK or IPK built using SDK
-  - Not installed or running on real routers
-  - Not connected to actual speakers; AirPlay volume mapping and playback unverified
-  - LuCI pages only checked under `dev/` mock backend, not loaded in real LuCI with rpcd/UCI
-  - Old instance migration and rollback scripts only have host testing, never executed on routers
-- Local development does not replace existing router services. Initial switching requires backup, disabling old instances, migrating configuration, validation, and providing rollback options.
-- See [Old Instance Migration Guide (Chinese)](docs/MIGRATION.zh-CN.md) for detection, configuration mapping, disabling, and rollback steps (not yet executed on real hardware).
+  - Not connected to actual speakers: a scan completes and the mDNS observation records a timestamp,
+    but the segment has no UPnP/DLNA renderer AirConnect can discover, so AirPlay volume mapping and
+    playback remain unverified
+  - The LuCI page itself was not opened in a logged-in browser session; only its static assets were fetched over HTTP
+  - Device-side performance (CPU, RSS, network, playback interruption) not measured
+  - `--rollback` has never been rehearsed on a router, and upgrade-preserves-settings is unverified
+- Local development does not replace existing router services. The first switchover has now been
+  done end to end: backup, disable the old instance, migrate the configuration, remove the old
+  packages, start the new service, verify. **Measured corrections:** the conflict check only guards
+  the RPC path (the init script does not check it), and removing the old packages also stops the new
+  service, which then has to be started again.
+- See [Old Instance Migration Guide (Chinese)](docs/MIGRATION.zh-CN.md) for detection,
+  configuration mapping, disabling, removal and rollback. The full record of the first on-device run,
+  including four places where the documentation did not match reality, is in its "首次执行记录" section.
 
 ## Three-Layer Architecture
 
 | Layer | Responsibility | Status | Pending |
 |-------|----------------|--------|---------|
-| `airconnect-engine` | Official airupnp/aircast binaries, version & source tracking | Implemented with host tests | Only recipe static checks (`tests/engine/check-recipe.sh`); not built via SDK, 95 MB upstream archive not fully downloaded |
-| `airconnect-manager` | UCI validation, atomic XML generation, procd, restricted diagnostic RPC | Implemented with host tests | Real rpcd registration, procd/netifd response shapes, real SSDP discovery, init script behavior on device not verified |
-| `luci-app-airconnect-manager` | shadcn-style static LuCI pages, devices & common settings priority | Implemented, unverified on real devices | Only `rules.js` has host tests; pages only checked under `dev/` mock backend, not loaded in real LuCI with rpcd/UCI |
+| `airconnect-engine` | Official airupnp/aircast binaries, version & source tracking | Implemented, SDK-built and installed on a device | Only `aarch64` is built; `x86_64` not built or run |
+| `airconnect-manager` | UCI validation, atomic XML generation, procd, restricted diagnostic RPC | Implemented, SDK-built, installed on a device, switchover complete | The procd instance shape, the init script's start path and the RPC recovery after removing the old packages are all verified on real hardware; a scan completes but the segment holds no discoverable speaker, so real speaker discovery and playback are not |
+| `luci-app-airconnect-manager` | shadcn-style static LuCI pages, devices & common settings priority | Implemented, SDK-built and installed on a device | Static assets are served and the menu/ACL JSON is valid; the page has not been opened in a logged-in browser session |
 | `tests/` | Host tests & static checks | Implemented with host tests | Never run on CI: workflow written but never triggered |
 
 Status determined by files in repository: layers without corresponding code or tests marked as not implemented. Build and device acceptance results in [Verification Record (Chinese)](docs/VERIFICATION.zh-CN.md).
@@ -62,7 +75,7 @@ Future CI must fix SDK and Action versions, documenting actually verified archit
 bash scripts/run-tests.sh
 ```
 
-All 11 test suites should pass with 2465 assertions.
+All 18 test suites should pass.
 
 ## Documentation
 
