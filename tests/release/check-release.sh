@@ -389,6 +389,39 @@ if [ -f "$local_script" ]; then
 		no 'the local script fails when no APK was produced' 'no emptiness guard'
 	fi
 
+	# libopenssl's afalg and devcrypto engines pull in kernel/linux/compile,
+	# which with CONFIG_ALL_KMODS=y cross-builds every kernel module for the
+	# target. Both scripts must turn them off, exactly like scripts/build-sdk.sh,
+	# or the build OOMs on a dependency that has nothing to do with this project.
+	for symbol in CONFIG_PACKAGE_libopenssl-afalg CONFIG_PACKAGE_libopenssl-devcrypto; do
+		if grep -q "$symbol" "$local_script" &&
+			grep -q "$symbol" .github/workflows/release.yml; then
+			ok "both build scripts unset $symbol"
+		else
+			no "both build scripts unset $symbol" 'one of them can build every kernel module'
+		fi
+	done
+
+	# The package copy must refresh mtimes. The scanner skips a Makefile that is
+	# not newer than its last scan stamp, and the CI cache restores tmp/ with
+	# that stamp -- with `cp -a` a package silently disappears from defconfig.
+	if grep -Eq '^[[:space:]]*cp -a ' "$local_script" ||
+		sed -n '/Link the packages into the SDK/,/Fetch the upstream/p' .github/workflows/release.yml |
+			grep -Eq '^[[:space:]]*cp -a '; then
+		no 'the package copy refreshes mtimes' 'cp -a keeps the checkout mtime; the scanner then skips the package'
+	else
+		ok 'the package copy refreshes mtimes'
+	fi
+
+	# A dropped CONFIG_PACKAGE_* symbol must fail the run by name, not surface
+	# later as "no APK" or "No rule to make target".
+	if grep -q 'dropped required symbol' "$local_script" &&
+		grep -q 'dropped required symbol' .github/workflows/release.yml; then
+		ok 'both build scripts fail on a dropped CONFIG symbol'
+	else
+		no 'both build scripts fail on a dropped CONFIG symbol' 'silent drop is still possible'
+	fi
+
 	# It must be shellcheck-clean bash, or a typo only shows up mid-build.
 	if command -v shellcheck >/dev/null 2>&1; then
 		if shellcheck -S warning "$local_script" >/dev/null 2>&1; then

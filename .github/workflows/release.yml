@@ -155,11 +155,21 @@ jobs:
         # Copied, not symlinked: the SDK's package scanner follows real paths,
         # and a symlink into the workspace makes the build depend on the
         # checkout layout.
+        #
+        # `cp -r`, not `cp -a`: the scanner re-reads a package only when its
+        # Makefile is newer than the stamp left by the previous scan. The SDK is
+        # restored from the action cache, which includes tmp/, so that stamp can
+        # be newer than a checkout that has not changed in a while. `cp -a`
+        # preserves the checkout's mtimes, the package is treated as already
+        # scanned, it never reaches tmp/.packageinfo, and `make defconfig`
+        # silently drops its CONFIG_PACKAGE_* symbol -- the build then reports
+        # no APK without naming the package. `cp -r` refreshes the mtime and
+        # still copies the mode bits.
         run: |
           set -eu
           for p in airconnect-engine airconnect-manager luci-app-airconnect-manager; do
             rm -rf ~/sdk/package/"$p"
-            cp -a "$GITHUB_WORKSPACE/packages/$p" ~/sdk/package/"$p"
+            cp -r "$GITHUB_WORKSPACE/packages/$p" ~/sdk/package/"$p"
           done
 
       - name: Fetch the upstream engine archive
@@ -187,7 +197,32 @@ jobs:
           CONFIG_PACKAGE_luci-app-airconnect-manager=m
           CONFIG_LIBCURL_OPENSSL=y
           EOF
+          # libopenssl's afalg and devcrypto engines make libopenssl depend on
+          # kernel/linux/compile; with the SDK's CONFIG_ALL_KMODS=y that builds
+          # every kernel module for the target and is what OOM'd the earlier
+          # build (docs/VERIFICATION.zh-CN.md). Nothing here uses either engine.
+          for symbol in CONFIG_PACKAGE_libopenssl-afalg CONFIG_PACKAGE_libopenssl-devcrypto; do
+            if grep -q "^${symbol}=" .config; then
+              sed "s|^${symbol}=.*|# ${symbol} is not set|" .config > .config.tmp
+              mv .config.tmp .config
+            elif ! grep -q "^# ${symbol} is not set$" .config; then
+              printf '# %s is not set\n' "${symbol}" >> .config
+            fi
+          done
           make defconfig
+          # A symbol defconfig drops means the SDK could not see the package.
+          # Fail here, naming it, instead of at "No rule to make target".
+          dropped=''
+          for symbol in CONFIG_PACKAGE_airconnect-engine=m \
+            CONFIG_PACKAGE_airconnect-manager=m \
+            CONFIG_PACKAGE_luci-app-airconnect-manager=m; do
+            grep -qx "$symbol" .config || dropped="$dropped $symbol"
+          done
+          grep -qx 'CONFIG_LIBCURL_OPENSSL=y' .config || dropped="$dropped CONFIG_LIBCURL_OPENSSL=y"
+          if [ -n "$dropped" ]; then
+            echo "make defconfig dropped required symbol(s):$dropped" >&2
+            exit 1
+          fi
 
       - name: Build
         # V=s so a failure shows the real error instead of the last few lines of

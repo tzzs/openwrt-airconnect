@@ -156,11 +156,20 @@ log 'installing feeds'
 # Copied rather than symlinked: the SDK's package scanner follows real paths,
 # and a symlink into the working tree makes the build depend on the checkout
 # layout instead of on the files.
+#
+# `cp -r`, not `cp -a`: the scanner decides whether to re-read a package by
+# comparing the Makefile's mtime with the stamp it wrote on the last scan. A
+# checkout can easily be older than that stamp, and `cp -a` preserves the old
+# mtime -- so a package added or changed since the last scan is treated as
+# already scanned, never appears in tmp/.packageinfo, and `make defconfig`
+# silently drops its CONFIG_PACKAGE_* symbol. The build then reports "no APK
+# was produced" without naming the package. `cp -r` refreshes the mtime while
+# still copying the mode bits (the init script stays executable).
 log 'linking the packages into the SDK'
 for pkg in airconnect-engine airconnect-manager luci-app-airconnect-manager; do
 	[ -d "${root}/packages/${pkg}" ] || die "missing packages/${pkg}"
 	rm -rf "${SDK_DIR}/package/${pkg}"
-	cp -a "${root}/packages/${pkg}" "${SDK_DIR}/package/${pkg}"
+	cp -r "${root}/packages/${pkg}" "${SDK_DIR}/package/${pkg}"
 done
 
 # --- upstream archive ------------------------------------------------------
@@ -189,7 +198,37 @@ CONFIG_PACKAGE_airconnect-manager=m
 CONFIG_PACKAGE_luci-app-airconnect-manager=m
 CONFIG_LIBCURL_OPENSSL=y
 EOF
+
+# libopenssl's optional afalg and devcrypto engines each make libopenssl depend
+# on kernel/linux/compile, which with the SDK's CONFIG_ALL_KMODS=y cross-builds
+# the target's entire kernel module set -- the OOM recorded in
+# docs/VERIFICATION.zh-CN.md. Nothing here uses either engine, so turn them off
+# in the form Kconfig writes them, so `make defconfig` keeps them off instead of
+# re-enabling a default.
+for symbol in CONFIG_PACKAGE_libopenssl-afalg CONFIG_PACKAGE_libopenssl-devcrypto; do
+	if grep -q "^${symbol}=" .config; then
+		sed "s|^${symbol}=.*|# ${symbol} is not set|" .config > .config.tmp
+		mv .config.tmp .config
+	elif ! grep -q "^# ${symbol} is not set$" .config; then
+		printf '# %s is not set\n' "${symbol}" >> .config
+	fi
+done
+
 make defconfig
+
+# A symbol that does not survive defconfig means the SDK cannot see the package
+# (usually a missing feed or an unresolved DEPENDS). Failing here names the
+# symbol instead of letting the build stop later at "No rule to make target".
+dropped=''
+for symbol in CONFIG_PACKAGE_airconnect-engine=m \
+	CONFIG_PACKAGE_airconnect-manager=m \
+	CONFIG_PACKAGE_luci-app-airconnect-manager=m; do
+	grep -qx "${symbol}" .config || dropped="${dropped} ${symbol}"
+done
+grep -qx 'CONFIG_LIBCURL_OPENSSL=y' .config || dropped="${dropped} CONFIG_LIBCURL_OPENSSL=y"
+if [ -n "${dropped}" ]; then
+	die "make defconfig dropped required symbol(s):${dropped} -- the SDK cannot see those packages; check the feeds"
+fi
 
 # --- build -----------------------------------------------------------------
 
