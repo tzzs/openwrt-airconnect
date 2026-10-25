@@ -143,10 +143,15 @@ case "$cmd" in
 		;;
 	show)
 		[ -f "$cfg" ] || exit 1
-		# `uci show` prints the section line first, then its options; the
-		# migration reads the section line to learn the section name.
-		printf "airconnect.%s=airconnect\n" "$(legacy_section_name)"
-		sed -n "s/^[[:space:]]*option[[:space:]][[:space:]]*\([A-Za-z0-9_]*\)[[:space:]][[:space:]]*'\(.*\)'[[:space:]]*\$/${1:-airconnect}.$(legacy_section_name).\1='\2'/p" "$cfg"
+		# Real uci prints the section line first, then one line per option, and
+		# both `uci show airconnect` and `uci show airconnect.<section>` spell
+		# every line `airconnect.<section>.<key>`. The prefix is the package
+		# plus the name the file declares, never the argument repeated: reusing
+		# "$1" here produced airconnect.main.main.<key> for the section-scoped
+		# form, which no real device ever prints.
+		show_prefix="airconnect.$(legacy_section_name)"
+		printf '%s=airconnect\n' "${show_prefix}"
+		sed -n "s|^[[:space:]]*option[[:space:]][[:space:]]*\([A-Za-z0-9_]*\)[[:space:]][[:space:]]*'\(.*\)'[[:space:]]*\$|${show_prefix}.\1='\2'|p" "$cfg"
 		exit 0
 		;;
 esac
@@ -392,6 +397,45 @@ if [ -d "${SB}/etc/airconnect-manager-backup" ]; then
 else
 	ok '--dry-run creates no backup directory'
 fi
+
+# --- (2e) keys with no equivalent are reported, never silently dropped -----
+
+# The mapping loop can only speak about the keys it knows, so any other option
+# used to vanish from the report entirely. A real device migrating
+# `stream_type broadcast` -- read only by the upstream Sonos path -- got a
+# report that read as lossless while the value was being dropped. The report is
+# the only thing the operator has to decide with, so leftovers must be named.
+section 'a key with no airconnect-manager equivalent is reported as skipped'
+make_sandbox leftover
+printf "\toption stream_type 'broadcast'\n" >> "${SB}/etc/config/airconnect"
+output=$(run_script "${SB}" --dry-run)
+status=$?
+check 'the leftover-key fixture exits 0' "${status}"
+for expected in \
+	'airconnect.main.stream_type=broadcast -> skipped (no equivalent option in airconnect-manager; not carried over)' \
+	'airconnect.main.name=Demo Speaker -> skipped (no equivalent option in airconnect-manager; not carried over)' \
+	'airconnect.main.address=192.0.2.10 -> skipped (no equivalent option in airconnect-manager; not carried over)'
+do
+	if printf '%s' "${output}" | grep -Fq -- "${expected}"; then
+		ok "leftover line: ${expected}"
+	else
+		no "leftover line: ${expected}" 'missing'
+	fi
+done
+if printf '%s' "${output}" | grep -q 'review each one before'; then
+	ok 'the leftover keys come with a review note'
+else
+	no 'the leftover keys come with a review note' 'no note'
+fi
+# A known key must not be reported twice: once by its own branch and once by
+# the leftover sweep, which would read as if two options were being dropped.
+if printf '%s' "${output}" | grep -q 'main.iface=br-lan -> skipped'; then
+	no 'a handled key is not reported as a leftover' 'iface was swept up'
+else
+	ok 'a handled key is not reported as a leftover'
+fi
+
+# --- (2f) --dry-run reports the mode --apply would use ---------------------
 
 section '--dry-run reports the mode --apply would use'
 make_sandbox drymode

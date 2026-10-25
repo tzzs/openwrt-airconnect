@@ -43,7 +43,11 @@ RFC 5737 addresses (`192.0.2.x`), and a `demo/airconnect` image.
 2. **`--dry-run` prints the mapping and modifies nothing.** Every mapped and
    skipped value is asserted by its exact `old-key=value -> ...` line, including
    the alternate legacy spellings (`iface`, `binding`, `upnp`, `cast`) and the
-   `(absent)` defaults.
+   `(absent)` defaults. A legacy key with no `airconnect-manager` equivalent --
+   a real device's `stream_type`, or the fixture's `name`/`address` -- must be
+   named as skipped, because the report is the only thing the operator has to
+   decide with; and a key the script does handle must not be swept up into that
+   list a second time.
 3. **`--apply`.** The generated main section is compared key by key, the device
    section must be keyed by the UDN with the legacy volume limit and must
    contain no speaker name or address, exactly one backup directory must exist

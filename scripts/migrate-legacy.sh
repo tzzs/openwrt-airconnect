@@ -566,6 +566,36 @@ EOF
 	if [ -n "${MAPPED_UDN}" ] && [ "${MAPPED_DEVICE}" != '1' ]; then
 		say 'device section: skipped (a UDN alone needs no override; no per-device volume limit was found)'
 	fi
+
+	# Report every key this script does not know how to carry over.
+	#
+	# The loop above can only speak about the keys it knows, so an option with
+	# no airconnect-manager equivalent used to vanish from the report entirely:
+	# a legacy file with `stream_type broadcast` (read only by the upstream
+	# Sonos path) produced a report that read as lossless while the setting was
+	# being dropped. Naming the leftovers is what makes the report honest; it
+	# changes nothing about what --apply writes.
+	mk_handled=' enabled interface iface binding upnp airupnp aircast cast udn max_volume volume_limit volume '
+	mk_leftover='0'
+	while IFS= read -r mk_line; do
+		[ -n "${mk_line}" ] || continue
+		mk_rest=${mk_line#airconnect.${LEGACY_SECTION}.}
+		[ "${mk_rest}" != "${mk_line}" ] || continue
+		mk_key=${mk_rest%%=*}
+		[ -n "${mk_key}" ] || continue
+		case "${mk_handled}" in
+			*" ${mk_key} "*) continue ;;
+		esac
+		mk_value=$(uci_get "airconnect.${LEGACY_SECTION}.${mk_key}") || mk_value=''
+		mk_leftover='1'
+		say "airconnect.${LEGACY_SECTION}.${mk_key}=${mk_value} -> skipped (no equivalent option in airconnect-manager; not carried over)"
+	done <<EOF
+$(uci -q show "airconnect.${LEGACY_SECTION}" 2>/dev/null)
+EOF
+	if [ "${mk_leftover}" = '1' ]; then
+		say '  note: the skipped keys above stay in the legacy file only; review each one before'
+		say '        starting the new service, because the engines will use their own defaults.'
+	fi
 }
 
 # The exact values that --apply writes. Printed by both modes, so a dry run is
@@ -807,13 +837,29 @@ next_steps() {
 		say '  2. remove the old AirConnect package (this script never removes packages):'
 		say '       opkg list-installed | grep -i airconnect     # 24.10 / IPK'
 		say '       apk list --installed | grep -i airconnect    # 25.12 / APK'
-		say '     The airconnect.manager backend refuses start while old binaries or a'
-		say '     legacy service are still present, so remove the package before starting.'
+		say '     Remove the names that listing prints, with the package manager that'
+		say '     printed them (docs/MIGRATION.zh-CN.md has the exact commands).'
+		# Measured on a real device: the conflict check guards the RPC actions
+		# (the ones a LuCI page sends), not the init script. Saying "the backend
+		# refuses start" without that distinction leads an operator to start the
+		# service by hand and end up with a running service that LuCI reports as
+		# conflicting and can never restart.
+		say '     Remove it before starting: while a legacy binary or service is present the'
+		say '     backend reports a conflict and refuses the start/restart actions sent over'
+		say '     RPC. The init script does not check this, so starting by hand succeeds and'
+		say '     leaves a service that LuCI can only report as conflicting, never restart.'
 	else
 		say '  2. the stopped container is kept; remove it only after the new setup works'
 	fi
-	say '  3. start the new service:'
-	say '       /etc/init.d/airconnect-manager enable'
+	# Do not tell the operator to `enable` the init script: OpenWrt's
+	# default_postinst already links /etc/rc.d/S95airconnect-manager the moment
+	# the package is installed, so `enable` is a no-op that hides the fact that
+	# the real opt-in is the UCI option. The init script is deliberately written
+	# to publish no procd instance while main.enabled is 0.
+	say '  3. opt in and start the new service (the init script is already linked into'
+	say '     /etc/rc.d at install time; the UCI option below is the opt-in):'
+	say "       uci set airconnect-manager.main.enabled='1'"
+	say '       uci commit airconnect-manager'
 	say '       /etc/init.d/airconnect-manager start'
 	say '  4. verify discovery, the iOS AirPlay menu and one played track (docs/MIGRATION.zh-CN.md)'
 	say "  5. keep ${BK_DIR} until the new setup has been stable for the documented retention period"
