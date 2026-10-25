@@ -28,8 +28,11 @@ define Package/airconnect-manager/description
   upstream AirConnect engines. Persistent settings live in a single UCI file,
   the engine XML under /var/etc is regenerated from it, and one procd instance
   is registered per enabled engine. The engine binaries themselves are shipped
-  by airconnect-engine. Installing this package never starts broadcasting: the
-  service is disabled by default and must be enabled explicitly.
+  by airconnect-engine. Installing this package never starts broadcasting. The
+  init script is enabled at boot by OpenWrt's default_postinst, but start_service
+  publishes no procd instance while the UCI 'enabled' option is 0, which is the
+  shipped default. Opting in is setting that option to 1, not enabling the init
+  script.
 endef
 
 define Package/airconnect-manager/conffiles

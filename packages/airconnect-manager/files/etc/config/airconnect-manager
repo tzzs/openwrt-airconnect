@@ -10,6 +10,11 @@
 #
 # enabled is 0 on purpose: a freshly installed package must not broadcast
 # AirPlay receivers on the LAN until the user opts in.
+#
+# Note that OpenWrt's default_postinst enables the init script at install time,
+# so /etc/rc.d already has S95airconnect-manager. That is not the opt-in: the
+# init script runs at boot but start_service publishes no procd instance while
+# this option is 0. Set enabled to 1 to start broadcasting.
 
 config main 'main'
 	option enabled '0'

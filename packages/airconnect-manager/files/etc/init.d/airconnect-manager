@@ -139,9 +139,12 @@ start_service() {
 	load_config
 
 	if [ "${ENABLED}" != 1 ]; then
-		# Disabled by the user. Publishing no instance stops a previously
-		# started engine, which is exactly what disabling must do. Nothing
-		# alarming is logged: this is the documented default after install.
+		# The UCI option is the opt-in, and it is 0 in the shipped config. The
+		# init script is enabled at boot by OpenWrt's default_postinst, so this
+		# function does run at boot -- but publishing no instance is what keeps a
+		# freshly installed package from broadcasting. It also stops a
+		# previously started engine, which is exactly what disabling must do.
+		# Nothing alarming is logged: this is the documented default.
 		return 0
 	fi
 	if [ "${AIRUPNP}" != 1 ] && [ "${AIRCAST}" != 1 ]; then
