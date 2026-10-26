@@ -1,0 +1,603 @@
+# Chinese translations for luci-app-airconnect-manager package.
+# Copyright (C) 2026 THE luci-app-airconnect-manager'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the luci-app-airconnect-manager package.
+# Automatically generated, 2026.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: luci-app-airconnect-manager 0.1.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-10-24 01:14+0800\n"
+"PO-Revision-Date: 2026-10-24 01:14+0800\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: none\n"
+"Language: zh_Hans\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:19
+#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:22
+#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:24
+msgid "Not provided"
+msgstr "未提供"
+
+#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:53
+msgid "Audio format"
+msgstr "音频格式"
+
+#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:53
+msgid "FLAC can use more CPU. Choose a format supported by your speaker."
+msgstr "FLAC 可能占用更多 CPU。请选择音箱支持的格式。"
+
+#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:54
+#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:69
+#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:82
+msgid "Inherit global setting"
+msgstr "继承全局设置"
+
+#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:70
+msgid "On (1)"
+msgstr "开启（1）"
+
+#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:70
+msgid "Off (0)"
+msgstr "关闭（0）"
+
+#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:80
+msgid "HTTP transfer mode (UPnP only)"
+msgstr "HTTP 传输模式（仅 UPnP）"
+
+#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:81
+msgid ""
+"Compatibility only. Change this when a UPnP speaker cannot play at all; the "
+"default works for most devices."
+msgstr "仅用于兼容性。当 UPnP 音箱完全无法播放时再修改此项；默认值适用于大多数设备。"
+
+#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:83
+msgid "-1: no content-length (default)"
+msgstr "-1：无 content-length（默认）"
+
+#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:84
+msgid "-3: chunked encoding"
+msgstr "-3：分块传输"
+
+#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:85
+msgid "0: fixed dummy length"
+msgstr "0：固定的虚拟长度"
+
+#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:93
+msgid "UPnP search version (UPnP only)"
+msgstr "UPnP 搜索版本（仅 UPnP）"
+
+#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:94
+msgid ""
+"Highest UPnP MediaRenderer version to search. The Chromecast engine ignores "
+"this."
+msgstr "要搜索的最高 UPnP MediaRenderer 版本。Chromecast 引擎会忽略此项。"
+
+#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:116
+msgid "Unsaved changes"
+msgstr "未保存的更改"
+
+#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:131
+msgid "General settings"
+msgstr "常规设置"
+
+#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:133
+msgid "Enable AirConnect"
+msgstr "启用 AirConnect"
+
+#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:133
+msgid ""
+"Changes take effect after Save & Apply. Applying briefly disconnects AirPlay."
+msgstr "保存并应用后更改才会生效。应用配置时 AirPlay 会短暂断开。"
+
+#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:135
+msgid "LAN interface"
+msgstr "局域网接口"
+
+#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:135
+msgid "Bind discovery and AirPlay to your local network interface."
+msgstr "将发现和 AirPlay 绑定到本地网络接口。"
+
+#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:138
+msgid "UPnP / DLNA speakers"
+msgstr "UPnP / DLNA 音箱"
+
+#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:139
+msgid "Chromecast speakers"
+msgstr "Chromecast 音箱"
+
+#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:140
+msgid "UPnP volume limit"
+msgstr "UPnP 音量上限"
+
+#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:140
+msgid "Default maximum volume, from 1 to 100."
+msgstr "默认最大音量，范围为 1 到 100。"
+
+#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:142
+msgid "Chromecast media volume"
+msgstr "Chromecast 媒体音量"
+
+#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:142
+msgid "Default media volume, from 0 to 1. This is not a volume limit."
+msgstr "默认媒体音量，范围为 0 到 1。这不是音量上限。"
+
+#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:147
+#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:183
+msgid "Buffer and latency"
+msgstr "缓冲与延迟"
+
+#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:147
+msgid "Format: 1000:2000. Lower values may cause audio dropouts."
+msgstr "格式：1000:2000。数值过低可能导致音频断续。"
+
+#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:150
+#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:187
+msgid "Send track information"
+msgstr "发送曲目信息"
+
+#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:150
+msgid ""
+"Sends the title and artist to the speaker. Both engines read this. A speaker "
+"may still show nothing."
+msgstr "将标题和艺术家发送给音箱。两个引擎都会读取此项，但音箱仍可能不显示。"
+
+#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:151
+#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:188
+msgid "Cover art URL"
+msgstr "封面图片 URL"
+
+#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:151
+msgid ""
+"Optional http:// or https:// image the speaker fetches itself. Leave empty "
+"for none. The router never downloads it."
+msgstr "可选的 http:// 或 https:// 图片地址，由音箱自行获取。留空表示不使用。路由器不会下载图片。"
+
+#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:153
+#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:190
+msgid "Handle FLUSH"
+msgstr "处理 FLUSH"
+
+#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:153
+msgid ""
+"Compatibility option, both engines. Turning it off can change pause and "
+"track-change behaviour, so keep it on unless a speaker misbehaves."
+msgstr "两个引擎都适用的兼容性选项。关闭后可能改变暂停和切歌行为，除非音箱表现异常，否则请保持开启。"
+
+#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:154
+#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:191
+msgid "Let the timing reference drift"
+msgstr "允许时序参考漂移"
+
+#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:154
+msgid ""
+"Both engines. Off adjusts timing by adding or dropping a frame, which can be "
+"audible as a click; on avoids the click but risks underruns."
+msgstr "两个引擎都适用。关闭时通过增加或丢弃帧来调整时序，可能听到咔嗒声；开启可避免咔嗒声，但可能发生欠载。"
+
+#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:158
+msgid "Stop the receiver (Chromecast only)"
+msgstr "停止接收器（仅 Chromecast）"
+
+#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:158
+msgid "Chromecast compatibility option. The UPnP engine ignores this."
+msgstr "Chromecast 兼容性选项。UPnP 引擎会忽略此项。"
+
+#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:159
+msgid "Log detail"
+msgstr "日志详细程度"
+
+#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:164
+msgid "Advanced settings"
+msgstr "高级设置"
+
+#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:170
+msgid "Enable bridging"
+msgstr "启用桥接"
+
+#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:171
+msgid "AirPlay name"
+msgstr "AirPlay 名称"
+
+#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:171
+msgid ""
+"Changes only the virtual AirPlay receiver name. Leave empty to use the "
+"original name."
+msgstr "只修改虚拟 AirPlay 接收器名称。留空则使用原名称。"
+
+#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:172
+#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:317
+msgid "Original name"
+msgstr "原名称"
+
+#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:174
+msgid "Volume limit"
+msgstr "音量上限"
+
+#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:174
+msgid "Leave empty to inherit the global UPnP limit."
+msgstr "留空以继承全局 UPnP 音量上限。"
+
+#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:177
+msgid "Media volume"
+msgstr "媒体音量"
+
+#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:177
+msgid "Leave empty to inherit the global Chromecast volume."
+msgstr "留空以继承全局 Chromecast 音量。"
+
+#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:183
+#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:187
+#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:188
+#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:190
+#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:191
+#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:196
+msgid "Leave empty to inherit the global setting."
+msgstr "留空以继承全局设置。"
+
+#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:189
+msgid "No cover art"
+msgstr "无封面图片"
+
+#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:196
+msgid "Stop the receiver"
+msgstr "停止接收器"
+
+#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:203
+msgid "Advanced audio settings"
+msgstr "高级音频设置"
+
+#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:266
+msgid "More than one speaker uses the same AirPlay name."
+msgstr "多个音箱使用了相同的 AirPlay 名称。"
+
+#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:268
+msgid ""
+"AirPlay lists these receivers under one name. Give each speaker its own name."
+msgstr "AirPlay 会将这些接收器显示为同一个名称。请为每个音箱设置独立名称。"
+
+#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:280
+msgid "Device information"
+msgstr "设备信息"
+
+#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:294
+msgid "Configure speaker"
+msgstr "配置音箱"
+
+#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:295
+msgid ""
+"Discovered on your network. Configure this speaker to override its AirPlay "
+"name and volume."
+msgstr "已在网络中发现。配置此音箱可以覆盖其 AirPlay 名称和音量。"
+
+#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:303
+msgid "Discovered"
+msgstr "已发现"
+
+#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:303
+msgid "Not currently discovered"
+msgstr "当前未发现"
+
+#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:303
+msgid "Discovery unknown"
+msgstr "发现状态未知"
+
+#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:309
+msgid "AirPlay advertised"
+msgstr "已广播 AirPlay"
+
+#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:311
+msgid "No AirPlay advertisement"
+msgstr "没有 AirPlay 广播"
+
+#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:313
+msgid "AirPlay broadcast unknown"
+msgstr "AirPlay 广播未知"
+
+#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:317
+msgid "IP address"
+msgstr "IP 地址"
+
+#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:317
+msgid "Model"
+msgstr "型号"
+
+#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:318
+msgid "Manufacturer"
+msgstr "制造商"
+
+#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:318
+msgid "Device identifier (UDN)"
+msgstr "设备标识符（UDN）"
+
+#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:319
+msgid "Last discovered"
+msgstr "最后发现时间"
+
+#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:321
+msgid "AirPlay broadcast"
+msgstr "AirPlay 广播"
+
+#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:322
+msgid "Yes"
+msgstr "是"
+
+#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:322
+#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:324
+#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:337
+#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:339
+msgid "observed"
+msgstr "已观测"
+
+#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:324
+msgid "No"
+msgstr "否"
+
+#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:325
+msgid "Unknown — not measured"
+msgstr "未知 — 尚未测量"
+
+#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:337
+msgid "Yes — an AirPlay receiver is advertised"
+msgstr "是 — 已广播 AirPlay 接收器"
+
+#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:339
+msgid "No — the scan found no advertisement"
+msgstr "否 — 扫描未发现广播"
+
+#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:342
+msgid "Last attempt:"
+msgstr "上次尝试："
+
+#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:343
+msgid ""
+"Unknown — no completed mDNS observation. This needs the engine running and "
+"its receiver advertised on this LAN."
+msgstr "未知 — 没有完成的 mDNS 观测。这需要引擎运行，并在此局域网中广播接收器。"
+
+#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:351
+msgid "Playing"
+msgstr "播放中"
+
+#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:353
+msgid "Not playing"
+msgstr "未播放"
+
+#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:354
+msgid ""
+"Unknown — the engines expose no documented playback status, so this is never "
+"inferred from the broadcast state."
+msgstr "未知 — 引擎没有文档化的播放状态，因此不会根据广播状态推断。"
+
+#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:366
+msgid "Disabled"
+msgstr "已禁用"
+
+#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:366
+msgid "Running"
+msgstr "运行中"
+
+#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:366
+msgid "Stopped"
+msgstr "已停止"
+
+#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:366
+msgid "Unknown"
+msgstr "未知"
+
+#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:369
+msgid "Service running does not confirm AirPlay availability or playback."
+msgstr "服务运行不代表 AirPlay 可用或正在播放。"
+
+#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:372
+msgid "Another AirConnect instance was detected."
+msgstr "检测到另一个 AirConnect 实例。"
+
+#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:372
+msgid "Stop the existing instance before starting these engines."
+msgstr "启动这些引擎前请先停止现有实例。"
+
+#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:395
+msgid "Scanning…"
+msgstr "扫描中…"
+
+#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:395
+#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:440
+msgid "Scan for speakers"
+msgstr "扫描音箱"
+
+#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:396
+msgid "Scan failed: "
+msgstr "扫描失败："
+
+#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:396
+msgid "Discovery is in progress."
+msgstr "正在发现设备。"
+
+#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:396
+msgid "Last scan: "
+msgstr "上次扫描："
+
+#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:396
+msgid "No scan has been completed."
+msgstr "尚未完成扫描。"
+
+#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:403
+msgid "Interface"
+msgstr "接口"
+
+#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:404
+msgid "Manager version"
+msgstr "管理器版本"
+
+#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:405
+msgid "AirPlay broadcast (UPnP)"
+msgstr "AirPlay 广播（UPnP）"
+
+#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:406
+msgid "AirPlay broadcast (Chromecast)"
+msgstr "AirPlay 广播（Chromecast）"
+
+#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:407
+msgid "Playback"
+msgstr "播放"
+
+#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:418
+msgid "Status unavailable. Displayed information may be stale. "
+msgstr "状态不可用。显示的信息可能已过期。"
+
+#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:425
+msgid "Could not start discovery."
+msgstr "无法开始发现。"
+
+#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:426
+msgid "Discovery requested. Results will update automatically."
+msgstr "已请求发现。结果会自动更新。"
+
+#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:434
+msgid "No unsaved changes"
+msgstr "没有未保存的更改"
+
+#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:442
+msgid "Find your speakers"
+msgstr "查找你的音箱"
+
+#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:442
+msgid ""
+"Turn on a discovery engine in Settings, then scan. Keep your speaker online "
+"on the same LAN and enable DLNA when required."
+msgstr "先在“设置”中启用发现引擎，再进行扫描。请保持音箱在线并与路由器处于同一局域网；必要时启用 DLNA。"
+
+#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:446
+#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:474
+msgid "Speakers"
+msgstr "音箱"
+
+#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:446
+msgid "Set the AirPlay name and volume for each speaker."
+msgstr "为每个音箱设置 AirPlay 名称和音量。"
+
+#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:448
+msgid "Loading settings…"
+msgstr "正在加载设置…"
+
+#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:449
+#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:474
+msgid "Settings"
+msgstr "设置"
+
+#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:449
+msgid "Global defaults apply unless a speaker has its own override."
+msgstr "除非音箱有单独覆盖值，否则使用全局默认值。"
+
+#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:450
+msgid "Recent AirConnect logs"
+msgstr "最近的 AirConnect 日志"
+
+#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:450
+msgid "Logs are loaded only when requested."
+msgstr "仅在请求时加载日志。"
+
+#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:453
+msgid "The log response was invalid."
+msgstr "日志响应无效。"
+
+#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:454
+msgid "Older log lines were omitted."
+msgstr "较早的日志行已省略。"
+
+#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:454
+msgid "No log entries."
+msgstr "没有日志条目。"
+
+#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:456
+msgid "Load recent logs"
+msgstr "加载最近日志"
+
+#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:458
+msgid "Start service"
+msgstr "启动服务"
+
+#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:458
+msgid "Stop service"
+msgstr "停止服务"
+
+#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:458
+msgid "Restart service"
+msgstr "重启服务"
+
+#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:461
+msgid "Service action failed."
+msgstr "服务操作失败。"
+
+#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:462
+msgid "Service request accepted. Check the reported service status."
+msgstr "服务请求已接受。请检查报告的服务状态。"
+
+#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:469
+#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:474
+msgid "Diagnostics"
+msgstr "诊断"
+
+#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:469
+msgid ""
+"Service actions use the last applied settings. Stopping or restarting "
+"briefly disconnects AirPlay."
+msgstr "服务操作使用最近一次应用的设置。停止或重启服务会使 AirPlay 短暂断开。"
+
+#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:471
+msgid "Recent logs"
+msgstr "最近日志"
+
+#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:473
+msgid "AirConnect pages"
+msgstr "AirConnect 页面"
+
+#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:488
+msgid "Bring your network speakers to AirPlay."
+msgstr "将网络音箱接入 AirPlay。"
+
+#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:489
+msgid "Service status"
+msgstr "服务状态"
+
+#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:491
+msgid ""
+"Save keeps changes pending. Save & Apply validates settings and briefly "
+"disconnects AirPlay while applying."
+msgstr "保存会保留待应用的更改。保存并应用会校验设置，并在应用期间使 AirPlay 短暂断开。"
+
+#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:495
+msgid "Could not load status. "
+msgstr "无法加载状态。"
+
+#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:502
+msgid "Validating…"
+msgstr "正在校验…"
+
+#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:510
+msgid "Configuration validation failed."
+msgstr "配置校验失败。"
+
+#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:513
+msgid "Saved; pending apply"
+msgstr "已保存；等待应用"
+
+#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:516
+msgid "Not saved — check settings"
+msgstr "未保存 — 请检查设置"
+
+#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:523
+msgid "Applying…"
+msgstr "正在应用…"
+
+#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:527
+msgid "Apply requested — check LuCI confirmation"
+msgstr "已请求应用 — 请检查 LuCI 确认信息"
+
+#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:529
+msgid "Apply failed — changes remain pending"
+msgstr "应用失败 — 更改仍处于待应用状态"

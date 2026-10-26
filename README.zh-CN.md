@@ -15,14 +15,14 @@
 ## 当前状态
 
 - ✅ 已迁入界面、设备管理、原生能力审计和性能需求。
-- ✅ 三个包的代码都已写入仓库：
-  - `airconnect-engine`: 引擎包配方（固定官方 1.12.4 发布包及 SHA256，安装到独立的 libexec 路径，不注册服务）
-  - `airconnect-manager`: 包含 UCI 校验、原子生成 XML、procd 启动脚本和 `airconnect.manager` rpcd 后端
-  - `luci-app-airconnect-manager`: 音箱、设置、诊断三个页签的静态 LuCI 页面
-- ✅ 主机验证：`bash scripts/run-tests.sh` 的 18 个套件全部通过，命令与结果记录在 [验证记录](docs/VERIFICATION.zh-CN.md)，说明见 [测试运行与 CI](docs/TESTING.zh-CN.md)。
-- ✅ SDK 构建：三个包都用 OpenWrt SDK 25.12.6（`armsr-armv8` / `aarch64_generic`）编译出 APK。上游归档的 SHA256 与配方 `PKG_HASH` 校验一致后才进入构建，每个 APK 的文件清单都从产物容器里读回核对过。
-- ✅ 设备安装：三个 APK 已用 `apk add --allow-untrusted` 装到真实的 iStoreOS 25.12.5 / aarch64 路由器。`airconnect.manager` 在真实 rpcd 上注册成功，五个方法齐全，`status`、`validate`、`logs`、`action` 均在设备上跑过。引擎二进制在设备上可执行并报 `v1.12.4`。
-- ⚠️ CI 工作流（`.github/workflows/test.yml`）已实现，但从未执行过：没有任何一次 CI 运行结果可查。仓库目前还没有 git remote。
+- ✅ 仓库中已实现三个功能包：
+  - `airconnect-engine`：引擎包配方（固定官方 1.12.4 发布包及 SHA256，安装到独立的 libexec 路径，不注册服务）
+  - `airconnect-manager`：包含 UCI 校验、原子生成 XML、procd 启动脚本和 `airconnect.manager` rpcd 后端
+  - `luci-app-airconnect-manager`：音箱、设置、诊断三个页签的静态 LuCI 页面
+- ✅ 主机验证：`bash scripts/run-tests.sh` 的 20 个套件全部通过，命令与结果记录在 [验证记录](docs/VERIFICATION.zh-CN.md)，说明见 [测试运行与 CI](docs/TESTING.zh-CN.md)。
+- ⚙️ SDK 构建链：已配置三个功能包加上自动生成的 `luci-i18n-airconnect-manager-zh-cn` 中文翻译包，使用 OpenWrt SDK 25.12.6（`armsr-armv8` / `aarch64_generic`）构建。上游归档的 SHA256 与配方 `PKG_HASH` 校验一致后才进入构建，发布工作流已配置为生成包含全部四个 APK 的 OpenWrt 25.12 `packages.adb` 索引并发布到 GitHub Pages。当前 Pages 仓库尚未签名，仅用于测试；首次本地四包构建仍在进行中。
+- ✅ 设备安装：三个功能 APK 已用 `apk add --allow-untrusted` 装到真实的 iStoreOS 25.12.5 / aarch64 路由器。`airconnect.manager` 在真实 rpcd 上注册成功，五个方法齐全，`status`、`validate`、`logs`、`action` 均在设备上跑过。引擎二进制在设备上可执行并报 `v1.12.4`。新的中文翻译 APK 尚未在设备上安装验证。
+- ⚠️ CI 工作流（`.github/workflows/test.yml` 和 `.github/workflows/release.yml`）已实现，但尚未产生可查的运行结果。仓库已连接到 GitHub，但 Pages 尚未启用，发布工作流也尚未发布 APK 仓库。
 - ✅ 服务切换已完成（2026-10-26，第一台真实设备）：旧 `airconnect`、`luci-app-airconnect`、
   `luci-i18n-airconnect-zh-cn` 连同依赖已卸载，配置按 UCI 映射迁移，`airconnect-manager` 在运行
   且已设为开机自启，`status.conflicts` 为空，RPC 的启动/重启恢复正常。
@@ -70,7 +70,7 @@ make package/airconnect-engine/compile V=s
 bash scripts/run-tests.sh
 ```
 
-所有 18 个测试套件应该通过。
+所有 20 个测试套件应该通过。
 
 ## 文档索引
 

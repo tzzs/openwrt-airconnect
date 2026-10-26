@@ -15,14 +15,14 @@ This project uses an independent Git history and is not developed as a fork of `
 ## Current Status
 
 - ✅ Migrated UI, device management, native capability auditing, and performance requirements.
-- ✅ All three packages are implemented in the repository:
+- ✅ The three functional packages are implemented in the repository:
   - `airconnect-engine`: Engine package recipe (fixed official release 1.12.4 with SHA256, installed to independent libexec path, no service registration)
   - `airconnect-manager`: Contains UCI validation, atomic XML generation, procd startup scripts, and `airconnect.manager` rpcd backend
   - `luci-app-airconnect-manager`: Static LuCI pages with three tabs: speakers, settings, and diagnostics
-- ✅ Host verification: all 18 test suites pass via `bash scripts/run-tests.sh`. Command and results recorded in [Verification Record](docs/VERIFICATION.zh-CN.md), with details in [Testing & CI](docs/TESTING.zh-CN.md).
-- ✅ SDK build: all three packages compile to APK with OpenWrt SDK 25.12.6 (`armsr-armv8` / `aarch64_generic`). The upstream archive's SHA256 was verified against the recipe's `PKG_HASH` before the build, and each APK's file list was read back from the built container.
-- ✅ Device install: the three APKs were installed on a real iStoreOS 25.12.5 / aarch64 router with `apk add --allow-untrusted`. The `airconnect.manager` object registers on the real rpcd with all five methods, and `status`, `validate`, `logs` and `action` were exercised on the device. The engine binaries run there and report `v1.12.4`.
-- ⚠️ CI workflow (`.github/workflows/test.yml`) is implemented but never executed: no CI run results available. The repository has no git remote yet, so the workflows have never run.
+- ✅ Host verification: all 20 test suites pass via `bash scripts/run-tests.sh`. Command and results are recorded in [Verification Record](docs/VERIFICATION.zh-CN.md), with details in [Testing & CI](docs/TESTING.zh-CN.md).
+- ⚙️ SDK build path: the three functional packages plus the generated `luci-i18n-airconnect-manager-zh-cn` translation package are configured to build with OpenWrt SDK 25.12.6 (`armsr-armv8` / `aarch64_generic`). The upstream archive's SHA256 is verified against the recipe's `PKG_HASH` before the build, and the release workflow is configured to generate the OpenWrt 25.12 `packages.adb` index for all four APKs on GitHub Pages. The Pages repository is currently unsigned and intended for testing; the first local four-package build is still in progress.
+- ✅ Device install: the three functional APKs were installed on a real iStoreOS 25.12.5 / aarch64 router with `apk add --allow-untrusted`. The `airconnect.manager` object registers on the real rpcd with all five methods, and `status`, `validate`, `logs` and `action` were exercised on the device. The engine binaries run there and report `v1.12.4`. The new Chinese translation package has not yet been installed on the device.
+- ⚠️ CI workflows (`.github/workflows/test.yml` and `.github/workflows/release.yml`) are implemented but have not yet produced a recorded run. The repository is connected to GitHub, but Pages has not yet been enabled and the release workflow has not yet published an APK repository.
 - ✅ Service switchover done (2026-10-26, first real device): the legacy `airconnect`,
   `luci-app-airconnect` and `luci-i18n-airconnect-zh-cn` packages were removed together with their
   dependency chain, the configuration was mapped into UCI, and `airconnect-manager` runs and is set
@@ -75,7 +75,7 @@ Future CI must fix SDK and Action versions, documenting actually verified archit
 bash scripts/run-tests.sh
 ```
 
-All 18 test suites should pass.
+All 20 test suites should pass.
 
 ## Documentation
 

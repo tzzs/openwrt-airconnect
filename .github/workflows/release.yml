@@ -9,8 +9,9 @@ name: Release
 #                   This is the only job that writes to the repository.
 #
 #   build            Runs on the tag release-please creates. Downloads a pinned
-#                   OpenWrt SDK, builds the three packages, and attaches the
-#                   APKs to the GitHub Release.
+#                   OpenWrt SDK, builds the three functional packages plus the
+#                   generated Chinese translation package, attaches the APKs to
+#                   the GitHub Release, and publishes the APK repository to Pages.
 #
 # The build is NOT run on every push: it needs a 260 MB SDK and compiles the
 # dependency chain, which is minutes of CI time for no benefit on a branch.
@@ -36,7 +37,10 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
+  pull-requests: write
+  pages: write
+  id-token: write
 
 jobs:
   # -------------------------------------------------------------------------
@@ -140,9 +144,10 @@ jobs:
           test -d ~/sdk/scripts
 
       - name: Install the feeds
-        # The three packages need the packages feed (curl, ucode) and the luci
-        # feed (luci-base). The base feed supplies the toolchain packages the
-        # dependency chain links against.
+        # The three functional packages need the packages feed (curl, ucode)
+        # and the luci feed (luci-base and luci.mk). The base feed supplies the
+        # toolchain packages the dependency chain links against; luci.mk also
+        # generates the Chinese translation package from po/zh_Hans.
         run: |
           set -eu
           cd ~/sdk
@@ -195,6 +200,7 @@ jobs:
           CONFIG_PACKAGE_airconnect-engine=m
           CONFIG_PACKAGE_airconnect-manager=m
           CONFIG_PACKAGE_luci-app-airconnect-manager=m
+          CONFIG_PACKAGE_luci-i18n-airconnect-manager-zh-cn=m
           CONFIG_LIBCURL_OPENSSL=y
           EOF
           # libopenssl's afalg and devcrypto engines make libopenssl depend on
@@ -210,12 +216,21 @@ jobs:
             fi
           done
           make defconfig
+          # The Actions cache keeps the SDK's package output between releases.
+          # Remove this project's previous versions before compiling, otherwise
+          # collection would mix old and new APKs and fail the exact-count check.
+          APK_DIR=~/sdk/bin/packages/${{ matrix.arch }}/base
+          rm -f "$APK_DIR"/airconnect-engine-*.apk \
+            "$APK_DIR"/airconnect-manager-*.apk \
+            "$APK_DIR"/luci-app-airconnect-manager-*.apk \
+            "$APK_DIR"/luci-i18n-airconnect-manager-zh-cn-*.apk
           # A symbol defconfig drops means the SDK could not see the package.
           # Fail here, naming it, instead of at "No rule to make target".
           dropped=''
           for symbol in CONFIG_PACKAGE_airconnect-engine=m \
             CONFIG_PACKAGE_airconnect-manager=m \
-            CONFIG_PACKAGE_luci-app-airconnect-manager=m; do
+            CONFIG_PACKAGE_luci-app-airconnect-manager=m \
+            CONFIG_PACKAGE_luci-i18n-airconnect-manager-zh-cn=m; do
             grep -qx "$symbol" .config || dropped="$dropped $symbol"
           done
           grep -qx 'CONFIG_LIBCURL_OPENSSL=y' .config || dropped="$dropped CONFIG_LIBCURL_OPENSSL=y"
@@ -231,7 +246,7 @@ jobs:
         run: |
           set -eu
           cd ~/sdk
-          for p in airconnect-engine airconnect-manager luci-app-airconnect-manager; do
+          for p in airconnect-engine airconnect-manager luci-app-airconnect-manager luci-i18n-airconnect-manager-zh-cn; do
             echo "::group::make package/$p/compile"
             make "package/$p/compile" V=s
             echo "::endgroup::"
@@ -240,12 +255,26 @@ jobs:
       - name: Collect the packages
         run: |
           set -eu
-          mkdir -p "$GITHUB_WORKSPACE/dist"
-          find ~/sdk/bin/packages -name 'airconnect*.apk' -exec cp {} "$GITHUB_WORKSPACE/dist/" \;
+          SDK_HOST=~/sdk/staging_dir/host/bin/apk
+          REPO="$GITHUB_WORKSPACE/pages/${{ matrix.arch }}/base"
+          mkdir -p "$GITHUB_WORKSPACE/dist" "$REPO"
+          touch "$GITHUB_WORKSPACE/pages/${{ matrix.arch }}/.nojekyll"
+          find ~/sdk/bin/packages/${{ matrix.arch }}/base -maxdepth 1 -type f \
+            \( -name 'airconnect-*.apk' \
+            -o -name 'luci-app-airconnect-manager-*.apk' \
+            -o -name 'luci-i18n-airconnect-manager-zh-cn-*.apk' \) \
+            -exec cp {} "$GITHUB_WORKSPACE/dist/" \;
+          # Keep the release attachments and the Pages repository in sync.
+          cp "$GITHUB_WORKSPACE/dist"/*.apk "$REPO/"
           # An empty dist/ means the build produced nothing, which would
           # otherwise look like a successful release.
-          test -n "$(find "$GITHUB_WORKSPACE/dist" -name '*.apk' -print -quit)"
-          ls -la "$GITHUB_WORKSPACE/dist"
+          test "$(find "$GITHUB_WORKSPACE/dist" -maxdepth 1 -name '*.apk' | wc -l)" -eq 4
+          # apk-tools 3 creates an ADB v3 index. OpenWrt 25.12 looks for the
+          # standard packages.adb filename when it refreshes this repository.
+          "$SDK_HOST" mkndx --allow-untrusted --output "$REPO/packages.adb" \
+            "$REPO"/*.apk
+          test -s "$REPO/packages.adb"
+          ls -la "$GITHUB_WORKSPACE/dist" "$REPO"
 
       - name: Check the package contents
         # The recipe's install rules are asserted by tests/engine/check-recipe.sh
@@ -254,20 +283,21 @@ jobs:
         run: |
           set -eu
           cd "$GITHUB_WORKSPACE/dist"
+          SDK_HOST=~/sdk/staging_dir/host/bin/apk
           for apk in airconnect-engine-*.apk; do
-            apk manifest --allow-untrusted "$apk" | grep -q 'usr/libexec/airconnect/airupnp' || {
+            "$SDK_HOST" manifest --allow-untrusted "$apk" | grep -q 'usr/libexec/airconnect/airupnp' || {
               echo "airupnp missing from $apk"; exit 1; }
-            apk manifest --allow-untrusted "$apk" | grep -q 'usr/libexec/airconnect/aircast' || {
+            "$SDK_HOST" manifest --allow-untrusted "$apk" | grep -q 'usr/libexec/airconnect/aircast' || {
               echo "aircast missing from $apk"; exit 1; }
-            apk manifest --allow-untrusted "$apk" | grep -q 'usr/share/airconnect/THIRD-PARTY-NOTICES' || {
+            "$SDK_HOST" manifest --allow-untrusted "$apk" | grep -q 'usr/share/airconnect/THIRD-PARTY-NOTICES' || {
               echo "licence notices missing from $apk"; exit 1; }
           done
           for apk in airconnect-manager-*.apk; do
-            apk manifest --allow-untrusted "$apk" | grep -q 'etc/init.d/airconnect-manager' || {
+            "$SDK_HOST" manifest --allow-untrusted "$apk" | grep -q 'etc/init.d/airconnect-manager' || {
               echo "init script missing from $apk"; exit 1; }
-            apk manifest --allow-untrusted "$apk" | grep -q 'usr/share/rpcd/ucode/airconnect-manager' || {
+            "$SDK_HOST" manifest --allow-untrusted "$apk" | grep -q 'usr/share/rpcd/ucode/airconnect-manager' || {
               echo "rpcd plugin missing from $apk"; exit 1; }
-            apk manifest --allow-untrusted "$apk" | grep -q 'etc/config/airconnect-manager' || {
+            "$SDK_HOST" manifest --allow-untrusted "$apk" | grep -q 'etc/config/airconnect-manager' || {
               echo "conffile missing from $apk"; exit 1; }
           done
 
@@ -279,3 +309,44 @@ jobs:
           set -eu
           # --clobber so a re-run of the same tag replaces rather than fails.
           gh release upload "$TAG" "$GITHUB_WORKSPACE/dist"/*.apk --clobber
+
+      - name: Upload the architecture repository artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: apk-repository-${{ matrix.arch }}
+          path: pages
+          if-no-files-found: error
+
+  # The Pages site is the package repository. GitHub Releases remains the
+  # human-facing version archive; Pages supplies packages.adb so apk can
+  # resolve the dependency graph from one user-facing package.
+  deploy-pages:
+    name: deploy APK repository
+    needs: build
+    if: needs.build.result == 'success'
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Download architecture repository artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: apk-repository-*
+          path: pages
+          merge-multiple: true
+
+      - name: Configure GitHub Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload the combined APK repository
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: pages
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

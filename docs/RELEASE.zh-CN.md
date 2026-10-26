@@ -20,9 +20,10 @@ release-please  ──打开/更新──▶  "chore: release x.y.z" PR
                                          ▼
                                   build 工作流
                                   ├─ 下载固定版本 OpenWrt SDK
-                                  ├─ 编译三个包
-                                  ├─ 校验 APK 内容
-                                  └─ 上传到 GitHub Release
+                                  ├─ 编译四个 APK（含中文翻译包）
+                                  ├─ 校验 APK 内容并生成 packages.adb
+                                  ├─ 上传到 GitHub Release
+                                  └─ 发布到 GitHub Pages APK 仓库
 ```
 
 ---
@@ -87,7 +88,7 @@ scope 只是给人看的，不影响版本号。当前使用的 scope：`manager
 
 CI 能保证"包能编译、内容完整"，不能保证"包在设备上是对的"。每次发版前需要确认：
 
-- [ ] 三个包已在一台真实的 armsr/armv8 设备上安装并启动成功
+- [ ] 四个 APK（engine、manager、LuCI、中文翻译）已在一台真实的 armsr/armv8 设备上安装并启动成功
 - [ ] `/etc/init.d/airconnect-manager start|stop|reload` 行为正确
 - [ ] `ubus call airconnect.manager.status` 返回预期结构
 - [ ] 升级一个已安装的旧版本后，`/etc/config/airconnect-manager` 保留
@@ -98,7 +99,9 @@ CI 能保证"包能编译、内容完整"，不能保证"包在设备上是对�
 
 ## 5. 在路由器上直接安装验证（不是构建）
 
-发布包**只能**来自 CI 的 SDK 构建。路由器上不构建 APK，原因见下。
+发布包**只能**来自 CI 的 SDK 构建。路由器上不构建 APK，原因见下。CI 还会把同一批四个 APK
+和 `packages.adb` 发布到 GitHub Pages，作为可供 OpenWrt 25.12 `apk` 解析依赖的静态仓库；GitHub Release
+仍然保留单文件下载和版本归档。当前 Pages 仓库是未签名测试仓库，使用前必须明确允许不受信任的索引和包。
 
 ### 为什么不在路由器上手工组装 APK
 
@@ -114,12 +117,14 @@ CI 能保证"包能编译、内容完整"，不能保证"包在设备上是对�
 
 ```sh
 # CI 产物下载到本地后推上路由器
-scp airconnect-engine-*.apk airconnect-manager-*.apk luci-app-*.apk router:/tmp/
+scp airconnect-engine-*.apk airconnect-manager-*.apk \
+    luci-app-airconnect-manager-*.apk luci-i18n-airconnect-manager-zh-cn-*.apk router:/tmp/
 
 # 安装（本地构建的未签名包）
 ssh router 'apk add --allow-untrusted /tmp/airconnect-engine-*.apk \
                                       /tmp/airconnect-manager-*.apk \
-                                      /tmp/luci-app-*.apk'
+                                      /tmp/luci-app-airconnect-manager-*.apk \
+                                      /tmp/luci-i18n-airconnect-manager-zh-cn-*.apk'
 
 # 然后真正跑起来
 ssh router '/etc/init.d/airconnect-manager start'
@@ -150,8 +155,8 @@ bash scripts/build-local.sh
 | 安装 packages + luci 两个 feed | 三个包依赖 ucode、rpcd、curl、luci-base |
 | `CONFIG_LIBCURL_OPENSSL=y` | 不选 TLS 后端，curl 的 configure 会以 "TLS not detected" 失败，而那不是 manager 的问题 |
 | 按 `PKG_HASH` 校验 95 MB 归档 | 那两个静态二进制是 `airconnect-engine` 的全部载荷 |
-| 三个包分别 `make compile` | 失败时能指名是哪个包，而不是停在某个匿名目标上 |
-| 用 `apk manifest` 回读产物 | 空的 `bin/packages` 会被当成成功发布 |
+| 四个包分别 `make compile` | 失败时能指名是哪个包，而不是停在某个匿名目标上；中文包由 `luci.mk` 根据 `po/zh_Hans` 动态生成 |
+| 用 `apk manifest` 回读产物 | 空的 `bin/packages` 或缺少中文翻译包会被当成成功发布 |
 
 产物在 `packages/output/`，可以直接 `scp` 到路由器上装。
 
@@ -167,8 +172,9 @@ bash scripts/build-local.sh
 4. 检查 PR 里的版本号和 changelog 是否符合预期
 5. **合并该 PR** —— 这一步同时创建 tag 和 GitHub Release
 6. `build` 工作流自动跑完，APK 附到 Release 上
-7. 下载 APK，在一台真实设备上 `apk add --allow-untrusted` 安装并验证
-8. 验证通过后，该 Release 才标记为正式可用
+7. 在仓库 Settings → Pages 中把 Source 设为 **GitHub Actions**（首次启用时需要人工设置）
+8. 下载四个 APK，在一台真实设备上 `apk add --allow-untrusted` 安装并验证；或配置 Pages 仓库后用入口包测试依赖解析
+9. 验证通过后，该 Release 才标记为正式可用
 
 ---
 
@@ -184,6 +190,38 @@ bash scripts/build-local.sh
 
 ---
 
-## 8. 密钥与权限
+## 8. GitHub Pages APK 仓库
 
-`release.yml` 只申请了 `contents: read`，上传产物时用内置的 `secrets.GITHUB_TOKEN`。没有自定义 secret，所以 fork 出来的仓库也能直接跑，不需要额外配置。
+Pages 发布的目录固定为（OpenWrt 25.12 / apk-tools 3 使用 ADB v3 索引）：
+
+```text
+aarch64_generic/base/
+├── packages.adb
+├── airconnect-engine-*.apk
+├── airconnect-manager-*.apk
+├── luci-app-airconnect-manager-*.apk
+└── luci-i18n-airconnect-manager-zh-cn-*.apk
+```
+
+启用 Pages 后，设备可以使用：
+
+```sh
+cat >> /etc/apk/repositories <<'EOF'
+https://tzzs.github.io/openwrt-airconnect/aarch64_generic/base
+EOF
+apk --allow-untrusted update
+apk add --allow-untrusted luci-app-airconnect-manager
+apk add --allow-untrusted luci-i18n-airconnect-manager-zh-cn
+```
+
+`luci-app-airconnect-manager` 会通过包依赖自动拉取 `airconnect-manager`、
+`airconnect-engine` 和 `luci-base`；中文包是 LuCI 按语言生成的独立资源包，不能让主包反向依赖它，
+否则会形成循环依赖。正式发布前仍应配置 APK 签名密钥，将公钥安装到设备 `/etc/apk/keys/`，并让 workflow
+签名 `packages.adb` 与 APK；完成后才能去掉 `--allow-untrusted`。在此之前，不要把 Pages URL
+当作生产环境的可信软件源。
+
+## 9. 密钥与权限
+
+`release.yml` 使用内置的 `secrets.GITHUB_TOKEN`，并申请 `contents: write`（上传 GitHub Release）、
+`pull-requests: write`（release-please 创建发布 PR）、`pages: write` 和 `id-token: write`（部署 Pages）。没有自定义 secret。仓库 Settings → Pages 的
+Source 必须设为 **GitHub Actions**；这是仓库设置，workflow 不能替用户自动修改。

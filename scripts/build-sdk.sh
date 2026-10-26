@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: MIT
 # Copyright (c) 2026 tzzs
 #
-# build-sdk.sh - compile the three packages with an OpenWrt SDK.
+# build-sdk.sh - compile the AirConnect packages with an OpenWrt SDK.
 #
 # HOST/LINUX TOOL, NOT A ROUTER SCRIPT. The OpenWrt SDK is a Linux x86_64
 # toolchain and this script drives `make` inside it. It never runs on the
@@ -36,11 +36,12 @@ set -o pipefail
 
 PROGRAM='build-sdk.sh'
 
-DEFAULT_PACKAGES='airconnect-engine airconnect-manager luci-app-airconnect-manager'
+DEFAULT_PACKAGES='airconnect-engine airconnect-manager luci-app-airconnect-manager luci-i18n-airconnect-manager-zh-cn'
 
 CONFIG_SYMBOLS='CONFIG_PACKAGE_airconnect-engine=m
 CONFIG_PACKAGE_airconnect-manager=m
 CONFIG_PACKAGE_luci-app-airconnect-manager=m
+CONFIG_PACKAGE_luci-i18n-airconnect-manager-zh-cn=m
 CONFIG_PACKAGE_libopenssl=y
 CONFIG_LIBCURL_OPENSSL=y'
 
@@ -238,6 +239,13 @@ esac
 
 copy_package() {
 	name="$1"
+	# luci.mk creates luci-i18n-airconnect-manager-zh-cn as a generated package
+	# from the parent LuCI package's po/ tree. It is a real build target, but deliberately has no matching
+	# packages/luci-i18n-*/ source directory to copy into the SDK.
+	if [ "$name" = 'luci-i18n-airconnect-manager-zh-cn' ]; then
+		say "using the generated LuCI translation package: ${name}"
+		return 0
+	fi
 	if [ ! -d "${root}/packages/${name}" ]; then
 		fail "no such package in the repository: packages/${name}" 2
 	fi
@@ -254,6 +262,16 @@ copy_package() {
 	find "${sdk}/package/${name}" -name '._*' -type f -delete 2>/dev/null || true
 	say "copied packages/${name} -> ${sdk}/package/${name}"
 }
+
+translation_parent='luci-app-airconnect-manager'
+case " ${packages} " in
+	*' luci-i18n-airconnect-manager-zh-cn '*)
+		case " ${packages} " in
+			*" ${translation_parent} "*) ;;
+			*) copy_package "$translation_parent" ;;
+		esac
+		;;
+esac
 
 for name in $packages; do
 	copy_package "$name"
@@ -409,11 +427,20 @@ find_apk() {
 		LC_ALL=C sort | tail -n 1
 }
 
+# A reused SDK may contain an APK from an earlier run. Remove only the requested
+# package before compiling it, so find_apk cannot mistake stale output for a new
+# successful build. Dependency APKs are intentionally preserved.
+clear_cached_apk() {
+	name="$1"
+	find "${sdk}/bin/packages" -type f -name "${name}-*.apk" -delete 2>/dev/null || true
+}
+
 failed=''
 no_apk=''
 report=''
 
 for name in $packages; do
+	clear_cached_apk "$name"
 	if ! build_one "$name"; then
 		failed="$name"
 		break
