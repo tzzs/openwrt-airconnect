@@ -2,16 +2,21 @@ name: Release
 
 # The release pipeline.
 #
-# Two jobs, deliberately separated:
+# Four jobs, deliberately separated by trust boundary:
 #
 #   release-please  Opens (or updates) a release PR from Conventional Commits.
 #                   When that PR merges, it cuts the tag and the GitHub Release.
-#                   This is the only job that writes to the repository.
 #
 #   build            Runs on the tag release-please creates. Downloads a pinned
 #                   OpenWrt SDK, builds the three functional packages plus the
-#                   generated Chinese translation package, attaches the APKs to
-#                   the GitHub Release, and publishes the APK repository to Pages.
+#                   generated Chinese translation package, and uploads artifacts.
+#
+#   upload-release   Downloads build artifacts and attaches the APKs to the
+#                   GitHub Release. This is the only build-adjacent job with
+#                   contents: write permission.
+#
+#   deploy-pages     Merges architecture artifacts and publishes the APK
+#                   repository to Pages with Pages/OIDC permissions only.
 #
 # The build is NOT run on every push: it needs a 260 MB SDK and compiles the
 # dependency chain, which is minutes of CI time for no benefit on a branch.
@@ -89,7 +94,7 @@ jobs:
     if: needs.release-please.outputs.release_created
     runs-on: ubuntu-latest
     permissions:
-      contents: write
+      contents: read
     strategy:
       fail-fast: false
       matrix:
@@ -303,14 +308,12 @@ jobs:
               echo "conffile missing from $apk"; exit 1; }
           done
 
-      - name: Upload the packages to the release
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          TAG: ${{ needs.release-please.outputs.tag_name }}
-        run: |
-          set -eu
-          # --clobber so a re-run of the same tag replaces rather than fails.
-          gh release upload "$TAG" "$GITHUB_WORKSPACE/dist"/*.apk --clobber
+      - name: Upload the release packages artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-packages-${{ matrix.arch }}
+          path: dist/*.apk
+          if-no-files-found: error
 
       - name: Upload the architecture repository artifact
         uses: actions/upload-artifact@v4
@@ -318,6 +321,30 @@ jobs:
           name: apk-repository-${{ matrix.arch }}
           path: pages
           if-no-files-found: error
+
+  upload-release:
+    name: upload release packages
+    needs: [release-please, build]
+    if: needs.build.result == 'success'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Download release packages
+        uses: actions/download-artifact@v4
+        with:
+          pattern: release-packages-*
+          path: dist
+          merge-multiple: true
+
+      - name: Upload the packages to the release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ needs.release-please.outputs.tag_name }}
+        run: |
+          set -eu
+          # --clobber so a re-run of the same tag replaces rather than fails.
+          gh release upload "$TAG" dist/*.apk --clobber
 
   # The Pages site is the package repository. GitHub Releases remains the
   # human-facing version archive; Pages supplies packages.adb so apk can

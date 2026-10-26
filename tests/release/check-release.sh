@@ -129,23 +129,41 @@ else
 	no 'release-please has its narrow write permissions' 'missing job-scoped contents/pull-requests permissions'
 fi
 
-# The build job uploads a GitHub Release but must not inherit Pages or OIDC
-# permissions.
+# The build job must be read-only: it produces artifacts but has no repository,
+# Pages, or OIDC write permission.
 if python3 - <<'PY'
 from pathlib import Path
 text = Path('.github/workflows/release.yml').read_text()
 start = text.index('  build:\n')
-end = text.index('\n  # The Pages site is the package repository.', start)
+end = text.index('\n  upload-release:\n', start)
 block = text[start:end]
 assert '    permissions:\n' in block
-assert '      contents: write' in block
+assert '      contents: read' in block
+assert 'contents: write' not in block
 assert 'pages:' not in block
 assert 'id-token:' not in block
 PY
 then
-	ok 'build has no Pages or OIDC permissions'
+	ok 'build has read-only permissions'
 else
-	no 'build has no Pages or OIDC permissions' 'build inherits deployment permissions'
+	no 'build has read-only permissions' 'build has repository, Pages, or OIDC write access'
+fi
+
+# Release upload is isolated in its own contents-write job.
+if python3 - <<'PY'
+from pathlib import Path
+text = Path('.github/workflows/release.yml').read_text()
+start = text.index('  upload-release:\n')
+end = text.index('\n  # The Pages site is the package repository.', start)
+block = text[start:end]
+assert '      contents: write' in block
+assert 'actions/download-artifact@v4' in block
+assert 'gh release upload' in block
+PY
+then
+	ok 'upload-release isolates GitHub Release write access'
+else
+	no 'upload-release isolates GitHub Release write access' 'missing dedicated contents-write upload job'
 fi
 
 # The Pages job is the only job that needs deployment and OIDC permissions.
