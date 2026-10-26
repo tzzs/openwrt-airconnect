@@ -97,7 +97,8 @@ done
 # qualifier warnings are harmless for this host-only interpreter build, but
 # must not be promoted to errors; the project test suites still fail normally.
 if grep -q -- '-DCMAKE_C_FLAGS=-Wno-error=discarded-qualifiers' .github/workflows/test.yml &&
-	grep -q 'key: ucode-.*-2' .github/workflows/test.yml; then
+	grep -q 'key: ucode-.*-2' .github/workflows/test.yml &&
+	grep -q 'LD_LIBRARY_PATH:.*\.ucode/lib' .github/workflows/test.yml; then
 	ok 'host workflow handles the pinned ucode GCC warning'
 else
 	no 'host workflow handles the pinned ucode GCC warning' \

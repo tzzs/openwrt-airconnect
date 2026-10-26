@@ -24,6 +24,9 @@ jobs:
       # Installed ucode prefix. scripts/run-tests.sh resolves the module
       # directory as <prefix>/lib/ucode next to the binary.
       UCODE_PREFIX: ${{ github.workspace }}/.ucode
+      # The CMake install puts libucode.so beside the binary's prefix; expose it
+      # both after a fresh build and when the cached interpreter is reused.
+      LD_LIBRARY_PATH: ${{ github.workspace }}/.ucode/lib
       # Upstream tag the interpreter is built from. Pinned on purpose: the
       # suites must not drift with whatever master happens to be.
       UCODE_TAG: v0.0.20250529
