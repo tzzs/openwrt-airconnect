@@ -170,11 +170,16 @@ bash scripts/build-local.sh
 2. 确认 `.github/workflows/test.yml` 在最近的 main 上是绿的
 3. 等 release-please 自动开出 `chore: release x.y.z` PR
 4. 检查 PR 里的版本号和 changelog 是否符合预期
-5. **合并该 PR** —— 这一步同时创建 tag 和 GitHub Release
-6. `build` 工作流自动跑完，APK 附到 Release 上
-7. 在仓库 Settings → Pages 中把 Source 设为 **GitHub Actions**（首次启用时需要人工设置）
-8. 下载四个 APK，在一台真实设备上 `apk add --allow-untrusted` 安装并验证；或配置 Pages 仓库后用入口包测试依赖解析
-9. 验证通过后，该 Release 才标记为正式可用
+5. **批准该 PR 的 workflow 运行**。release-please 用 `GITHUB_TOKEN` 创建 PR，GitHub 不会自动为它
+   触发 workflow，PR 上会显示 `action_required`。在 PR 的 Checks 区域点 "Approve and run workflows"
+   （或 Actions 运行页的 "Review deployments"）后，`test.yml` 才会真正跑起来。这是平台对
+   `GITHUB_TOKEN` 的防递归限制，不能用仓库设置关掉，也不要为此换成权限更大的 PAT
+6. 确认该 PR 上的 Host tests 通过
+7. **合并该 PR** —— 这一步同时创建 tag 和 GitHub Release
+8. `build` 工作流自动跑完，APK 附到 Release 上
+9. 在仓库 Settings → Pages 中把 Source 设为 **GitHub Actions**（首次启用时需要人工设置）
+10. 下载四个 APK，在一台真实设备上 `apk add --allow-untrusted` 安装并验证；或配置 Pages 仓库后用入口包测试依赖解析
+11. 验证通过后，该 Release 才标记为正式可用
 
 ---
 
