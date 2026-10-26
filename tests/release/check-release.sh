@@ -93,12 +93,77 @@ for action in 'actions/checkout@v4' 'actions/cache@v4' 'googleapis/release-pleas
 	fi
 done
 
-# release-please opens a release PR, so the workflow needs permission to write
-# pull requests in addition to the contents permission used for the release.
-if grep -qE '^  pull-requests: write$' .github/workflows/release.yml; then
-	ok 'release.yml grants release-please pull request write permission'
+# Keep workflow defaults read-only; write and OIDC permissions belong only to
+# the jobs that need them.
+if python3 - <<'PY'
+from pathlib import Path
+text = Path('.github/workflows/release.yml').read_text()
+start = text.index('permissions:\n')
+end = text.index('\njobs:', start)
+block = text[start:end]
+assert '  contents: read' in block
+assert 'write' not in block
+assert 'id-token:' not in block
+PY
+then
+	ok 'release.yml keeps workflow permissions read-only'
 else
-	no 'release.yml grants release-please pull request write permission' 'missing pull-requests: write'
+	no 'release.yml keeps workflow permissions read-only' 'workflow grants broad write or OIDC permissions'
+fi
+
+# release-please opens a release PR and updates the release tag, so only that job
+# gets repository and pull-request write permission.
+if python3 - <<'PY'
+from pathlib import Path
+text = Path('.github/workflows/release.yml').read_text()
+start = text.index('  release-please:\n')
+end = text.index('\n  # -------------------------------------------------------------------------\n  # build', start)
+block = text[start:end]
+assert '    permissions:\n' in block
+assert '      contents: write' in block
+assert '      pull-requests: write' in block
+PY
+then
+	ok 'release-please has its narrow write permissions'
+else
+	no 'release-please has its narrow write permissions' 'missing job-scoped contents/pull-requests permissions'
+fi
+
+# The build job uploads a GitHub Release but must not inherit Pages or OIDC
+# permissions.
+if python3 - <<'PY'
+from pathlib import Path
+text = Path('.github/workflows/release.yml').read_text()
+start = text.index('  build:\n')
+end = text.index('\n  # The Pages site is the package repository.', start)
+block = text[start:end]
+assert '    permissions:\n' in block
+assert '      contents: write' in block
+assert 'pages:' not in block
+assert 'id-token:' not in block
+PY
+then
+	ok 'build has no Pages or OIDC permissions'
+else
+	no 'build has no Pages or OIDC permissions' 'build inherits deployment permissions'
+fi
+
+# The Pages job is the only job that needs deployment and OIDC permissions.
+if python3 - <<'PY'
+from pathlib import Path
+text = Path('.github/workflows/release.yml').read_text()
+start = text.index('  deploy-pages:\n')
+block = text[start:]
+assert '    permissions:\n' in block
+assert '      pages: write' in block
+assert '      id-token: write' in block
+assert 'contents: write' not in block
+assert 'pull-requests: write' not in block
+PY
+then
+	ok 'deploy-pages has only Pages and OIDC write permissions'
+else
+	no 'deploy-pages has only Pages and OIDC write permissions' 'deployment job permissions are too broad'
 fi
 
 # The upload step must use the built-in token, not a custom secret: a fork has
