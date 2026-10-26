@@ -1,7 +1,12 @@
 // SPDX-License-Identifier: MIT
 // Deliberately synthetic identities; no live device inventory belongs in tests.
+//
+// `const f = function () {}` plus a trailing `export { }` list, not
+// `export function`: the ucode shipped by iStoreOS 25.12.5
+// (libucode.so.20230711) rejects the latter, so a fixture written that way
+// could not run on the target even though newer host interpreters accept it.
 
-export function defaults() {
+const defaults = function() {
 	return {
 		main: {
 			enabled: false, interface: 'br-lan', airupnp: true, aircast: false,
@@ -14,9 +19,9 @@ export function defaults() {
 		},
 		devices: []
 	};
-}
+};
 
-export function overrides() {
+const overrides = function() {
 	return {
 		main: {
 			enabled: '1', aircast: '1', max_volume: '80', media_volume: '0.4',
@@ -44,9 +49,9 @@ export function overrides() {
 			}
 		]
 	};
-}
+};
 
-export function defaultXml(engine) {
+const defaultXml = function(engine) {
 	let root = engine == 'upnp' ? 'airupnp' : 'aircast';
 	let lines = [
 		'<?xml version="1.0" encoding="UTF-8"?>', '<' + root + '>',
@@ -64,4 +69,6 @@ export function defaultXml(engine) {
 		push(lines, '    <stop_receiver>0</stop_receiver>');
 	push(lines, '  </common>', '</' + root + '>');
 	return join('\n', lines) + '\n';
-}
+};
+
+export { defaults, overrides, defaultXml };

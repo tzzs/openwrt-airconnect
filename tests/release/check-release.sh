@@ -96,13 +96,40 @@ done
 # The pinned ucode tag predates the GCC used by ubuntu-latest. Its const
 # qualifier warnings are harmless for this host-only interpreter build, but
 # must not be promoted to errors; the project test suites still fail normally.
+# LD_LIBRARY_PATH must stay step-scoped: a job-wide workspace loader path would
+# be inherited by every action and shell step in the job.
 if grep -q -- '-DCMAKE_C_FLAGS=-Wno-error=discarded-qualifiers' .github/workflows/test.yml &&
-	grep -q 'key: ucode-.*-2' .github/workflows/test.yml &&
-	grep -q 'LD_LIBRARY_PATH:.*\.ucode/lib' .github/workflows/test.yml; then
-	ok 'host workflow handles the pinned ucode GCC warning'
+	grep -q 'key: ucode-.*-3' .github/workflows/test.yml &&
+	grep -q 'UCODE_REF: [0-9a-f]\{40\}' .github/workflows/test.yml &&
+	python3 - <<'PY'
+import sys
+from pathlib import Path
+lines = Path('.github/workflows/test.yml').read_text().split('\n')
+# A job-level env block sits at 4 spaces under `jobs.<id>`; step env at 8+.
+for index, line in enumerate(lines):
+    if line.startswith('    env:'):
+        for follow in lines[index + 1:]:
+            if not follow.startswith('      ') or follow.strip() == '':
+                break
+            if follow.strip().startswith('LD_LIBRARY_PATH:'):
+                sys.exit(1)  # a job-wide loader path is inherited by every step
+PY
+then
+	ok 'host workflow keeps the ucode loader path step-scoped'
 else
-	no 'host workflow handles the pinned ucode GCC warning' \
-		'missing the narrow CMake warning override or cache-key bump'
+	no 'host workflow keeps the ucode loader path step-scoped' \
+		'missing CMake override, stale cache key, or a job-wide LD_LIBRARY_PATH'
+fi
+
+# Test fixtures run on the target interpreter too (the state suites load them
+# through the plugin). iStoreOS 25.12.5's libucode.so.20230711 rejects
+# `export function`, so a fixture written that way hides a real device failure
+# behind a newer host interpreter.
+if grep -rq '^export function' tests/; then
+	no 'test fixtures use the target-compatible export syntax' \
+		"$(grep -rl '^export function' tests/ | tr '\n' ' ')"
+else
+	ok 'test fixtures use the target-compatible export syntax'
 fi
 
 # Keep workflow defaults read-only; write and OIDC permissions belong only to

@@ -4,7 +4,7 @@
 
 // A UCI-shaped main section as the uci cursor returns it: every value is a
 // string and the metadata keys start with a dot.
-export function uciMain(overrides) {
+const uciMain = function(overrides) {
 	let main = {
 		'.anonymous': false,
 		'.type': 'main',
@@ -29,10 +29,10 @@ export function uciMain(overrides) {
 	for (let key in overrides ?? {})
 		main[key] = overrides[key];
 	return main;
-}
+};
 
 // One UPnP and one Cast device, mirroring the two-engine default configuration.
-export function uciDevices() {
+const uciDevices = function() {
 	return [
 		{
 			'.anonymous': false,
@@ -59,11 +59,11 @@ export function uciDevices() {
 			latency: '500:2000'
 		}
 	];
-}
+};
 
 // A cursor stand-in for the uci module. It records the calls it receives so the
 // tests can assert that loadConfig asks for the documented names.
-export function fakeCursor(main, devices) {
+const fakeCursor = function(main, devices) {
 	let calls = [];
 	return {
 		calls: calls,
@@ -81,36 +81,36 @@ export function fakeCursor(main, devices) {
 			return true;
 		}
 	};
-}
+};
 
 // The raw (un-normalized) configuration matching uciMain()/uciDevices(), which
 // is what loadConfig() is expected to produce.
-export function rawConfig(overrides) {
+const rawConfig = function(overrides) {
 	return { main: uciMain(overrides), devices: uciDevices() };
-}
+};
 
 // A configuration written before the advanced options existed: the shipped
 // file from an older install simply lacks them. normalizeConfig must give the
 // same effective settings as the current default file, which is the backwards
 // compatibility promise for this change.
-export function legacyRawConfig() {
+const legacyRawConfig = function() {
 	let main = uciMain();
 	for (let key in ['metadata', 'artwork', 'flush', 'drift', 'http_length', 'upnp_max', 'stop_receiver'])
 		delete main[key];
 	return { main: main, devices: [] };
-}
+};
 
-export function currentDefaultRawConfig() {
+const currentDefaultRawConfig = function() {
 	// The shipped default file's advanced options, i.e. the upstream defaults.
 	let main = uciMain({ artwork: '' });
 	return { main: main, devices: [] };
-}
+};
 
 // A normalized configuration with a PCM default for the UPnP engine only. This
 // is the asymmetric-render fixture: renderXml(config, 'upnp') succeeds while
 // renderXml(config, 'cast') throws, because Cast cannot use PCM and main.codec
 // is the Cast default. Cast is disabled so normalizeConfig accepts the object.
-export function pcmUpnpOnly() {
+const pcmUpnpOnly = function() {
 	return {
 		main: {
 			enabled: true, interface: 'br-lan', airupnp: true, aircast: false,
@@ -134,11 +134,13 @@ export function pcmUpnpOnly() {
 			}
 		]
 	};
-}
+};
 
 // A previously written, still valid runtime file. "keep last good" is only
 // provable against bytes that exist before the failing apply runs.
-export function previousXml(engine) {
+const previousXml = function(engine) {
 	return '<?xml version="1.0" encoding="UTF-8"?>\n<' + (engine == 'upnp' ? 'airupnp' : 'aircast') +
 		'>\n  <binding>previous-good</binding>\n</' + (engine == 'upnp' ? 'airupnp' : 'aircast') + '>\n';
-}
+};
+
+export { uciMain, uciDevices, fakeCursor, rawConfig, legacyRawConfig, currentDefaultRawConfig, pcmUpnpOnly, previousXml };

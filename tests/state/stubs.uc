@@ -27,7 +27,7 @@ import * as fs from 'fs';
 // The fake answer to every uci call the plugin makes. `get_all` returns the
 // `main` object and `foreach` walks the `devices` array of config.json, which is
 // exactly the shape runtime.uc's loadConfig expects from a real cursor.
-export const UCI_SOURCE =
+const UCI_SOURCE =
 	'import * as fs from "fs";\n' +
 	'let self = fs.dirname(sourcepath());\n' +
 	'({ cursor: function() { return {\n' +
@@ -48,7 +48,7 @@ export const UCI_SOURCE =
 // The fake ubus answers exactly the three calls the plugin makes: procd's
 // service list, netifd's device status and netifd's interface dump. Anything
 // else returns an empty object, which is what an unknown ubus object looks like.
-export const UBUS_SOURCE =
+const UBUS_SOURCE =
 	'import * as fs from "fs";\n' +
 	'let self = fs.dirname(sourcepath());\n' +
 	'({ connect: function() { return {\n' +
@@ -76,16 +76,16 @@ function writeIfChanged(path, data) {
 
 // Install both stubs into `stubDir`. Returns the two paths so a caller can
 // report them.
-export function install(stubDir) {
+const install = function(stubDir) {
 	writeIfChanged(stubDir + '/uci.uc', UCI_SOURCE);
 	writeIfChanged(stubDir + '/ubus.uc', UBUS_SOURCE);
 	return { uci: stubDir + '/uci.uc', ubus: stubDir + '/ubus.uc' };
-}
+};
 
 // Write `<stubDir>/config.json`, the single knob both stubs read. Defaults match
 // what the plugin sees on a fresh, working router so a test only states what it
 // cares about.
-export function configure(stubDir, options) {
+const configure = function(stubDir, options) {
 	options = options ?? {};
 	let config = {
 		main: options.main ?? {
@@ -97,4 +97,6 @@ export function configure(stubDir, options) {
 	};
 	fs.writefile(stubDir + '/config.json', sprintf('%J\n', config));
 	return config;
-}
+};
+
+export { UCI_SOURCE, UBUS_SOURCE, install, configure };

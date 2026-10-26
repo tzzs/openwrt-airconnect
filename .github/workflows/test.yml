@@ -24,12 +24,13 @@ jobs:
       # Installed ucode prefix. scripts/run-tests.sh resolves the module
       # directory as <prefix>/lib/ucode next to the binary.
       UCODE_PREFIX: ${{ github.workspace }}/.ucode
-      # The CMake install puts libucode.so beside the binary's prefix; expose it
-      # both after a fresh build and when the cached interpreter is reused.
-      LD_LIBRARY_PATH: ${{ github.workspace }}/.ucode/lib
-      # Upstream tag the interpreter is built from. Pinned on purpose: the
-      # suites must not drift with whatever master happens to be.
-      UCODE_TAG: v0.0.20250529
+      # Upstream revision the interpreter is built from. Pinned to a commit, not
+      # a branch: the suites must not drift with whatever master happens to be.
+      # The last release tag (v0.0.20250529) predates syntax the suites and the
+      # shipped modules rely on, so the pin is a commit rather than a tag.
+      UCODE_REF: aabdeb4f5060c91c5929bf6d7af745c6aabf5ec5
+      # Short label used in cache keys and step names.
+      UCODE_LABEL: aabdeb4f
     steps:
       - name: Check out the repository
         uses: actions/checkout@v4
@@ -38,7 +39,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           # Pinned major. The repository has no npm dependencies; node only
-          # executes the plain .mjs suite.
+          # executes the plain .mjs file.
           node-version: 20
 
       - name: Install build dependencies for ucode
@@ -50,23 +51,24 @@ jobs:
         run: |
           set -eu
           sudo apt-get update
-          sudo apt-get install --no-install-recommends --yes libjson-c-dev libmd-dev
+          sudo apt-get install --no-install-recommends --yes libjson-c-dev libmd-dev gettext
 
       - name: Cache the ucode build
         id: ucode-cache
         uses: actions/cache@v4
         with:
           path: ${{ env.UCODE_PREFIX }}
-          # The suffix changes when the fixed-tag compatibility flags change; do not
-          # reuse an interpreter built before the current CI toolchain workaround.
-          key: ucode-${{ runner.os }}-${{ env.UCODE_TAG }}-2
+          # The suffix changes when the pinned revision or compatibility flags
+          # change; never reuse an interpreter built another way.
+          key: ucode-${{ runner.os }}-${{ env.UCODE_LABEL }}-3
 
-      - name: Build ucode ${{ env.UCODE_TAG }}
+      - name: Build ucode ${{ env.UCODE_LABEL }}
         if: steps.ucode-cache.outputs.cache-hit != 'true'
         env:
-          # The source tag is pinned; the release workflow separately verifies the
-          # AirConnect archive used for package output.
-          UCODE_URL: https://github.com/jow-/ucode/archive/refs/tags/v0.0.20250529.tar.gz
+          # Fetch the pinned commit rather than a tag: the suites rely on
+          # behaviour that only exists after the last release tag.
+          UCODE_URL: https://github.com/jow-/ucode/archive/${{ env.UCODE_REF }}.tar.gz
+          LD_LIBRARY_PATH: ${{ github.workspace }}/.ucode/lib
         run: |
           set -eu
           work=$(mktemp -d)
@@ -89,6 +91,8 @@ jobs:
 
       - name: Verify the cached interpreter
         if: steps.ucode-cache.outputs.cache-hit == 'true'
+        env:
+          LD_LIBRARY_PATH: ${{ github.workspace }}/.ucode/lib
         run: |
           set -eu
           test -x "$UCODE_PREFIX/bin/ucode"
@@ -98,6 +102,7 @@ jobs:
       - name: Run the host test suites
         env:
           UCODE: ${{ env.UCODE_PREFIX }}/bin/ucode
+          LD_LIBRARY_PATH: ${{ github.workspace }}/.ucode/lib
         # One command, and it fails the job when any suite fails. Suites are
         # discovered by convention inside the script.
         run: bash scripts/run-tests.sh

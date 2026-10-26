@@ -81,13 +81,14 @@ run-tests: no ucode interpreter found.
 
 The ucode suites are not optional. Without a real interpreter they cannot run,
 and silently skipping them is how the trailing-newline validation bug survived.
-Build the same host interpreter CI uses (pinned upstream tag), or point the
-runner at one you already have:
+Build the same host interpreter CI uses (pinned upstream commit, not a tag: the
+last release tag predates syntax the suites and shipped modules rely on), or
+point the runner at one you already have:
 
   # build it once, into the layout the runner looks for
-  curl -fsSL https://github.com/jow-/ucode/archive/refs/tags/v0.0.20250529.tar.gz \
-    | tar -xz
-  cd ucode-0.0.20250529
+  ref=aabdeb4f5060c91c5929bf6d7af745c6aabf5ec5
+  curl -fsSL "https://github.com/jow-/ucode/archive/${ref}.tar.gz" | tar -xz
+  cd "ucode-${ref}"
   cmake -B build -DCMAKE_BUILD_TYPE=Release \
     -DCMAKE_INSTALL_PREFIX="$HOME/.local/opt/ucode-host" \
     -DCMAKE_INSTALL_LIBDIR=lib
