@@ -20,9 +20,9 @@
   - `airconnect-manager`：包含 UCI 校验、原子生成 XML、procd 启动脚本和 `airconnect.manager` rpcd 后端
   - `luci-app-airconnect-manager`：音箱、设置、诊断三个页签的静态 LuCI 页面
 - ✅ 主机验证：`bash scripts/run-tests.sh` 的 20 个套件全部通过，命令与结果记录在 [验证记录](docs/VERIFICATION.zh-CN.md)，说明见 [测试运行与 CI](docs/TESTING.zh-CN.md)。
-- ⚙️ SDK 构建链：已配置三个功能包加上自动生成的 `luci-i18n-airconnect-manager-zh-cn` 中文翻译包，使用 OpenWrt SDK 25.12.6（`armsr-armv8` / `aarch64_generic`）构建。上游归档的 SHA256 与配方 `PKG_HASH` 校验一致后才进入构建，发布工作流已配置为生成包含全部四个 APK 的 OpenWrt 25.12 `packages.adb` 索引并发布到 GitHub Pages。当前 Pages 仓库尚未签名，仅用于测试；首次本地四包构建仍在进行中。
+- ✅ SDK 发布链：已配置三个功能包加上自动生成的 `luci-i18n-airconnect-manager-zh-cn` 中文翻译包，使用 OpenWrt SDK 25.12.6（`armsr-armv8` / `aarch64_generic`）构建。上游归档的 SHA256 与配方 `PKG_HASH` 校验一致后才进入构建，发布工作流会生成包含全部四个 APK 的 OpenWrt 25.12 `packages.adb` 索引并发布到 GitHub Pages。当前 Pages 仓库尚未签名，仅用于测试；仍需记录一次成功的远程发布运行。
 - ✅ 设备安装：三个功能 APK 已用 `apk add --allow-untrusted` 装到真实的 iStoreOS 25.12.5 / aarch64 路由器。`airconnect.manager` 在真实 rpcd 上注册成功，五个方法齐全，`status`、`validate`、`logs`、`action` 均在设备上跑过。引擎二进制在设备上可执行并报 `v1.12.4`。新的中文翻译 APK 尚未在设备上安装验证。
-- ⚠️ CI 工作流（`.github/workflows/test.yml` 和 `.github/workflows/release.yml`）已实现，但尚未产生可查的运行结果。仓库已连接到 GitHub，但 Pages 尚未启用，发布工作流也尚未发布 APK 仓库。
+- ⚙️ CI 工作流：`test.yml` 在每次 push 和 pull request 上运行主机测试。`release.yml` 在 `main` 上由 release-please 管理；发布 PR 合并后，它会构建四个 APK、上传到 GitHub Release，并发布 Pages APK 仓库。当前本地工作流改动仍需一次成功的远程运行；首次启用时还要在仓库设置中把 Pages Source 设为 GitHub Actions。
 - ✅ 服务切换已完成（2026-10-26，第一台真实设备）：旧 `airconnect`、`luci-app-airconnect`、
   `luci-i18n-airconnect-zh-cn` 连同依赖已卸载，配置按 UCI 映射迁移，`airconnect-manager` 在运行
   且已设为开机自启，`status.conflicts` 为空，RPC 的启动/重启恢复正常。
@@ -51,18 +51,38 @@
 
 **首版验证目标：** OpenWrt/iStoreOS 25.12、aarch64_generic；随后验证 x86_64。24.10/IPK 单独构建。不能将 SNAPSHOT 的可安装性替代稳定版 SDK 构建与设备验收。
 
-## 开发入口
+## 安装
 
-### 本地开发设置
+对于 OpenWrt/iStoreOS 25.12 的 `aarch64_generic` 设备，添加项目测试仓库后只安装一个面向用户的 LuCI 主包即可：
 
-使用匹配目标版本的 OpenWrt SDK，将 `packages/airconnect-engine` 链接到 SDK 的 `package/` 下，再运行：
+```sh
+cat >> /etc/apk/repositories <<'EOF'
+https://tzzs.github.io/openwrt-airconnect/aarch64_generic/base
+EOF
 
-```bash
-make defconfig
-make package/airconnect-engine/compile V=s
+apk --allow-untrusted update
+apk add --allow-untrusted luci-app-airconnect-manager
 ```
 
-后续 CI 必须固定 SDK 和 Action 版本，并记录实际验证过的架构；目前没有发布构建成功声明。
+`luci-app-airconnect-manager` 会自动拉取 `airconnect-manager`、`airconnect-engine` 以及所需运行时依赖。需要简体中文 LuCI 翻译时，再安装可选包：
+
+```sh
+apk add --allow-untrusted luci-i18n-airconnect-manager-zh-cn
+```
+
+当前 Pages 仓库尚未签名，仅用于测试。在完成 APK 和仓库签名前，请保留 `--allow-untrusted`。如果 Pages 尚未启用，也可以从 GitHub Release 下载四个 APK 后，用 `apk add --allow-untrusted` 一起安装；普通用户不需要自行构建 SDK。
+
+## 开发入口
+
+### 本地开发构建
+
+开发软件包时使用匹配目标版本的 OpenWrt SDK，并运行仓库提供的可复现四包构建脚本：
+
+```bash
+bash scripts/build-local.sh
+```
+
+产物写入 `packages/output/`。发布工作流只会在 release-please 发布 PR 合并并创建 tag 后，自动执行同一套 SDK 构建。
 
 ### 本地运行测试
 

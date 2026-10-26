@@ -117,14 +117,16 @@ ucode 套件需要**真实的** ucode 解释器。查找顺序：
 因此 CI 覆盖的正是“主机可证明”的部分：ucode 模块的校验/渲染/解析/原子写、rpcd
 插件的编译与沙箱 I/O、包与 init 脚本的静态及行为检查、前后端校验一致性。
 
-`workflow_dispatch` 触发时还会出现第二个任务 `sdk-build`，它**尚未实现**：只有一步
-回显将来要做什么并带 `TODO`，不产出任何软件包，也不会在 push / PR 上运行。这是
-刻意保留的意图记录，不能当作可用的发布流水线。
+`workflow_dispatch` 只会重新运行 `host-tests`。SDK 构建不属于这个工作流；它由
+`.github/workflows/release.yml` 的 `build` job 负责，并且只在 release-please 创建发布后运行。
+该 job 会使用固定的 OpenWrt SDK 编译三个功能包和自动生成的中文翻译包，校验四个 APK，
+生成 `packages.adb`，再交给 Release 上传和 Pages 发布任务。
 
 ## CI 不覆盖、仍需人工的门槛
 
-- **SDK 构建**：用匹配目标版本的 OpenWrt SDK 编译三个包，检查产物内容
-  （二进制、init 脚本、conffiles、rpcd 插件、ACL）。`sdk-build` 目前只是占位。
+- **SDK 构建的远程成功记录**：发布工作流已经实现自动构建，但当前修改仍需一次真实的
+  GitHub Actions 运行来确认 SDK 下载、四包编译、Release 上传和 Pages artifact 聚合。
+  这不是 `host-tests` 的 push/PR 阶段工作。
 - **真实设备验收**：安装、启动、两台音箱独立设置、保存/重启/升级后配置保留、
   AirPlay 满音量映射与反馈、回退方案。
 - **真实 LuCI 集成**：页面在目标 LuCI 版本中的渲染、保存回滚、服务触发器。

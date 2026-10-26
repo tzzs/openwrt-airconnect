@@ -84,7 +84,8 @@ jobs:
   # -------------------------------------------------------------------------
   # build
   #
-  # Triggered by the tag release-please creates. Builds for the primary target
+  # Triggered when release-please reports that it created a release (the tag and
+  # GitHub Release are created as part of that action). Builds for the primary target
   # first; a second matrix leg for x86_64 is added once that target has been
   # verified on hardware, per docs/RELEASE.zh-CN.md.
   # -------------------------------------------------------------------------

@@ -93,6 +93,17 @@ for action in 'actions/checkout@v4' 'actions/cache@v4' 'googleapis/release-pleas
 	fi
 done
 
+# The pinned ucode tag predates the GCC used by ubuntu-latest. Its const
+# qualifier warnings are harmless for this host-only interpreter build, but
+# must not be promoted to errors; the project test suites still fail normally.
+if grep -q -- '-DCMAKE_C_FLAGS=-Wno-error=discarded-qualifiers' .github/workflows/test.yml &&
+	grep -q 'key: ucode-.*-2' .github/workflows/test.yml; then
+	ok 'host workflow handles the pinned ucode GCC warning'
+else
+	no 'host workflow handles the pinned ucode GCC warning' \
+		'missing the narrow CMake warning override or cache-key bump'
+fi
+
 # Keep workflow defaults read-only; write and OIDC permissions belong only to
 # the jobs that need them.
 if python3 - <<'PY'

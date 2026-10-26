@@ -186,7 +186,7 @@ bash scripts/build-local.sh
 | release PR 的 changelog 漏了东西 | 检查提交信息是否符合规范，不是 release-please 的问题 |
 | `build` 工作流失败 | 看具体哪一步。SDK 下载失败换重试；编译失败把 `V=s` 的输出贴出来 |
 | 发布的包有问题 | 发一个 `fix:` 提交走新版本，**不要删 tag** |
-| 需要在没有提交的情况下手动触发构建 | `workflow_dispatch`，但它只在 tag 存在时才会上传产物 |
+| 需要在没有新提交的情况下手动重跑发布工作流 | `workflow_dispatch`；它仍要求 `release-please` 在本次运行中报告 `release_created`，否则不会进入构建与上传 |
 
 ---
 
