@@ -4,11 +4,10 @@
 //
 //   node tests/parity/check-frontend.mjs
 //
-// Loads the LuCI static resource airconnect-manager/rules.js by evaluating it
-// the way LuCI's `require` does - through a class factory given `_` and `L`
-// (no bundler, no npm, no real LuCI) - runs every case from cases.json through
-// the rule methods, and compares the result with the verdicts the real backend
-// produced in tests/parity/run.uc.
+// Imports the frontend rule module (frontend/src/lib/rules.js, the module the
+// React app validates with) and runs every case from cases.json through it,
+// comparing the result with the verdicts the real backend produced in
+// tests/parity/run.uc.
 //
 // The backend verdicts are not re-implemented here on purpose: this file shells
 // out to `ucode tests/parity/run.uc --verdicts`, so there is exactly one
@@ -23,8 +22,9 @@ import { fileURLToPath } from 'node:url';
 const HERE = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(HERE, '..', '..');
 const CASES_PATH = join(HERE, 'cases.json');
-const RULES_PATH = join(ROOT,
-	'packages/luci-app-airconnect-manager/htdocs/luci-static/resources/airconnect-manager/rules.js');
+const RULES_URL = new URL(
+	'../../packages/luci-app-airconnect-manager/frontend/src/lib/rules.js',
+	import.meta.url);
 
 // `field` in cases.json -> exported rule in rules.js.
 const RULES = {
@@ -59,36 +59,13 @@ function check(ok, label, detail) {
 	return false;
 }
 
-// Evaluate rules.js the way LuCI does: `require` hands the class factory `_`
-// and `L`, then demands a class (`Class.isSubclass(factory())`) and
-// instantiates it. A plain object literal is rejected on the router with
-//   TypeError: "airconnect-manager.rules" factory yields invalid constructor
-// which aborts the whole view, so the shim reproduces exactly that contract.
-//
-// The shim is deliberately tiny: `extend` only builds a real prototype chain,
-// which is all LuCI's check inspects. If rules.js ever needs more of the LuCI
-// API, this file fails here instead of on the router.
-function LuCIBaseClass() {}
-
-LuCIBaseClass.extend = function(properties) {
-	const Subclass = function() {};
-	Subclass.prototype = Object.create(LuCIBaseClass.prototype);
-	for (const name of Object.keys(properties))
-		Subclass.prototype[name] = properties[name];
-	Subclass.extend = LuCIBaseClass.extend;
-	return Subclass;
-};
-
-const LUCI = { Class: LuCIBaseClass };
+// The rule module is a plain ES module, so it is imported rather than evaluated:
+// `createRules(t)` returns the same ten functions for any translation helper, and
+// calling it with none leaves the messages in English.
+const { createRules } = await import(RULES_URL);
 
 function loadRules(translate) {
-	const source = readFileSync(RULES_PATH, 'utf8');
-	const factory = new Function('_', 'L', source);
-	const Rules = factory(translate ? function(s) { return s; } : undefined, LUCI);
-	if (typeof Rules !== 'function' || !(Rules.prototype instanceof LUCI.Class))
-		throw new Error('rules.js did not return a LuCI class; the router would abort the view with '
-			+ '"factory yields invalid constructor"');
-	return new Rules();
+	return createRules(translate ? function (s) { return s; } : undefined);
 }
 
 function backendVerdicts() {
@@ -135,10 +112,8 @@ function main() {
 
 	// --- module shape ------------------------------------------------------
 	// Several fields share one rule (the four 0/1 flags), so the export count is
-	// the number of distinct rule names, not the number of mapped fields. The
-	// rules are prototype methods, so the documented set lives on the prototype
-	// of the instance LuCI hands the view.
-	const exported = Object.keys(Object.getPrototypeOf(rules));
+	// the number of distinct rule names, not the number of mapped fields.
+	const exported = Object.keys(rules);
 	const ruleNames = new Set(Object.values(RULES));
 	for (const name of ruleNames)
 		check(typeof rules[name] === 'function', 'rules.js exports ' + name);

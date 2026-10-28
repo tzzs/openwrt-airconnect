@@ -164,6 +164,29 @@ jobs:
             ucode-mod-ubus ucode-mod-uci rpcd rpcd-mod-ucode curl \
             luci-base libopenssl
 
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          # Pinned major, matching the host-test workflow. node only runs the
+          # Vite build; the runtime is the browser, which LuCI serves the bundle to.
+          node-version: 20
+
+      - name: Build the React frontend
+        # The LuCI page is a bundled React + shadcn/ui app (app.js + app.css),
+        # built from packages/luci-app-airconnect-manager/frontend by Vite. The
+        # bundle is not committed, so it must exist before the SDK copies the
+        # package tree in the next step. `npm ci` needs a lockfile; the package
+        # ships package-lock.json for exactly this.
+        env:
+          CI: 'false'
+        run: |
+          set -eu
+          cd "$GITHUB_WORKSPACE/packages/luci-app-airconnect-manager/frontend"
+          npm ci
+          npm run build
+          test -f "$GITHUB_WORKSPACE/packages/luci-app-airconnect-manager/htdocs/luci-static/resources/airconnect-manager/app.js"
+          test -f "$GITHUB_WORKSPACE/packages/luci-app-airconnect-manager/htdocs/luci-static/resources/airconnect-manager/app.css"
+
       - name: Link the packages into the SDK
         # Copied, not symlinked: the SDK's package scanner follows real paths,
         # and a symlink into the workspace makes the build depend on the

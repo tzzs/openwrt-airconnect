@@ -47,14 +47,26 @@ PY
 	then ok 'translation has no untranslated non-header entries'; else no 'translation has no untranslated non-header entries' 'an entry has empty msgstr'; fi
 fi
 
-if [ -f "${view}" ] && [ -f "${pot}" ]; then
-	if python3 - "${view}" "${pot}" <<'PY'
+frontend="${app}/frontend/src"
+if [ -d "${frontend}" ] && [ -f "${pot}" ]; then
+	# The page text now lives in the React sources (lib/*.js, components/*.jsx)
+	# and the thin LuCI loader. Together they must be covered by the POT.
+	if python3 - "${frontend}" "${view}" "${pot}" <<'PY'
 import ast
+import os
 import re
 import sys
-view, pot = sys.argv[1:]
-source = open(view, encoding='utf-8').read()
-strings = {ast.literal_eval("'" + value + "'") for value in re.findall(r"_\('((?:\\\\.|[^'\\\\])*)'\)", source)}
+frontend, view, pot = sys.argv[1:]
+pattern = re.compile(r"_\(\s*'((?:\\.|[^'\\])*)'\s*\)")
+strings = set()
+for base, dirs, files in os.walk(frontend):
+    for name in files:
+        if not name.endswith(('.js', '.jsx')):
+            continue
+        path = os.path.join(base, name)
+        for value in pattern.findall(open(path, encoding='utf-8').read()):
+            strings.add(ast.literal_eval("'" + value + "'"))
+strings |= {ast.literal_eval("'" + value + "'") for value in pattern.findall(open(view, encoding='utf-8').read())}
 ids = set()
 current = None
 field = None
@@ -70,9 +82,9 @@ for line in open(pot, encoding='utf-8'):
 missing = sorted(strings - ids)
 if missing:
     print('missing from POT:', ', '.join(missing[:5]), file=sys.stderr); sys.exit(1)
-print('all %d _() strings are present in the POT' % len(strings))
+print('all %d _() strings across the frontend are present in the POT' % len(strings))
 PY
-	then ok 'POT covers every _() string in the LuCI view'; else no 'POT covers every _() string in the LuCI view' 'source strings missing'; fi
+	then ok 'POT covers every _() string in the frontend'; else no 'POT covers every _() string in the frontend' 'source strings missing'; fi
 fi
 
 printf '\ni18n: %d passed, %d failed\n' "${passed}" "${failed}"

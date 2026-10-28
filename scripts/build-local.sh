@@ -153,6 +153,27 @@ log 'installing feeds'
 	ucode ucode-mod-fs ucode-mod-socket ucode-mod-ubus ucode-mod-uci \
 	rpcd rpcd-mod-ucode curl luci-base libopenssl
 
+# --- frontend build --------------------------------------------------------
+
+# The LuCI page is a bundled React + shadcn/ui app (app.js + app.css), built
+# from the package's frontend/ directory by Vite. The bundle is not committed,
+# so it must exist before the SDK copies the package tree below. node + npm are
+# required here; the script bails early if they are missing rather than failing
+# deep inside the SDK build with a "no app.js" copy.
+log 'building the React frontend'
+command -v node >/dev/null 2>&1 || die 'node is required to build the frontend'
+command -v npm  >/dev/null 2>&1 || die 'npm is required to build the frontend'
+FRONTEND_DIR="${root}/packages/luci-app-airconnect-manager/frontend"
+[ -d "$FRONTEND_DIR" ] || die "missing $FRONTEND_DIR"
+(
+	cd "$FRONTEND_DIR"
+	npm ci
+	npm run build
+)
+BUNDLE_DIR="${root}/packages/luci-app-airconnect-manager/htdocs/luci-static/resources/airconnect-manager"
+[ -f "$BUNDLE_DIR/app.js" ]  || die "frontend build did not produce app.js"
+[ -f "$BUNDLE_DIR/app.css" ] || die "frontend build did not produce app.css"
+
 # --- link the packages -----------------------------------------------------
 
 # Copied rather than symlinked: the SDK's package scanner follows real paths,

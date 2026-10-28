@@ -27,21 +27,26 @@
 #
 # Budgets
 # -------
-# Every cap is derived from a measurement taken on 2026-10-22 in this repository
+# Every cap is derived from a measurement taken on 2026-10-29 in this repository
 # (see docs/PERFORMANCE-RESULTS.zh-CN.md for the table and the command). The
 # headroom is deliberate: a cap that trips on an ordinary edit teaches everyone
-# to raise the cap instead of reading the number, so each cap allows roughly a
-# doubling of what exists today while still catching an accidental dependency,
-# a base64-encoded font, a committed source map or a copied-in framework.
+# to raise the cap instead of reading the number, so each cap allows real room
+# while still catching an accidental dependency, a base64-encoded font, a
+# committed source map or a copied-in framework.
 #
-#   measured total 47,775 bytes uncompressed -> cap 65,536 (64 KiB, +37 %)
-#   measured total 14,646 bytes gzip -9      -> cap 32,768 (32 KiB, +124 %)
+# The page is now a bundled React + shadcn/ui application (app.js + app.css,
+# built from frontend/ by `npm run build`), so the payload is one bundle instead
+# of a hand-written view plus its stylesheet. The bundle is minified and its
+# icons are tree-shaken; the gzip figure is what the router actually sends.
+#
+#   measured total 661,342 bytes uncompressed -> cap 786,432 (768 KiB, +19 %)
+#   measured total 205,854 bytes gzip -9      -> cap 262,144 (256 KiB, +27 %)
 #
 # Per-file caps, same rule (measured value in the comment):
 #
-#   view/airconnect-manager/overview.js  30,327 B -> 49,152 (48 KiB, +62 %)
-#   airconnect-manager/manager.css        9,388 B -> 24,576 (24 KiB, +162 %)
-#   airconnect-manager/rules.js           7,437 B -> 12,288 (12 KiB, +65 %)
+#   airconnect-manager/app.js           641,642 B -> 720,896 (704 KiB, +12 %)
+#   airconnect-manager/app.css           16,224 B ->  32,768 (32 KiB, +102 %)
+#   view/airconnect-manager/overview.js   2,853 B ->   8,192 (8 KiB, +187 %)
 #   menu.d / acl.d JSON                    265/358 B -> 2,048 (2 KiB)
 #   any other file                                     32,768 (32 KiB)
 #
@@ -66,15 +71,15 @@ res="${pkg}/htdocs/luci-static/resources"
 
 # --- budgets ----------------------------------------------------------------
 
-TOTAL_CAP=65536
-GZIP_TOTAL_CAP=32768
+TOTAL_CAP=786432
+GZIP_TOTAL_CAP=262144
 DEFAULT_FILE_CAP=32768
 
 cap_for() {
 	case "$1" in
-		*/view/airconnect-manager/overview.js) printf '49152\n' ;;
-		*/airconnect-manager/manager.css) printf '24576\n' ;;
-		*/airconnect-manager/rules.js) printf '12288\n' ;;
+		*/airconnect-manager/app.js) printf '720896\n' ;;
+		*/airconnect-manager/app.css) printf '32768\n' ;;
+		*/view/airconnect-manager/overview.js) printf '8192\n' ;;
 		*/luci/menu.d/*.json) printf '2048\n' ;;
 		*/rpcd/acl.d/*.json) printf '2048\n' ;;
 		*) printf '%s\n' "${DEFAULT_FILE_CAP}" ;;

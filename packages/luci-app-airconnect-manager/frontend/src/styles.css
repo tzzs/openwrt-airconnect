@@ -1,0 +1,112 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/*
+ * Tokens live on the app root, never on :root, so nothing here can leak into
+ * LuCI's sidebar, header or other applications.
+ */
+.ac-root {
+	--background: 0 0% 100%;
+	--foreground: 240 6% 10%;
+	--card: 0 0% 100%;
+	--card-foreground: 240 6% 10%;
+	--popover: 0 0% 100%;
+	--popover-foreground: 240 6% 10%;
+	--primary: 240 6% 10%;
+	--primary-foreground: 0 0% 98%;
+	--secondary: 240 5% 96%;
+	--secondary-foreground: 240 6% 10%;
+	--muted: 240 5% 96%;
+	--muted-foreground: 240 4% 46%;
+	--accent: 240 5% 96%;
+	--accent-foreground: 240 6% 10%;
+	--destructive: 0 72% 45%;
+	--destructive-foreground: 0 0% 98%;
+	--success: 150 62% 28%;
+	--success-foreground: 0 0% 100%;
+	--warning: 35 78% 32%;
+	--warning-foreground: 0 0% 100%;
+	--border: 240 6% 90%;
+	--input: 240 6% 88%;
+	--ring: 240 5% 65%;
+	--radius: 0.625rem;
+}
+
+.ac-root.dark {
+	--background: 240 4% 13%;
+	--foreground: 240 5% 94%;
+	--card: 240 4% 16%;
+	--card-foreground: 240 5% 94%;
+	--popover: 240 4% 16%;
+	--popover-foreground: 240 5% 94%;
+	--primary: 240 5% 92%;
+	--primary-foreground: 240 4% 11%;
+	--secondary: 240 4% 21%;
+	--secondary-foreground: 240 5% 94%;
+	--muted: 240 4% 21%;
+	--muted-foreground: 240 5% 68%;
+	--accent: 240 4% 24%;
+	--accent-foreground: 240 5% 94%;
+	--destructive: 0 62% 52%;
+	--destructive-foreground: 0 0% 98%;
+	--success: 150 45% 66%;
+	--success-foreground: 150 60% 10%;
+	--warning: 38 72% 62%;
+	--warning-foreground: 38 80% 10%;
+	--border: 240 4% 27%;
+	--input: 240 4% 29%;
+	--ring: 240 4% 45%;
+}
+
+/*
+ * Preflight is off (see tailwind.config.mjs), so the app restores the handful of
+ * base rules it actually depends on, scoped to itself.
+ */
+@layer base {
+	.ac-root,
+	.ac-root *,
+	.ac-root *::before,
+	.ac-root *::after {
+		box-sizing: border-box;
+	}
+
+	.ac-root {
+		background-color: hsl(var(--background));
+		color: hsl(var(--foreground));
+		font-size: 14px;
+		line-height: 1.5;
+	}
+
+	.ac-root button,
+	.ac-root input,
+	.ac-root select,
+	.ac-root textarea {
+		font: inherit;
+		color: inherit;
+		letter-spacing: inherit;
+		margin: 0;
+	}
+
+	.ac-root button {
+		background: none;
+		border: 0;
+		padding: 0;
+		cursor: pointer;
+	}
+
+	.ac-root a {
+		color: hsl(var(--primary));
+		text-decoration: none;
+	}
+
+	.ac-root :focus-visible {
+		outline: 2px solid hsl(var(--ring));
+		outline-offset: 2px;
+	}
+
+	/* `hidden` must win over the `flex`/`grid` display utilities the app uses. */
+	.ac-root [hidden] {
+		display: none !important;
+	}
+}
