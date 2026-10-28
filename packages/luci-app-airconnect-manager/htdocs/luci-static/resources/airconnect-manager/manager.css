@@ -15,7 +15,11 @@
   color: var(--ac-text);
   max-width: 1080px;
   margin: 0 auto;
-  padding: 8px 0 12px;
+  /* Argon paints a `header::after` band 2rem tall below the site header, and
+   * the page body starts right under that header, so the first row of content
+   * would sit on the band. Reserve the band plus the usual 12px gap; themes
+   * without the band just get that much extra top spacing. */
+  padding: calc(2rem + 12px) 0 12px;
   line-height: 1.5;
   color-scheme: light;
 }

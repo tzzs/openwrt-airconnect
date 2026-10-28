@@ -275,7 +275,11 @@ return view.extend({
 		var body = E('div', { 'class': 'ac-device-controls' });
 		var title = E('h3', {}, text(device.name || device.original_name));
 		var card = E('article', { 'class': 'ac-device-card' }, [
-			E('header', { 'class': 'ac-device-heading' }, [E('div', {}, [title, E('p', {}, text(device.original_name))]), status]),
+			// A <div>, not <header>. The Argon theme styles a bare `header` as the
+		// site header (`color: #fff` plus a `header::after` blue bar), so a
+		// <header> here rendered the heading white-on-white. `section` and
+		// `article` carry no such bare theme rule, so the card stays as it is.
+		E('div', { 'class': 'ac-device-heading' }, [E('div', {}, [title, E('p', {}, text(device.original_name))]), status]),
 			body,
 			E('details', { 'class': 'ac-device-details' }, [E('summary', {}, _('Device information')), facts])
 		]);
@@ -485,7 +489,10 @@ return view.extend({
 			self.restageDevices().then(function() { self.updateNameWarning(); });
 		} }, [
 			E('link', { rel: 'stylesheet', href: L.resource('airconnect-manager/manager.css') }),
-			E('header', { 'class': 'ac-page-heading' }, [E('div', {}, [E('h1', {}, 'AirConnect'), E('p', { 'class': 'ac-muted' }, _('Bring your network speakers to AirPlay.'))]), this.saveState]),
+			// <div>, not <header>: see makeDeviceCard. On Argon a bare `header`
+			// takes color:#fff and draws a `header::after` blue bar, which put the
+			// page title in white on top of a stray band.
+			E('div', { 'class': 'ac-page-heading' }, [E('div', {}, [E('h1', {}, 'AirConnect'), E('p', { 'class': 'ac-muted' }, _('Bring your network speakers to AirPlay.'))]), this.saveState]),
 			E('section', { 'class': 'ac-service-summary', 'aria-label': _('Service status') }, [this.serviceStatus, this.statusNote]), this.statusError, this.conflict,
 			tabs, devicesPanel, settingsPanel, diagnosticsPanel,
 			E('p', { 'class': 'ac-apply-note' }, _('Save keeps changes pending. Save & Apply validates settings and briefly disconnects AirPlay while applying.'))

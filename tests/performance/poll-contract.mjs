@@ -336,14 +336,31 @@ function loadView(env) {
 	return instance;
 }
 
-// Evaluate rules.js the same way, so the view's `require airconnect-manager.rules`
-// resolves to the real module instead of a stub of this test's own making.
+// rules.js is a LuCI class factory, not a module with exports: LuCI's `require`
+// demands `Class.isSubclass(factory())` and then instantiates it, so this builds
+// the class through the same minimal `L.Class` shim as
+// tests/parity/check-frontend.mjs and returns the instance LuCI would hand the
+// view - a stub of this test's own making would hide a broken contract.
+function LuCIBaseClass() {}
+
+LuCIBaseClass.extend = function(properties) {
+	const Subclass = function() {};
+	Subclass.prototype = Object.create(LuCIBaseClass.prototype);
+	for (const name of Object.keys(properties))
+		Subclass.prototype[name] = properties[name];
+	Subclass.extend = LuCIBaseClass.extend;
+	return Subclass;
+};
+
+const LUCI = { Class: LuCIBaseClass };
+
 function loadRules() {
 	const source = readFileSync(join(ROOT,
 		'packages/luci-app-airconnect-manager/htdocs/luci-static/resources/airconnect-manager/rules.js'), 'utf8');
-	const module = { exports: {} };
-	new Function('_', 'module', source + '\nreturn module.exports;\n')((text) => text, module);
-	return module.exports;
+	const Rules = new Function('_', 'L', source)((text) => text, LUCI);
+	if (typeof Rules !== 'function' || !(Rules.prototype instanceof LUCI.Class))
+		throw new Error('rules.js did not return a LuCI class; the router would abort the view');
+	return new Rules();
 }
 
 // Every scenario gets its own instance, its own fake RPC and its own fake clock.

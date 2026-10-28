@@ -123,17 +123,30 @@ function createUci(data) {
 	};
 }
 
-// rules.js ends with a top-level `return {...}`, so the factory's own return
-// value is the module. (LuCI wraps it differently; the shim mirrors
-// tests/parity/check-frontend.mjs, which is the established pattern here.)
+// rules.js is a LuCI class factory, not a module with exports: LuCI's `require`
+// demands `Class.isSubclass(factory())`, instantiates the class and hands the
+// *instance* to the view. Anything else aborts the whole view with
+// `TypeError: "airconnect-manager.rules" factory yields invalid constructor`.
+// This is the same minimal `L.Class` shim as tests/parity/check-frontend.mjs.
+function LuCIBaseClass() {}
+
+LuCIBaseClass.extend = function(properties) {
+	const Subclass = function() {};
+	Subclass.prototype = Object.create(LuCIBaseClass.prototype);
+	for (const name of Object.keys(properties))
+		Subclass.prototype[name] = properties[name];
+	Subclass.extend = LuCIBaseClass.extend;
+	return Subclass;
+};
+
+const LUCI = { Class: LuCIBaseClass };
+
 function loadRules() {
 	const source = readFileSync(RULES_PATH, 'utf8');
-	const factory = new Function('_', 'module', source + '\nreturn module.exports;\n');
-	const module = { exports: {} };
-	const exported = factory((text) => text, module);
-	if (exported == null || typeof exported !== 'object')
-		throw new Error('rules.js did not return an exports object');
-	return exported;
+	const Rules = new Function('_', 'L', source)((text) => text, LUCI);
+	if (typeof Rules !== 'function' || !(Rules.prototype instanceof LUCI.Class))
+		throw new Error('rules.js did not return a LuCI class; the router would abort the view');
+	return new Rules();
 }
 
 function loadView(env) {
@@ -170,7 +183,7 @@ async function optionsFor(engine) {
 		rpc: { declare: () => () => Promise.resolve({}) },
 		ui: { addNotification() { }, changes: { init: () => Promise.resolve(), apply: () => Promise.resolve() } },
 		poll: { add() { }, remove() { }, start() { }, stop() { } },
-		L: { bind: (fn, context) => fn.bind(context), resource: (path) => path },
+		L: { bind: (fn, context) => fn.bind(context), resource: (path) => path, Class: LUCI.Class },
 		rules: loadRules()
 	});
 	instance.maps = [];
@@ -211,6 +224,18 @@ const UPNP_ONLY = ['http_length', 'upnp_max'];
 const CAST_ONLY = ['stop_receiver'];
 
 async function main() {
+	section('theme-safe markup');
+	// Argon, the iStoreOS theme, styles a bare `header` as the site header:
+	// `color: #fff` plus a `header::after` bar painted with the theme's primary
+	// colour. A <header> inside this view therefore rendered its heading
+	// white-on-white with a stray blue band across the page. No host shim
+	// reproduces a theme, so the markup itself is the contract here: `section`
+	// and `article` have no bare theme rule, `header` does.
+	const viewSource = readFileSync(VIEW_PATH, 'utf8');
+	const headerElements = viewSource.match(/E\(\s*['"]header['"]/g) || [];
+	check(headerElements.length === 0, 'the view never creates a <header> element',
+		headerElements.length + ' occurrence(s); use a <div> with the same class instead');
+
 	section('global advanced panel');
 	const upnp = await optionsFor('upnp');
 	const cast = await optionsFor('cast');

@@ -605,3 +605,67 @@ overlay 剩余约 1.1 GB。安装前设备上已装并运行着旧包 `airconnec
 - **LuCI 页面**：仍未在登录会话中打开。
 - **设备侧性能**：仍未测量。
 
+
+## LuCI 页面在登录会话中的验证（S4，2026-10-29）
+
+设备同 S2/S3：iStoreOS 25.12.5、`aarch64_generic`、APK。这一节补上了前面各节一直挂着的
+“LuCI 页面仍未在登录会话中打开”。
+
+### 真正验证过的
+
+- 四个包（engine、manager、LuCI、中文翻译）用 `apk add --allow-untrusted` 装完后，
+  在登录会话里打开 `/cgi-bin/luci/admin/services/airconnect-manager`，页面正常渲染：
+  三个标签页（音箱 / 设置 / 网络诊断）都能切换，设置页 16 个字段全部出现，诊断页三个服务按钮和
+  日志按钮都在；
+- 中文翻译生效：页面文案、标签、空状态提示都是中文，`airconnect-manager.zh-cn.lmo` 被真正加载；
+- 菜单项 `admin/services/airconnect-manager`（标题 `AirConnect`，order 60）出现在“服务”下；
+- 页面里的状态与服务端一致：`UPnP: 运行中`、`Chromecast: 已禁用`、`conflicts` 为空时警告条不显示。
+
+### 发现并修掉的缺陷：`rules.js` 不是 LuCI 类
+
+首次打开页面时整个视图是空的，弹窗只有一行：
+
+```text
+TypeError
+"airconnect-manager.rules" factory yields invalid constructor
+```
+
+根因在 LuCI 的 `require`（`/www/luci-static/resources/luci.js`）：它不是通用模块加载器，而是
+**类加载器**——`_factory(...)` 的返回值必须满足 `Class.isSubclass()`，然后 LuCI 自己 `new` 出实例
+交给调用方。`rules.js` 结尾是 `return { interfaceValue, ... }`，一个普通对象，所以校验失败，
+整个 `overview.js` 连带加载失败。改成 `return L.Class.extend({ ... })`（`L` 是 LuCI 传给每个类文件的
+参数）后页面正常。
+
+**主机测试为什么没抓到**：三个加载 `rules.js` 的套件（`tests/parity/check-frontend.mjs`、
+`tests/luci/run.mjs`、`tests/performance/poll-contract.mjs`）各自用 `new Function` 取返回值，
+只检查“是不是对象/能不能调用”，从不检查 LuCI 的类契约。它们测的形状和真实加载器要求的形状
+不一致，缺陷正好落在两者之间。现在三个套件都用同一个最小 `L.Class` shim 构造类再实例化，
+`check-frontend.mjs` 还会显式断言 `Rules.prototype instanceof L.Class`，并在旧实现上验证过它会失败。
+
+（附带发现：`tests/performance/poll-contract.mjs` 原来的 `loadRules()` 读的是 `module.exports`，
+而 `rules.js` 从不写它，所以那个套件拿到的一直是空对象 `{}`——因为该套件不调用任何规则，
+这个错误一直被掩盖。）
+
+### 发现并修掉的第二个缺陷：`<header>` 撞上 Argon 的站点页头样式
+
+视图用 `<header class="ac-page-heading">` 和 `<header class="ac-device-heading">` 包标题。Argon
+主题对**裸 `header` 元素**写了站点页头的样式：
+
+```css
+header { color: #fff; color: var(--header-color); padding: 0; position: relative }
+header::after { content: ""; position: absolute; height: 2rem; width: 100%; background: #5e72e4 }
+```
+
+结果是页面标题变成白字（白底上不可见），并且页头下方多出一条 2rem 的蓝色带压在标题上。
+`section` 和 `article` 没有这类裸元素规则，所以卡片和面板不受影响。
+
+修法：两处标题改用 `<div>` + 同样的 class（`tests/luci/run.mjs` 里加了断言，视图再出现
+`E('header')` 就失败）；`manager.css` 的根容器把 Argon 那条 2rem 带子的高度让出来
+（`padding: calc(2rem + 12px) 0 12px`），没有该带子的主题只是多出这段上边距。
+
+### 仍未验证
+
+- **真实音箱**：`devices` 仍为空，该网段没有可发现的 UPnP/DLNA 渲染器；
+- **保存与回滚**：页面能渲染，但“保存 / 保存并应用 / 重置”没有在真机上点过，
+  `ui.changes` 的确认与回滚未走通；
+- **设备侧性能**、**升级保留设置**、**`--rollback`** 与 S2/S3 一样仍未验证。

@@ -12,10 +12,18 @@
 // these functions agree with it. Never loosen one side to make the other pass:
 // the backend is the authority, the view must tighten to match it.
 //
-// This file is loaded standalone by LuCI (`'require airconnect-manager.rules'`)
-// and is also evaluated by the host test runner, so it must not touch the LuCI
-// API at load time. `_` is only consulted when a rule runs, and the messages
-// fall back to plain English strings when no translation helper is present.
+// LuCI loads this file with `'require airconnect-manager.rules'`, and its
+// `require` is not a general module loader: the factory must yield a class
+// (`Class.isSubclass(factory())`), which LuCI then instantiates and hands to the
+// view. Returning a plain object aborts the entire view with
+//   TypeError: "airconnect-manager.rules" factory yields invalid constructor
+// so the rules are prototype methods of a `L.Class.extend()` class. `L` is one
+// of the arguments LuCI passes to every class file; nothing else of the LuCI
+// API is touched, and tests/parity/check-frontend.mjs builds the same class
+// through a minimal `L.Class` shim before instantiating it.
+//
+// `_` is only consulted when a rule runs, and the messages fall back to plain
+// English strings when no translation helper is present.
 
 'use strict';
 
@@ -191,7 +199,8 @@ function artwork(value) {
 	return true;
 }
 
-return {
+// A class, not an object literal: LuCI rejects anything else (see the header).
+return L.Class.extend({
 	interfaceValue: interfaceValue,
 	upnpVolume: upnpVolume,
 	castVolume: castVolume,
@@ -202,4 +211,4 @@ return {
 	httpLength: httpLength,
 	upnpMax: upnpMax,
 	artwork: artwork
-};
+});
