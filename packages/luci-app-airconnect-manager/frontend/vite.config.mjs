@@ -9,6 +9,7 @@ const outDir = fileURLToPath(new URL('../htdocs/luci-static/resources/airconnect
 
 export default defineConfig({
 	plugins: [react()],
+	define: { 'process.env.NODE_ENV': JSON.stringify('production') },
 	build: {
 		outDir,
 		// The directory also holds the view's own static files while a build is
