@@ -12,17 +12,21 @@ import {
 	Info,
 	Menu,
 	Mic2,
+	Monitor,
+	Moon,
 	MoreHorizontal,
 	Pause,
 	Play,
 	Radio,
 	RefreshCw,
+	RotateCcw,
 	Search,
 	Settings2,
 	Signal,
 	SlidersHorizontal,
 	Speaker,
 	Square,
+	Sun,
 	Wifi,
 	X
 } from 'lucide-react';
@@ -98,7 +102,7 @@ function HealthStrip({ status, presentation, t }) {
 	);
 }
 
-function TopBar({ status, saveState, busy, onSave, onSaveApply, onReset, onSettings, onRefresh, t }) {
+function TopBar({ status, saveState, busy, onSave, onSaveApply, onReset, onSettings, onRefresh, lang, onLanguageChange, languages = [], theme, onThemeChange, themes = [], t }) {
 	const _ = (text) => copy(t, text);
 	const services = (status && status.services) || {};
 	const running = (services.upnp && services.upnp.running) || (services.cast && services.cast.running);
@@ -118,21 +122,59 @@ function TopBar({ status, saveState, busy, onSave, onSaveApply, onReset, onSetti
 				<span className={'ac-save-state ac-save-' + saveState.tone} role="status" aria-live="polite">
 					{saveState.text}
 				</span>
-				<Button variant="ghost" size="icon" className="ac-icon-button" disabled={busy} onClick={onRefresh} title={_('Refresh status')}>
-					<RefreshCw />
-				</Button>
-				<Button variant="outline" size="sm" disabled={busy} onClick={onSettings}>
-					<Settings2 /> {_('Global settings')}
-				</Button>
-				<Button variant="outline" size="sm" disabled={busy} onClick={onSave}>
-					{_('Save')}
-				</Button>
-				<Button size="sm" disabled={busy} onClick={onSaveApply}>
-					{_('Save and apply')}
-				</Button>
-				<Button variant="ghost" size="icon" className="ac-icon-button" disabled={busy} onClick={onReset} title={_('Reset')}>
-					<MoreHorizontal />
-				</Button>
+				{/*
+				 * Every action on the page is a shadcn Button with an explicit
+				 * type="button": the app is mounted inside LuCI's view, and a
+				 * button without a type defaults to submit. Icon-only buttons
+				 * carry both a title and an aria-label because the icon alone is
+				 * not an accessible name.
+				 */}
+				<div className="ac-header-actions">
+					{/*
+					 * Language and theme are pure-frontend preferences, so they
+					 * sit with the other controls rather than in LuCI's chrome.
+					 * They are segmented Buttons (the spec allows two segments
+					 * instead of a Select) and are not `_()` strings: their
+					 * labels come from the i18n and theme modules so the two
+					 * language labels never need translating.
+					 */}
+					{languages.length ? (
+						<div className="ac-preferences" role="group" aria-label="Language">
+							{languages.map((entry) => (
+								<Button key={entry.value} variant={entry.value === lang ? 'secondary' : 'ghost'} size="sm" type="button" className={'ac-lang-button' + (entry.value === lang ? '' : ' bg-transparent')} aria-pressed={entry.value === lang} title={entry.label} aria-label={entry.label} onClick={() => onLanguageChange && onLanguageChange(entry.value)}>
+									{entry.value === 'zh' ? '中' : 'EN'}
+								</Button>
+							))}
+						</div>
+					) : null}
+					{themes.length && typeof onThemeChange === 'function' ? (
+						<div className="ac-preferences" role="group" aria-label="Theme">
+							{themes.map((entry) => {
+								const ThemeIcon = entry.value === 'light' ? Sun : entry.value === 'dark' ? Moon : Monitor;
+								return (
+									<Button key={entry.value} variant={entry.value === theme ? 'secondary' : 'ghost'} size="icon" type="button" className={'ac-icon-button' + (entry.value === theme ? '' : ' bg-transparent')} aria-pressed={entry.value === theme} title={entry.label} aria-label={entry.label} onClick={() => onThemeChange(entry.value)}>
+										<ThemeIcon />
+									</Button>
+								);
+							})}
+						</div>
+					) : null}
+					<Button variant="ghost" size="icon" type="button" className="ac-icon-button bg-transparent" disabled={busy} onClick={onRefresh} title={_('Refresh status')} aria-label={_('Refresh status')}>
+						<RefreshCw />
+					</Button>
+					<Button variant="ghost" size="sm" type="button" className="bg-transparent" disabled={busy} onClick={onSettings}>
+						<Settings2 /> {_('Global settings')}
+					</Button>
+					<Button variant="ghost" size="icon" type="button" className="ac-icon-button bg-transparent" disabled={busy} onClick={onReset} title={_('Reset')} aria-label={_('Reset')}>
+						<RotateCcw />
+					</Button>
+					<Button variant="outline" size="sm" type="button" disabled={busy} onClick={onSave}>
+						{_('Save')}
+					</Button>
+					<Button size="sm" type="button" disabled={busy} onClick={onSaveApply}>
+						{_('Save and apply')}
+					</Button>
+				</div>
 			</div>
 		</div>
 	);
@@ -155,16 +197,20 @@ function DeviceRail({ devices, selectedKey, onSelect, onScan, scanState, onConfi
 					<span className="ac-section-label">{_('Workspace')}</span>
 					<h2>{_('Speakers')} <span>{devices.length}</span></h2>
 				</div>
-				<Button variant="ghost" size="icon" className="ac-icon-button" title={_('Rail menu')}>
+				<Button variant="ghost" size="icon" type="button" className="ac-icon-button bg-transparent" title={_('Rail menu')} aria-label={_('Rail menu')}>
 					<Menu />
 				</Button>
 			</div>
 			<label className="ac-search-field">
 				<Search />
 				<input value={query} onChange={(event) => setQuery(event.target.value)} placeholder={_('Search speakers')} />
-				{query ? <button type="button" onClick={() => setQuery('')} aria-label={_('Clear search')}><X /></button> : null}
+				{query ? (
+					<Button variant="ghost" size="icon" type="button" className="ac-search-clear bg-transparent" onClick={() => setQuery('')} title={_('Clear search')} aria-label={_('Clear search')}>
+						<X />
+					</Button>
+				) : null}
 			</label>
-			<Button className="ac-scan-button" variant="outline" disabled={scanState.disabled || scanState.running} onClick={onScan}>
+			<Button className="ac-scan-button" variant="outline" size="sm" type="button" disabled={scanState.disabled || scanState.running} onClick={onScan}>
 				<Compass /> {scanState.running ? _('Scanning speakers') : _('Scan for speakers')}
 			</Button>
 			<div className="ac-rail-caption">
@@ -177,7 +223,17 @@ function DeviceRail({ devices, selectedKey, onSelect, onScan, scanState, onConfi
 					const selected = key === selectedKey;
 					const broadcast = presentation.deviceBroadcastBadge(device.broadcasting);
 					return (
-						<button key={key} type="button" className={'ac-device-row' + (selected ? ' is-selected' : '')} onClick={() => onSelect(key)}>
+						/*
+						 * This one stays a native <button> on purpose. It is a
+						 * navigation list item, not an action: the shadcn Button
+						 * brings the action chrome (background, hover fill,
+						 * fixed height) that a row must not have, and <nav>
+						 * semantics require the row to be the interactive
+						 * element itself. It still follows the same rules as
+						 * every other button: type="button", a visible focus
+						 * ring and aria-current for the selected row.
+						 */
+						<button key={key} type="button" className={'ac-device-row' + (selected ? ' is-selected' : '')} aria-current={selected ? 'page' : undefined} onClick={() => onSelect(key)}>
 							<span className="ac-device-avatar"><Speaker /></span>
 							<span className="ac-device-row-copy">
 								<strong>{device.name || device.original_name || _('Unnamed speaker')}</strong>
@@ -251,7 +307,7 @@ function DeviceEditor({ device, values, fields, rules, onChange, presentation, t
 				<div className="ac-setup-illustration"><Compass /></div>
 				<h2>{_('This speaker is discovered')}</h2>
 				<p>{_('Create a local profile to give it an AirPlay name, set its volume and choose how it bridges audio.')}</p>
-				<Button onClick={() => onChange(null, '__configure__', device)}><Settings2 /> {_('Set up this speaker')}</Button>
+				<Button type="button" onClick={() => onChange(null, '__configure__', device)}><Settings2 /> {_('Set up this speaker')}</Button>
 			</div>
 		);
 	}
@@ -296,7 +352,7 @@ function EmptyWorkspace({ onScan, scanState, t }) {
 			<span className="ac-section-label">{_('AirPlay bridge')}</span>
 			<h1>{_('Find the speakers on your network')}</h1>
 			<p>{_('Start a discovery scan to see compatible UPnP and Chromecast speakers. They will appear here with a separate profile for each receiver.')}</p>
-			<Button onClick={onScan} disabled={scanState.disabled || scanState.running}><Compass /> {scanState.running ? _('Scanning speakers') : _('Start discovery')}</Button>
+			<Button type="button" onClick={onScan} disabled={scanState.disabled || scanState.running}><Compass /> {scanState.running ? _('Scanning speakers') : _('Start discovery')}</Button>
 			{scanState.disabled ? <small>{_('Enable UPnP or Chromecast discovery in Global settings first.')}</small> : null}
 		</div>
 	);
@@ -314,8 +370,8 @@ function UtilityRail({ status, presentation, onAction, conflicts, logs, onLoadLo
 				<div className="ac-service-row"><span><StatusDot tone={services.upnp && services.upnp.running ? 'positive' : 'neutral'} />{_('UPnP discovery')}</span><strong>{presentation.serviceLabel(services.upnp)}</strong></div>
 				<div className="ac-service-row"><span><StatusDot tone={services.cast && services.cast.running ? 'positive' : 'neutral'} />{_('Chromecast discovery')}</span><strong>{presentation.serviceLabel(services.cast)}</strong></div>
 				<div className="ac-utility-actions">
-					<Button size="sm" disabled={busy || conflicts.length > 0} onClick={() => onAction('start')}><Play /> {_('Start')}</Button>
-					<Button size="sm" variant="outline" disabled={busy} onClick={() => onAction('restart')}><RefreshCw /> {_('Restart')}</Button>
+					<Button size="sm" type="button" disabled={busy || conflicts.length > 0} onClick={() => onAction('start')}><Play /> {_('Start')}</Button>
+					<Button size="sm" variant="outline" type="button" disabled={busy} onClick={() => onAction('restart')}><RefreshCw /> {_('Restart')}</Button>
 				</div>
 				{conflicts.length ? <Alert tone="warning"><strong>{_('Another AirConnect instance was detected.')}</strong><p>{conflicts.join('\n')}</p></Alert> : null}
 			</section>
@@ -332,7 +388,7 @@ function UtilityRail({ status, presentation, onAction, conflicts, logs, onLoadLo
 				{broadcast.observed_at ? <small className="ac-observed-time"><Clock3 /> {_('Observed')} {presentation.time(broadcast.observed_at)}</small> : null}
 			</section>
 			<section className="ac-utility-block ac-log-block">
-				<div className="ac-utility-heading"><span>{_('Recent logs')}</span><Button variant="ghost" size="icon" className="ac-icon-button" disabled={busy} onClick={onLoadLogs} title={_('Load recent logs')}><RefreshCw /></Button></div>
+				<div className="ac-utility-heading"><span>{_('Recent logs')}</span><Button variant="ghost" size="icon" type="button" className="ac-icon-button bg-transparent" disabled={busy} onClick={onLoadLogs} title={_('Load recent logs')} aria-label={_('Load recent logs')}><RefreshCw /></Button></div>
 				<pre>{logs ? (logs.lines.length ? logs.lines.slice(-8).join('\n') : _('No log entries.')) : _('Logs appear here when requested.')}</pre>
 			</section>
 		</aside>
@@ -343,7 +399,7 @@ function SettingsWorkspace({ fields, model, set, rules, onClose, t, inheritLabel
 	const _ = (text) => copy(t, text);
 	return (
 		<section className="ac-settings-workspace">
-			<div className="ac-settings-titlebar"><div><span className="ac-section-label">{_('Configuration')}</span><h1>{_('Global settings')}</h1><p>{_('Defaults for every speaker without a local override.')}</p></div><Button variant="ghost" size="icon" className="ac-icon-button" onClick={onClose} title={_('Close settings')}><X /></Button></div>
+			<div className="ac-settings-titlebar"><div><span className="ac-section-label">{_('Configuration')}</span><h1>{_('Global settings')}</h1><p>{_('Defaults for every speaker without a local override.')}</p></div><Button variant="ghost" size="icon" type="button" className="ac-icon-button bg-transparent" onClick={onClose} title={_('Close settings')} aria-label={_('Close settings')}><X /></Button></div>
 			<div className="ac-settings-layout">
 				<section className="ac-settings-column"><div className="ac-settings-column-heading"><Cog /><div><h2>{_('Network and discovery')}</h2><p>{_('Choose which bridge engines are available on this router.')}</p></div></div><div className="ac-editor-grid">{fields.filter((field) => field.group === 'primary').map((field) => <Field key={field.name} field={field} value={model[field.name]} onChange={(value) => set(field.name, value)} rules={rules} idPrefix="ac-main" inheritLabel={inheritLabel} />)}</div></section>
 				<section className="ac-settings-column"><div className="ac-settings-column-heading"><SlidersHorizontal /><div><h2>{_('Audio defaults')}</h2><p>{_('Applied when a speaker does not define its own value.')}</p></div></div><div className="ac-editor-grid">{fields.filter((field) => field.group !== 'primary').map((field) => <Field key={field.name} field={field} value={model[field.name]} onChange={(value) => set(field.name, value)} rules={rules} idPrefix="ac-main" inheritLabel={inheritLabel} />)}</div></section>
@@ -382,12 +438,18 @@ export function Workspace({
 	settingsOpen,
 	onCloseSettings,
 	t,
-	inheritLabel
+	inheritLabel,
+	lang,
+	onLanguageChange,
+	languages,
+	theme,
+	onThemeChange,
+	themes
 }) {
 	const _ = (text) => copy(t, text);
 	return (
 		<div className="ac-console">
-			<TopBar status={status} saveState={saveState} busy={busy} onSave={onSave} onSaveApply={onSaveApply} onReset={onReset} onSettings={onSettings} onRefresh={onRefresh} t={t} />
+			<TopBar status={status} saveState={saveState} busy={busy} onSave={onSave} onSaveApply={onSaveApply} onReset={onReset} onSettings={onSettings} onRefresh={onRefresh} lang={lang} onLanguageChange={onLanguageChange} languages={languages} theme={theme} onThemeChange={onThemeChange} themes={themes} t={t} />
 			<HealthStrip status={status} presentation={presentation} t={t} />
 			<div className="ac-console-layout">
 				<DeviceRail devices={devices} selectedKey={selectedKey} onSelect={onSelect} onScan={onScan} scanState={scanState} onConfigure={onConfigure} presentation={presentation} t={t} />

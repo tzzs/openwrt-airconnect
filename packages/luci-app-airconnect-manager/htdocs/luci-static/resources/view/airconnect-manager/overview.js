@@ -11,8 +11,15 @@
 //
 // This file stays a LuCI class because that is what LuCI's router loads, and it
 // owns the page globals the app needs (`uci`, `rpc`, `ui`, `poll`, `_`). It
-// mounts the app into a container and delegates the footer's Save / Save & Apply
-// buttons to it, so the app never has to reach for `window`.
+// mounts the app into a container; saving, applying and reloading all live in
+// the app's own header, not in a LuCI footer.
+//
+// There are deliberately no handleSave / handleSaveApply / handleReset methods.
+// LuCI's view.extend decides the footer buttons by testing whether those
+// methods exist (luci.js renders a ComboButton for handleSaveApply and a plain
+// cbi-button for each of handleSave and handleReset). Defining them would add a
+// second, differently styled "Save and apply / Save / Reset" row below a page
+// whose header already provides all three, so they are omitted on purpose.
 
 var configName = 'airconnect-manager';
 
@@ -62,6 +69,8 @@ return view.extend({
 
 		loadApp()
 			.then(function (app) {
+				// Kept so the mounted instance can be inspected or unmounted from
+				// the console; the page does not delegate its buttons to it.
 				self.app = app.mount(mountNode, {
 					uci: uci,
 					rpc: rpc,
@@ -79,19 +88,5 @@ return view.extend({
 			});
 
 		return root;
-	},
-
-	handleSave: function () {
-		return this.app ? this.app.save() : Promise.resolve();
-	},
-
-	handleSaveApply: function (ev, mode) {
-		// LuCI passes mode '0' for a normal apply and '1' for "save only"; the app
-		// maps that onto ui.changes.apply(rollback).
-		return this.app ? this.app.saveApply(mode === '0') : Promise.resolve();
-	},
-
-	handleReset: function () {
-		window.location.reload();
 	}
 });

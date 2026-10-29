@@ -40,7 +40,19 @@
 	--shadow-soft: 0 1px 2px rgb(25 35 55 / 0.04), 0 8px 24px rgb(25 35 55 / 0.04);
 }
 
-.ac-root.dark {
+/*
+ * Dark tokens. `ac-theme-dark` is the explicit choice; `dark` is kept for the
+ * class the page used before the theme switcher. With neither class the
+ * prefers-color-scheme block below applies the same tokens, so "system" follows
+ * the OS. `ac-theme-light` opts out of that block, which is how an explicit
+ * light choice wins over a dark OS.
+ *
+ * The values are repeated in the two blocks because CSS has no mixin: the
+ * explicit class must win even when the OS is light, and the media query cannot
+ * be part of a selector list.
+ */
+.ac-root.dark,
+.ac-root.ac-theme-dark {
 	--background: 224 26% 10%;
 	--foreground: 220 20% 95%;
 	--surface: 224 23% 14%;
@@ -71,6 +83,39 @@
 	--shadow-soft: 0 1px 2px rgb(0 0 0 / 0.25), 0 12px 30px rgb(0 0 0 / 0.2);
 }
 
+@media (prefers-color-scheme: dark) {
+	.ac-root:not(.ac-theme-light):not(.ac-theme-dark) {
+		--background: 224 26% 10%;
+		--foreground: 220 20% 95%;
+		--surface: 224 23% 14%;
+		--surface-subtle: 224 21% 18%;
+		--surface-strong: 225 25% 7%;
+		--surface-strong-2: 225 22% 13%;
+		--card: 224 23% 14%;
+		--card-foreground: 220 20% 95%;
+		--popover: 224 23% 14%;
+		--popover-foreground: 220 20% 95%;
+		--primary: 232 80% 70%;
+		--primary-foreground: 231 45% 12%;
+		--secondary: 224 20% 21%;
+		--secondary-foreground: 220 20% 95%;
+		--muted: 224 20% 18%;
+		--muted-foreground: 220 14% 70%;
+		--accent: 232 45% 22%;
+		--accent-foreground: 232 86% 82%;
+		--destructive: 0 72% 60%;
+		--destructive-foreground: 0 0% 100%;
+		--success: 151 51% 62%;
+		--success-foreground: 151 52% 12%;
+		--warning: 35 88% 66%;
+		--warning-foreground: 35 70% 12%;
+		--border: 224 18% 28%;
+		--input: 224 17% 33%;
+		--ring: 232 80% 70%;
+		--shadow-soft: 0 1px 2px rgb(0 0 0 / 0.25), 0 12px 30px rgb(0 0 0 / 0.2);
+	}
+}
+
 @layer base {
 	.ac-root,
 	.ac-root *,
@@ -85,7 +130,6 @@
 		font-family: ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 		font-size: 14px;
 		line-height: 1.5;
-		min-height: 600px;
 	}
 
 	.ac-root button,
@@ -116,11 +160,28 @@
 	}
 }
 
-.ac-root { container: airconnect / inline-size; min-width: 0; }
+/*
+ * Argon wraps the view in `#maincontent > .container`, which is `width: 100%`
+ * with a 20px inline margin: the container's content box therefore ends 20px
+ * past #maincontent's right edge. A child that inherits `width: 100%` would sit
+ * on that overflowing edge and be clipped. `width: auto` + `margin-right: 20px`
+ * makes the app end exactly at #maincontent's right edge instead.
+ *
+ * `container` must stay in the plain cascade (not in @layer base): Tailwind's
+ * base layer would drop it, and the @container rules below would never match.
+ */
+.ac-root {
+	box-sizing: border-box;
+	container: airconnect / inline-size;
+	margin-right: 20px;
+	max-width: 100%;
+	min-width: 0;
+	width: auto;
+}
 
 .ac-console {
 	background: hsl(var(--background));
-	min-height: 680px;
+	min-width: 0;
 	width: 100%;
 }
 
@@ -132,6 +193,7 @@
 	gap: 1rem;
 	justify-content: space-between;
 	min-height: 68px;
+	min-width: 0;
 	padding: 0 1.5rem;
 }
 
@@ -161,6 +223,7 @@
 
 .ac-brand-lockup {
 	gap: 0.7rem;
+	min-width: 0;
 }
 
 .ac-brand-mark {
@@ -177,10 +240,14 @@
 .ac-brand-mark svg { height: 19px; width: 19px; }
 .ac-brand-lockup strong { display: block; font-size: 0.94rem; line-height: 1.1; }
 .ac-brand-lockup span { color: hsl(var(--muted-foreground)); display: block; font-size: 0.69rem; margin-top: 0.18rem; }
-.ac-header-status { gap: 0.65rem; }
-.ac-header-status button svg { height: 15px; width: 15px; }
-.ac-icon-button { height: 32px !important; padding: 0 !important; width: 32px !important; }
-.ac-icon-button svg { height: 16px; width: 16px; }
+.ac-header-status { flex-wrap: wrap; gap: 0.65rem; justify-content: flex-end; min-width: 0; }
+.ac-header-actions { align-items: center; display: flex; flex-wrap: wrap; gap: 0.4rem; }
+.ac-preferences { align-items: center; display: flex; gap: 0.2rem; }
+/* `size="icon"` is 2.25rem in the button variants; the console uses 2rem so a
+ * row of icon and text buttons shares one height. The `.ac-root` prefix matches
+ * Tailwind's `.ac-root .size-9` specificity, so no !important is needed. */
+.ac-root .ac-icon-button { height: 2rem; padding: 0; width: 2rem; }
+.ac-root .ac-icon-button svg { height: 1rem; width: 1rem; }
 
 .ac-save-state {
 	font-size: 0.72rem;
@@ -211,9 +278,10 @@
 	border-bottom: 1px solid hsl(var(--border));
 	display: grid;
 	grid-template-columns: repeat(3, minmax(0, 1fr));
+	min-width: 0;
 	padding: 0 1.5rem;
 }
-.ac-health-item { border-right: 1px solid hsl(var(--border)); gap: 0.62rem; min-height: 72px; padding: 0 1.25rem; }
+.ac-health-item { border-right: 1px solid hsl(var(--border)); gap: 0.62rem; min-height: 72px; min-width: 0; padding: 0 1.25rem; }
 .ac-health-item:first-child { padding-left: 0; }
 .ac-health-item:last-child { border-right: 0; }
 .ac-health-icon { align-items: center; border-radius: 0.45rem; display: flex; height: 29px; justify-content: center; width: 29px; }
@@ -232,28 +300,39 @@
 
 .ac-console-layout {
 	display: grid;
-	grid-template-columns: 270px minmax(0, 1fr) 278px;
-	min-height: 540px;
+	grid-template-columns: 260px minmax(0, 1fr) 260px;
+	/* No hard-coded height. The row is content-sized but capped relative to the
+	 * viewport, so each column scrolls on its own instead of stretching the page
+	 * to its longest child. The cap leaves room for LuCI's chrome, the console
+	 * header and the health strip above; a very short viewport still scrolls the
+	 * page vertically, which is allowed - only horizontal scrolling is not. */
+	max-height: calc(100vh - 18rem);
+	min-height: 0;
+	min-width: 0;
 }
-.ac-device-rail { background: hsl(var(--surface-strong)); color: hsl(220 20% 92%); display: flex; flex-direction: column; min-width: 0; padding: 1.25rem 0.7rem 0.75rem; }
+.ac-device-rail { background: hsl(var(--surface-strong)); color: hsl(220 20% 92%); display: flex; flex-direction: column; min-height: 0; min-width: 0; padding: 1.25rem 0.7rem 0.75rem; }
 .ac-rail-heading { justify-content: space-between; padding: 0 0.6rem; }
 .ac-section-label { color: hsl(var(--muted-foreground)); display: block; font-size: 0.64rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; }
 .ac-device-rail .ac-section-label { color: hsl(222 13% 62%); }
 .ac-rail-heading h2 { font-size: 1.05rem; font-weight: 650; margin: 0.18rem 0 0; }
 .ac-rail-heading h2 span { color: hsl(222 13% 61%); font-size: 0.75rem; font-weight: 500; }
 .ac-device-rail .ac-icon-button { color: hsl(220 20% 80%); }
-.ac-device-rail .ac-icon-button:hover { background: hsl(var(--surface-strong-2)); }
+.ac-root .ac-device-rail .ac-icon-button:hover { background: hsl(var(--surface-strong-2)); color: hsl(220 20% 94%); }
 .ac-search-field { align-items: center; background: hsl(var(--surface-strong-2)); border: 1px solid hsl(225 18% 30%); border-radius: 0.42rem; color: hsl(222 13% 62%); display: flex; gap: 0.45rem; margin: 1.15rem 0.35rem 0.65rem; padding: 0.42rem 0.55rem; }
-.ac-search-field svg { height: 14px; width: 14px; }
+.ac-root .ac-search-field > svg { height: 14px; width: 14px; }
 .ac-search-field input { background: transparent; border: 0; color: hsl(220 20% 94%); font-size: 0.73rem; min-width: 0; outline: 0; width: 100%; }
 .ac-search-field input::placeholder { color: hsl(222 13% 60%); }
-.ac-search-field button { color: hsl(222 13% 66%); display: flex; padding: 0; }
-.ac-search-field button svg { height: 13px; width: 13px; }
-.ac-scan-button { border-color: hsl(225 18% 34%) !important; color: hsl(220 20% 90%) !important; font-size: 0.74rem !important; justify-content: flex-start !important; margin: 0 0.35rem; width: calc(100% - 0.7rem); }
-.ac-scan-button:hover { background: hsl(var(--surface-strong-2)) !important; }
-.ac-scan-button svg { height: 15px; width: 15px; }
+/* A shadcn Button with size="icon" is 2.25rem; the search row is 2rem tall, so
+ * the clear button is shrunk here. The `.ac-root` prefix matches the utility's
+ * specificity without !important. */
+.ac-root .ac-search-clear { color: hsl(222 13% 66%); flex: 0 0 auto; height: 1.35rem; padding: 0; width: 1.35rem; }
+.ac-root .ac-search-clear:hover { background: hsl(225 18% 30%); color: hsl(220 20% 94%); }
+.ac-root .ac-search-clear svg { height: 13px; width: 13px; }
+.ac-root .ac-scan-button { border-color: hsl(225 18% 34%); color: hsl(220 20% 90%); justify-content: flex-start; margin: 0 0.35rem; width: calc(100% - 0.7rem); }
+.ac-root .ac-scan-button:hover { background: hsl(var(--surface-strong-2)); color: hsl(220 20% 94%); }
+.ac-root .ac-scan-button svg { height: 15px; width: 15px; }
 .ac-rail-caption { color: hsl(222 13% 59%); display: flex; font-size: 0.65rem; justify-content: space-between; margin: 1rem 0.6rem 0.45rem; }
-.ac-device-list { flex: 1; min-height: 150px; overflow: auto; }
+.ac-device-list { flex: 1; min-height: 0; overflow: auto; }
 .ac-device-row { background: transparent; border-radius: 0.42rem; border: 1px solid transparent; color: hsl(220 20% 88%); gap: 0.55rem; margin: 0.16rem 0.15rem; padding: 0.62rem 0.45rem; position: relative; text-align: left; transition: background-color 160ms ease, border-color 160ms ease; width: calc(100% - 0.3rem); }
 .ac-device-row:hover { background: hsl(var(--surface-strong-2)); }
 .ac-device-row.is-selected { background: hsl(235 45% 29%); border-color: hsl(235 50% 43%); }
@@ -274,23 +353,24 @@
 .ac-rail-empty p { font-size: 0.72rem; margin: 0; }
 .ac-rail-footer { align-items: center; border-top: 1px solid hsl(225 18% 27%); color: hsl(222 13% 61%); display: flex; font-size: 0.64rem; gap: 0.45rem; margin-top: 0.7rem; padding: 0.8rem 0.6rem 0.1rem; }
 
-.ac-main-workspace { background: hsl(var(--background)); min-width: 0; padding: 1.55rem clamp(1.1rem, 3vw, 2.5rem) 2.5rem; }
-.ac-device-hero { align-items: center; display: flex; gap: 0.9rem; justify-content: space-between; margin-bottom: 1.5rem; }
+.ac-main-workspace { background: hsl(var(--background)); min-height: 0; min-width: 0; overflow-y: auto; padding: 1.15rem clamp(0.9rem, 2vw, 1.6rem) 1.6rem; }
+.ac-device-hero { align-items: center; display: flex; gap: 0.9rem; justify-content: space-between; margin-bottom: 1.1rem; min-width: 0; }
 .ac-hero-icon { align-items: center; background: hsl(var(--accent)); border: 1px solid hsl(235 55% 89%); border-radius: 0.65rem; color: hsl(var(--primary)); display: flex; flex: 0 0 auto; height: 48px; justify-content: center; width: 48px; }
 .ac-hero-icon svg { height: 24px; width: 24px; }
 .ac-hero-copy { flex: 1; min-width: 0; }
 .ac-hero-copy .ac-section-label { margin-bottom: 0.15rem; }
 .ac-hero-copy h1, .ac-empty-workspace h1, .ac-settings-titlebar h1 { font-size: 1.42rem; font-weight: 680; letter-spacing: -0.02em; line-height: 1.2; margin: 0; text-wrap: balance; }
 .ac-hero-copy p, .ac-settings-titlebar p { color: hsl(var(--muted-foreground)); font-size: 0.76rem; margin: 0.22rem 0 0; }
-.ac-hero-state { flex-wrap: wrap; gap: 0.42rem; justify-content: flex-end; }
-.ac-editor-stack { display: flex; flex-direction: column; gap: 0.8rem; max-width: 840px; }
-.ac-editor-section { background: hsl(var(--surface)); border: 1px solid hsl(var(--border)); border-radius: 0.62rem; box-shadow: var(--shadow-soft); padding: 1.15rem 1.25rem; }
+.ac-hero-state { flex-wrap: wrap; gap: 0.42rem; justify-content: flex-end; min-width: 0; }
+.ac-editor-stack { display: flex; flex-direction: column; gap: 0.8rem; max-width: 840px; min-width: 0; }
+.ac-editor-section { background: hsl(var(--surface)); border: 1px solid hsl(var(--border)); border-radius: 0.62rem; box-shadow: var(--shadow-soft); min-width: 0; padding: 1.15rem 1.25rem; }
 .ac-editor-section-focus { border-color: hsl(235 52% 84%); }
-.ac-editor-heading { justify-content: space-between; margin-bottom: 1rem; }
+.ac-editor-heading { justify-content: space-between; margin-bottom: 1rem; min-width: 0; }
+.ac-editor-heading > div { min-width: 0; }
 .ac-editor-heading h2, .ac-settings-column-heading h2 { font-size: 0.86rem; font-weight: 680; margin: 0; }
 .ac-editor-heading p, .ac-settings-column-heading p { color: hsl(var(--muted-foreground)); font-size: 0.71rem; margin: 0.18rem 0 0; }
 .ac-editor-heading > svg { color: hsl(var(--muted-foreground)); height: 16px; width: 16px; }
-.ac-editor-grid { display: grid; gap: 1rem 1.25rem; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.ac-editor-grid { display: grid; gap: 1rem 1.25rem; grid-template-columns: repeat(2, minmax(0, 1fr)); min-width: 0; }
 .ac-editor-grid > .space-y-1\.5 { min-width: 0; }
 .ac-editor-grid label { color: hsl(var(--foreground)); font-size: 0.74rem; font-weight: 620; }
 .ac-editor-grid input, .ac-editor-grid button[role="combobox"] { background: hsl(var(--surface)); font-size: 0.76rem; height: 34px; }
@@ -303,7 +383,8 @@
 .ac-disclosure summary > span:last-child { color: hsl(var(--muted-foreground)); font-size: 0.67rem; font-weight: 500; }
 .ac-disclosure[open] summary { border-bottom: 1px solid hsl(var(--border)); }
 .ac-disclosure > .ac-editor-grid { padding: 1rem 1.25rem 1.25rem; }
-.ac-fact-grid { display: grid; gap: 0.9rem 1.3rem; grid-template-columns: repeat(3, minmax(0, 1fr)); margin: 0; }
+.ac-fact-grid { display: grid; gap: 0.9rem 1.3rem; grid-template-columns: repeat(3, minmax(0, 1fr)); margin: 0; min-width: 0; }
+.ac-fact { min-width: 0; }
 .ac-fact dt { color: hsl(var(--muted-foreground)); font-size: 0.66rem; margin-bottom: 0.18rem; }
 .ac-fact dd { font-size: 0.74rem; margin: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
@@ -319,19 +400,19 @@
 .ac-empty-workspace small { color: hsl(var(--muted-foreground)); font-size: 0.68rem; margin-top: 0.7rem; }
 .ac-empty-orbit { border-radius: 1.2rem; height: 82px; margin-bottom: 1.2rem; width: 82px; }
 
-.ac-utility-rail { background: hsl(var(--surface)); border-left: 1px solid hsl(var(--border)); min-width: 0; padding: 1.35rem 1rem; }
-.ac-utility-block { border-bottom: 1px solid hsl(var(--border)); padding: 0 0 1.2rem; margin-bottom: 1.15rem; }
+.ac-utility-rail { background: hsl(var(--surface)); border-left: 1px solid hsl(var(--border)); min-height: 0; min-width: 0; overflow-y: auto; padding: 1.1rem 0.9rem; }
+.ac-utility-block { border-bottom: 1px solid hsl(var(--border)); margin-bottom: 0.95rem; min-width: 0; padding: 0 0 1rem; }
 .ac-utility-heading { color: hsl(var(--foreground)); font-size: 0.74rem; font-weight: 680; justify-content: space-between; margin-bottom: 0.85rem; }
 .ac-utility-heading > svg { color: hsl(var(--muted-foreground)); height: 15px; width: 15px; }
 .ac-service-row { color: hsl(var(--muted-foreground)); font-size: 0.7rem; justify-content: space-between; padding: 0.38rem 0; }
 .ac-service-row span { align-items: center; display: flex; gap: 0.4rem; }
 .ac-service-row strong { color: hsl(var(--foreground)); font-size: 0.69rem; font-weight: 620; }
 .ac-utility-actions { gap: 0.45rem; margin-top: 0.8rem; }
-.ac-utility-actions button { flex: 1; font-size: 0.7rem !important; height: 30px !important; }
-.ac-utility-actions svg { height: 13px; width: 13px; }
+.ac-utility-actions button { flex: 1; min-width: 0; }
+.ac-root .ac-utility-actions svg { height: 13px; width: 13px; }
 .ac-utility-block .ac-alert { font-size: 0.68rem; margin-top: 0.75rem; padding: 0.65rem; }
 .ac-utility-block .ac-alert svg { display: none; }
-.ac-signal-card { align-items: center; background: hsl(var(--surface-subtle)); border-radius: 0.45rem; display: flex; gap: 0.65rem; justify-content: space-between; margin-top: 0.45rem; padding: 0.65rem 0.7rem; }
+.ac-signal-card { align-items: center; background: hsl(var(--surface-subtle)); border-radius: 0.45rem; display: flex; gap: 0.65rem; justify-content: space-between; margin-top: 0.45rem; min-width: 0; padding: 0.65rem 0.7rem; }
 .ac-signal-card div { display: flex; flex-direction: column; min-width: 0; }
 .ac-signal-card span { color: hsl(var(--muted-foreground)); font-size: 0.64rem; }
 .ac-signal-card strong { font-size: 0.68rem; font-weight: 620; line-height: 1.3; margin-top: 0.18rem; }
@@ -340,16 +421,16 @@
 .ac-log-block { border-bottom: 0; margin-bottom: 0; }
 .ac-log-block pre { background: hsl(var(--surface-subtle)); border-radius: 0.45rem; color: hsl(var(--muted-foreground)); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.61rem; line-height: 1.55; margin: 0; max-height: 145px; overflow: auto; padding: 0.7rem; white-space: pre-wrap; }
 
-.ac-settings-workspace { max-width: 960px; }
+.ac-settings-workspace { max-width: 960px; min-width: 0; }
 .ac-settings-titlebar { justify-content: space-between; margin-bottom: 1.35rem; }
 .ac-settings-titlebar h1 { margin-top: 0.22rem; }
 .ac-settings-layout { display: grid; gap: 0.8rem; grid-template-columns: repeat(2, minmax(0, 1fr)); }
-.ac-settings-column { background: hsl(var(--surface)); border: 1px solid hsl(var(--border)); border-radius: 0.62rem; box-shadow: var(--shadow-soft); padding: 1.2rem; }
+.ac-settings-column { background: hsl(var(--surface)); border: 1px solid hsl(var(--border)); border-radius: 0.62rem; box-shadow: var(--shadow-soft); min-width: 0; padding: 1.2rem; }
 .ac-settings-column-heading { align-items: flex-start; gap: 0.65rem; margin-bottom: 1.2rem; }
 .ac-settings-column-heading > svg { color: hsl(var(--primary)); height: 17px; margin-top: 0.05rem; width: 17px; }
 .ac-settings-column .ac-editor-grid { grid-template-columns: 1fr; }
 
-.ac-console-footer { color: hsl(var(--muted-foreground)); font-size: 0.65rem; justify-content: space-between; padding: 0.75rem 1.5rem; }
+.ac-console-footer { color: hsl(var(--muted-foreground)); font-size: 0.65rem; justify-content: space-between; min-width: 0; padding: 0.75rem 1.5rem; }
 .ac-console-footer > span { align-items: center; display: flex; gap: 0.35rem; }
 .ac-footer-dot { background: hsl(var(--success)); border-radius: 50%; height: 6px; width: 6px; }
 .ac-loading-state { align-items: flex-start; display: flex; flex-direction: column; gap: 0.7rem; margin: 4rem auto; max-width: 620px; }
@@ -362,30 +443,37 @@
 @container airconnect (max-width: 1120px) {
 	.ac-workspace-header { flex-wrap: wrap; padding-block: 0.85rem; }
 	.ac-header-status { flex-wrap: wrap; }
-	.ac-console-layout { grid-template-columns: 245px minmax(0, 1fr); }
-	.ac-utility-rail { border-left: 0; border-top: 1px solid hsl(var(--border)); display: grid; gap: 1rem; grid-column: 1 / -1; grid-template-columns: repeat(3, minmax(0, 1fr)); padding: 1rem 1.5rem; }
-	.ac-utility-block { border-bottom: 0; border-right: 1px solid hsl(var(--border)); margin: 0; padding: 0 1rem 0 0; }
+	/* Two columns plus a full-width rail row cannot honour the desktop height
+	 * cap without the rail painting over the footer, so the cap is dropped here
+	 * and the page scrolls vertically instead. */
+	.ac-console-layout { grid-template-columns: 245px minmax(0, 1fr); max-height: none; }
+	.ac-utility-rail { border-left: 0; border-top: 1px solid hsl(var(--border)); display: grid; gap: 1rem; grid-column: 1 / -1; grid-template-columns: repeat(3, minmax(0, 1fr)); padding: 1rem 1.25rem; }
+	.ac-utility-block { border-bottom: 0; border-right: 1px solid hsl(var(--border)); margin: 0; min-width: 0; padding: 0 1rem 0 0; }
 	.ac-utility-block:last-child { border-right: 0; padding-right: 0; }
 }
 
 @container airconnect (max-width: 760px) {
 	.ac-workspace-header { align-items: flex-start; flex-direction: column; padding: 0.85rem 1rem; }
-	.ac-header-status { flex-wrap: wrap; width: 100%; }
+	.ac-header-status { flex-wrap: wrap; justify-content: flex-start; width: 100%; }
 	.ac-header-status .ac-save-state { flex: 1; }
-	.ac-header-status button:not(.ac-icon-button) { flex: 1; }
+	.ac-header-actions { width: 100%; }
+	.ac-header-actions .ac-icon-button { flex: 0 0 2rem; }
+	.ac-header-actions button:not(.ac-icon-button) { flex: 1; }
 	.ac-health-strip { padding: 0 1rem; }
 	.ac-health-item { min-height: 64px; padding: 0 0.65rem; }
 	.ac-health-item:first-child { padding-left: 0; }
 	.ac-health-copy small { font-size: 0.59rem; }
-	.ac-console-layout { display: block; }
+	/* Stacked layout: the page scrolls vertically, so the grid cap is removed
+	 * and only the device list keeps its own horizontal scroller. */
+	.ac-console-layout { display: block; max-height: none; }
 	.ac-device-rail { padding: 1rem 0.65rem 0.7rem; }
 	.ac-device-list { display: flex; gap: 0.2rem; max-height: 86px; overflow-x: auto; overflow-y: hidden; }
-	.ac-device-row { flex: 0 0 210px; margin: 0; }
+	.ac-device-row { flex: 0 0 210px; margin: 0; width: auto; }
 	.ac-rail-footer, .ac-rail-caption { display: none; }
-	.ac-main-workspace { padding: 1.25rem 1rem 2rem; }
-	.ac-device-hero { align-items: flex-start; flex-wrap: wrap; }
+	.ac-main-workspace { padding: 1rem 0.9rem 1.4rem; }
+	.ac-device-hero { align-items: flex-start; flex-wrap: wrap; margin-bottom: 1.1rem; }
 	.ac-hero-state { justify-content: flex-start; margin-left: 3.9rem; width: calc(100% - 3.9rem); }
-	.ac-editor-grid, .ac-fact-grid, .ac-settings-layout { grid-template-columns: 1fr; }
+	.ac-editor-grid, .ac-fact-grid, .ac-settings-layout { grid-template-columns: minmax(0, 1fr); }
 	.ac-utility-rail { display: flex; flex-direction: column; padding: 1rem; }
 	.ac-utility-block { border-bottom: 1px solid hsl(var(--border)); border-right: 0; padding: 0 0 1rem; }
 	.ac-utility-block:last-child { border-bottom: 0; padding-bottom: 0; }

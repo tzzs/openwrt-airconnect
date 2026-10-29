@@ -1,4 +1,4 @@
-import { Check, X, AlertTriangle, Loader2 } from 'lucide-react';
+import { Check, X, AlertTriangle, CircleAlert, Loader2 } from 'lucide-react';
 
 import { cn } from '../lib/utils.js';
 import { Badge } from './ui/badge.jsx';
@@ -33,8 +33,11 @@ export function Alert({ tone = 'warning', children, className }) {
 			className={cn('rounded-md border p-3 text-sm', palette, className)}
 		>
 			<div className="flex items-start gap-2">
+				{/* A filled-looking circle-alert for errors, the triangular warning
+				    sign for warnings: the two tones must be distinguishable at a
+				    glance, not just by colour. */}
 				{tone === 'destructive' ? (
-					<AlertTriangle className="mt-0.5 size-4 shrink-0" />
+					<CircleAlert className="mt-0.5 size-4 shrink-0" />
 				) : (
 					<AlertTriangle className="mt-0.5 size-4 shrink-0" />
 				)}

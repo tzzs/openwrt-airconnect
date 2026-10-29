@@ -39,14 +39,24 @@
 # of a hand-written view plus its stylesheet. The bundle is minified and its
 # icons are tree-shaken; the gzip figure is what the router actually sends.
 #
-#   measured total 661,342 bytes uncompressed -> cap 786,432 (768 KiB, +19 %)
-#   measured total 205,854 bytes gzip -9      -> cap 262,144 (256 KiB, +27 %)
+# Measured on 2026-10-30 after the workspace redesign (overflow, height, layout,
+# button unification):
+#
+#   measured total 371,776 bytes uncompressed -> cap 786,432 (768 KiB)
+#   measured total 115,587 bytes gzip -9      -> cap 262,144 (256 KiB)
+#
+# The total and app.js caps are unchanged from the 2026-10-29 budget and are now
+# generous because the tree-shaken bundle is smaller than the one they were
+# sized for; they still catch an accidental dependency or a copied-in framework.
+# The app.css cap is the only one that had to move: the redesign took the
+# stylesheet from 32,672 B to 35,374 B, so 32,768 no longer fit. The new cap
+# keeps the same ~19 % headroom rule used for the other entries.
 #
 # Per-file caps, same rule (measured value in the comment):
 #
-#   airconnect-manager/app.js           641,642 B -> 720,896 (704 KiB, +12 %)
-#   airconnect-manager/app.css           16,224 B ->  32,768 (32 KiB, +102 %)
-#   view/airconnect-manager/overview.js   2,853 B ->   8,192 (8 KiB, +187 %)
+#   airconnect-manager/app.js          332,713 B -> 720,896 (704 KiB)
+#   airconnect-manager/app.css          35,374 B ->  40,960 (40 KiB, +16 %)
+#   view/airconnect-manager/overview.js   3,051 B ->   8,192 (8 KiB)
 #   menu.d / acl.d JSON                    265/358 B -> 2,048 (2 KiB)
 #   any other file                                     32,768 (32 KiB)
 #
@@ -78,7 +88,7 @@ DEFAULT_FILE_CAP=32768
 cap_for() {
 	case "$1" in
 		*/airconnect-manager/app.js) printf '720896\n' ;;
-		*/airconnect-manager/app.css) printf '32768\n' ;;
+		*/airconnect-manager/app.css) printf '40960\n' ;;
 		*/view/airconnect-manager/overview.js) printf '8192\n' ;;
 		*/luci/menu.d/*.json) printf '2048\n' ;;
 		*/rpcd/acl.d/*.json) printf '2048\n' ;;
