@@ -39,8 +39,25 @@ jobs:
         uses: actions/setup-node@v4
         with:
           # Pinned major. The repository has no npm dependencies; node only
-          # executes the plain .mjs file.
+          # executes the plain .mjs file and runs the Vite build of the LuCI
+          # frontend.
           node-version: 20
+
+      - name: Build the React frontend
+        # The LuCI page is a bundled React + shadcn/ui app (app.js + app.css)
+        # built from packages/luci-app-airconnect-manager/frontend. The bundle
+        # is gitignored, so the payload budget check below would otherwise see
+        # only four static files and fail. `npm ci` needs the lockfile, which
+        # the package ships for exactly this.
+        env:
+          CI: 'false'
+        run: |
+          set -eu
+          cd "$GITHUB_WORKSPACE/packages/luci-app-airconnect-manager/frontend"
+          npm ci
+          npm run build
+          test -f "$GITHUB_WORKSPACE/packages/luci-app-airconnect-manager/htdocs/luci-static/resources/airconnect-manager/app.js"
+          test -f "$GITHUB_WORKSPACE/packages/luci-app-airconnect-manager/htdocs/luci-static/resources/airconnect-manager/app.css"
 
       - name: Install build dependencies for ucode
         # json-c is a hard build requirement of ucode itself. libmd provides the
