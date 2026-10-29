@@ -14,12 +14,15 @@
 // mounts the app into a container; saving, applying and reloading all live in
 // the app's own header, not in a LuCI footer.
 //
-// There are deliberately no handleSave / handleSaveApply / handleReset methods.
-// LuCI's view.extend decides the footer buttons by testing whether those
-// methods exist (luci.js renders a ComboButton for handleSaveApply and a plain
-// cbi-button for each of handleSave and handleReset). Defining them would add a
-// second, differently styled "Save and apply / Save / Reset" row below a page
-// whose header already provides all three, so they are omitted on purpose.
+// The footer buttons are suppressed by setting handleSave / handleSaveApply /
+// handleReset to null below. Leaving them undefined is not enough: LuCI's base
+// `View` class defines all three, so `this.handleSave` is always truthy and
+// addFooter() would render a second, differently styled "Save and apply / Save
+// / Reset" row under a page whose header already provides them. `null` makes
+// the tests in addFooter() fail without touching the base class.
+//
+// Do not remove these three properties: the page has no cbi-map to save, so the
+// inherited handlers would only add buttons that do nothing.
 
 var configName = 'airconnect-manager';
 
@@ -57,6 +60,12 @@ return view.extend({
 	load: function () {
 		return Promise.all([uci.load(configName), loadApp()]);
 	},
+
+	// See the comment at the top of this file: these must be explicit nulls so
+	// addFooter() skips the cbi-page-actions row entirely.
+	handleSave: null,
+	handleSaveApply: null,
+	handleReset: null,
 
 	render: function () {
 		var self = this;

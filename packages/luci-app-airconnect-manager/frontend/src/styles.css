@@ -162,21 +162,42 @@
 
 /*
  * Argon wraps the view in `#maincontent > .container`, which is `width: 100%`
- * with a 20px inline margin: the container's content box therefore ends 20px
- * past #maincontent's right edge. A child that inherits `width: 100%` would sit
- * on that overflowing edge and be clipped. `width: auto` + `margin-right: 20px`
- * makes the app end exactly at #maincontent's right edge instead.
+ * with a 20px inline margin. A percentage width ignores its own margins, so the
+ * container's right edge lands one margin past #maincontent's right edge and
+ * the whole document scrolls sideways (measured: 20px at 900-1100px viewports,
+ * 16px once Argon narrows its gutter). `width: auto` makes the container honour
+ * its margins, which is the only place this can be fixed: the overflow belongs
+ * to the ancestor, not to `.ac-root`. app.css loads only on this view, so the
+ * rule cannot leak into other LuCI pages.
  *
  * `container` must stay in the plain cascade (not in @layer base): Tailwind's
  * base layer would drop it, and the @container rules below would never match.
  */
+#maincontent > .container {
+	box-sizing: border-box;
+	max-width: 100%;
+	width: auto;
+}
+
 .ac-root {
 	box-sizing: border-box;
 	container: airconnect / inline-size;
-	margin-right: 20px;
 	max-width: 100%;
 	min-width: 0;
 	width: auto;
+}
+
+/*
+ * Argon turns a bare `h2` into a white card (background, 16px/20px padding,
+ * radius, shadow). Inside the workspace that surfaced as a white pill reading
+ * "音箱 0" on the dark device rail, in both themes. Strip the card; the size,
+ * weight and colour come from the class rules below.
+ */
+.ac-root h2 {
+	background: none;
+	border-radius: 0;
+	box-shadow: none;
+	padding: 0;
 }
 
 .ac-console {
@@ -328,8 +349,14 @@
 .ac-root .ac-search-clear { color: hsl(222 13% 66%); flex: 0 0 auto; height: 1.35rem; padding: 0; width: 1.35rem; }
 .ac-root .ac-search-clear:hover { background: hsl(225 18% 30%); color: hsl(220 20% 94%); }
 .ac-root .ac-search-clear svg { height: 13px; width: 13px; }
-.ac-root .ac-scan-button { border-color: hsl(225 18% 34%); color: hsl(220 20% 90%); justify-content: flex-start; margin: 0 0.35rem; width: calc(100% - 0.7rem); }
-.ac-root .ac-scan-button:hover { background: hsl(var(--surface-strong-2)); color: hsl(220 20% 94%); }
+/*
+ * `variant="outline"` gives the shadcn Button `bg-background`, which is the
+ * page surface (near-white in the light theme). On the always-dark device rail
+ * that produced white text on a white fill, so the button was unreadable in
+ * light mode. Fill it with the rail's own raised surface instead.
+ */
+.ac-root .ac-scan-button { background: hsl(var(--surface-strong-2)); border-color: hsl(225 18% 34%); color: hsl(220 20% 90%); justify-content: flex-start; margin: 0 0.35rem; width: calc(100% - 0.7rem); }
+.ac-root .ac-scan-button:hover { background: hsl(225 20% 28%); color: hsl(220 20% 96%); }
 .ac-root .ac-scan-button svg { height: 15px; width: 15px; }
 .ac-rail-caption { color: hsl(222 13% 59%); display: flex; font-size: 0.65rem; justify-content: space-between; margin: 1rem 0.6rem 0.45rem; }
 .ac-device-list { flex: 1; min-height: 0; overflow: auto; }
