@@ -1,18 +1,10 @@
-# SOME DESCRIPTIVE TITLE.
-# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
-# This file is distributed under the same license as the luci-app-airconnect-manager package.
-# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+# AirConnect Manager translation template.
+# This file is distributed under the same license as the package.
 #
-#, fuzzy
 msgid ""
 msgstr ""
 "Project-Id-Version: luci-app-airconnect-manager 0.1.0\n"
-"Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-29 00:00+0800\n"
-"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
-"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
-"Language-Team: LANGUAGE <LL@li.org>\n"
-"Language: \n"
+"POT-Creation-Date: 2026-10-30 00:00+0800\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
@@ -33,6 +25,10 @@ msgstr ""
 msgid "Add a host after http:// or https://."
 msgstr ""
 
+#: frontend/src/components/workspace.jsx:269
+msgid "Advanced"
+msgstr ""
+
 #: frontend/src/components/speakers.jsx:90
 msgid "Advanced audio settings"
 msgstr ""
@@ -41,11 +37,24 @@ msgstr ""
 msgid "Advanced settings"
 msgstr ""
 
+#: frontend/src/components/workspace.jsx:399
+msgid "AirConnect Manager"
+msgstr ""
+
+#: frontend/src/components/workspace.jsx:72
+msgid "AirConnect health overview"
+msgstr ""
+
 #: frontend/src/lib/presentation.js:66
 msgid "AirPlay advertised"
 msgstr ""
 
+#: frontend/src/components/workspace.jsx:296
+msgid "AirPlay bridge"
+msgstr ""
+
 #: frontend/src/components/speakers.jsx:61
+#: frontend/src/components/workspace.jsx:325
 msgid "AirPlay broadcast"
 msgstr ""
 
@@ -69,20 +78,37 @@ msgstr ""
 msgid "AirPlay name"
 msgstr ""
 
+#: frontend/src/components/workspace.jsx:227
+msgid "AirPlay name override is active."
+msgstr ""
+
 #: frontend/src/components/diagnostics.jsx:80
+#: frontend/src/components/workspace.jsx:320
 msgid "Another AirConnect instance was detected."
 msgstr ""
 
-#: frontend/src/App.jsx:175
+#: frontend/src/components/workspace.jsx:349
+msgid "Applied when a speaker does not define its own value."
+msgstr ""
+
+#: frontend/src/App.jsx:171
 msgid "Apply failed — changes remain pending"
 msgstr ""
 
-#: frontend/src/App.jsx:172
+#: frontend/src/App.jsx:168
 msgid "Apply requested — check LuCI confirmation"
 msgstr ""
 
-#: frontend/src/App.jsx:169
+#: frontend/src/App.jsx:165
 msgid "Applying…"
+msgstr ""
+
+#: frontend/src/components/workspace.jsx:269
+msgid "Audio and compatibility"
+msgstr ""
+
+#: frontend/src/components/workspace.jsx:349
+msgid "Audio defaults"
 msgstr ""
 
 #: frontend/src/lib/fields.js:108
@@ -98,13 +124,13 @@ msgstr ""
 msgid "Both engines. Off adjusts timing by adding or dropping a frame, which can be audible as a click; on avoids the click but risks underruns."
 msgstr ""
 
-#: frontend/src/App.jsx:245
-msgid "Bring your network speakers to AirPlay."
-msgstr ""
-
 #: frontend/src/lib/fields.js:110
 #: frontend/src/lib/fields.js:143
 msgid "Buffer and latency"
+msgstr ""
+
+#: frontend/src/components/workspace.jsx:399
+msgid "Changes are kept locally until you save."
 msgstr ""
 
 #: frontend/src/lib/fields.js:139
@@ -127,8 +153,13 @@ msgstr ""
 msgid "Choose off (0) or on (1)."
 msgstr ""
 
-#: frontend/src/App.jsx:281
+#: frontend/src/components/workspace.jsx:348
+msgid "Choose which bridge engines are available on this router."
+msgstr ""
+
 #: frontend/src/components/diagnostics.jsx:99
+#: frontend/src/components/workspace.jsx:184
+#: frontend/src/components/workspace.jsx:69
 #: frontend/src/lib/presentation.js:31
 msgid "Chromecast"
 msgstr ""
@@ -137,12 +168,28 @@ msgstr ""
 msgid "Chromecast compatibility option. The UPnP engine ignores this."
 msgstr ""
 
+#: frontend/src/components/workspace.jsx:315
+msgid "Chromecast discovery"
+msgstr ""
+
 #: frontend/src/lib/fields.js:106
 msgid "Chromecast media volume"
 msgstr ""
 
+#: frontend/src/components/workspace.jsx:225
+msgid "Chromecast receiver"
+msgstr ""
+
 #: frontend/src/lib/fields.js:103
 msgid "Chromecast speakers"
+msgstr ""
+
+#: frontend/src/components/workspace.jsx:165
+msgid "Clear search"
+msgstr ""
+
+#: frontend/src/components/workspace.jsx:346
+msgid "Close settings"
 msgstr ""
 
 #: frontend/src/components/settings.jsx:48
@@ -157,7 +204,11 @@ msgstr ""
 msgid "Compatibility option, both engines. Turning it off can change pause and track-change behaviour, so keep it on unless a speaker misbehaves."
 msgstr ""
 
-#: frontend/src/App.jsx:153
+#: frontend/src/components/workspace.jsx:346
+msgid "Configuration"
+msgstr ""
+
+#: frontend/src/App.jsx:149
 msgid "Configuration validation failed."
 msgstr ""
 
@@ -165,17 +216,21 @@ msgstr ""
 msgid "Configure speaker"
 msgstr ""
 
-#: frontend/src/App.jsx:234
+#: frontend/src/App.jsx:247
 msgid "Could not load settings. "
 msgstr ""
 
-#: frontend/src/App.jsx:207
+#: frontend/src/App.jsx:203
 msgid "Could not start discovery."
 msgstr ""
 
 #: frontend/src/lib/fields.js:114
 #: frontend/src/lib/fields.js:147
 msgid "Cover art URL"
+msgstr ""
+
+#: frontend/src/components/workspace.jsx:253
+msgid "Create a local profile to give it an AirPlay name, set its volume and choose how it bridges audio."
 msgstr ""
 
 #: frontend/src/lib/fields.js:105
@@ -186,11 +241,22 @@ msgstr ""
 msgid "Default media volume, from 0 to 1. This is not a volume limit."
 msgstr ""
 
+#: frontend/src/components/workspace.jsx:346
+msgid "Defaults for every speaker without a local override."
+msgstr ""
+
+#: frontend/src/components/workspace.jsx:273
+msgid "Device facts"
+msgstr ""
+
+#: frontend/src/components/workspace.jsx:279
+msgid "Device identifier"
+msgstr ""
+
 #: frontend/src/components/speakers.jsx:58
 msgid "Device identifier (UDN)"
 msgstr ""
 
-#: frontend/src/App.jsx:298
 #: frontend/src/components/diagnostics.jsx:88
 msgid "Diagnostics"
 msgstr ""
@@ -207,6 +273,14 @@ msgstr ""
 msgid "Discovered on your network. Configure this speaker to override its AirPlay name and volume."
 msgstr ""
 
+#: frontend/src/components/workspace.jsx:171
+msgid "Discovery error"
+msgstr ""
+
+#: frontend/src/components/workspace.jsx:203
+msgid "Discovery is available"
+msgstr ""
+
 #: frontend/src/lib/presentation.js:113
 msgid "Discovery is in progress."
 msgstr ""
@@ -219,6 +293,14 @@ msgstr ""
 msgid "Enable AirConnect"
 msgstr ""
 
+#: frontend/src/components/workspace.jsx:300
+msgid "Enable UPnP or Chromecast discovery in Global settings first."
+msgstr ""
+
+#: frontend/src/components/workspace.jsx:203
+msgid "Enable an engine to scan"
+msgstr ""
+
 #: frontend/src/lib/fields.js:157
 #: frontend/src/lib/fields.js:171
 msgid "Enable bridging"
@@ -228,8 +310,16 @@ msgstr ""
 msgid "Enter an interface name of 1-15 characters that starts with a letter or digit."
 msgstr ""
 
+#: frontend/src/components/workspace.jsx:263
+msgid "Everyday controls"
+msgstr ""
+
 #: frontend/src/lib/fields.js:109
 msgid "FLAC can use more CPU. Choose a format supported by your speaker."
+msgstr ""
+
+#: frontend/src/components/workspace.jsx:297
+msgid "Find the speakers on your network"
 msgstr ""
 
 #: frontend/src/components/speakers.jsx:172
@@ -246,6 +336,11 @@ msgstr ""
 
 #: frontend/src/components/settings.jsx:39
 msgid "Global defaults apply unless a speaker has its own override."
+msgstr ""
+
+#: frontend/src/components/workspace.jsx:125
+#: frontend/src/components/workspace.jsx:346
+msgid "Global settings"
 msgstr ""
 
 #: frontend/src/lib/fields.js:163
@@ -266,13 +361,14 @@ msgid "Highest UPnP MediaRenderer version to search. The Chromecast engine ignor
 msgstr ""
 
 #: frontend/src/components/speakers.jsx:55
+#: frontend/src/components/workspace.jsx:276
 msgid "IP address"
 msgstr ""
 
-#: frontend/src/App.jsx:29
-#: frontend/src/lib/fields.js:64
+#: frontend/src/App.jsx:23
 #: frontend/src/lib/fields.js:142
 #: frontend/src/lib/fields.js:165
+#: frontend/src/lib/fields.js:64
 msgid "Inherit global setting"
 msgstr ""
 
@@ -289,7 +385,12 @@ msgid "Last attempt:"
 msgstr ""
 
 #: frontend/src/components/speakers.jsx:59
+#: frontend/src/components/workspace.jsx:280
 msgid "Last discovered"
+msgstr ""
+
+#: frontend/src/components/workspace.jsx:171
+msgid "Last scan"
 msgstr ""
 
 #: frontend/src/lib/presentation.js:114
@@ -320,15 +421,20 @@ msgid "Let the timing reference drift"
 msgstr ""
 
 #: frontend/src/components/diagnostics.jsx:125
+#: frontend/src/components/workspace.jsx:335
 msgid "Load recent logs"
 msgstr ""
 
-#: frontend/src/App.jsx:292
-msgid "Loading settings…"
+#: frontend/src/App.jsx:256
+msgid "Loading speakers and status…"
 msgstr ""
 
 #: frontend/src/lib/fields.js:130
 msgid "Log detail"
+msgstr ""
+
+#: frontend/src/components/workspace.jsx:336
+msgid "Logs appear here when requested."
 msgstr ""
 
 #: frontend/src/components/diagnostics.jsx:135
@@ -340,6 +446,7 @@ msgid "Manager version"
 msgstr ""
 
 #: frontend/src/components/speakers.jsx:57
+#: frontend/src/components/workspace.jsx:278
 msgid "Manufacturer"
 msgstr ""
 
@@ -348,11 +455,16 @@ msgid "Media volume"
 msgstr ""
 
 #: frontend/src/components/speakers.jsx:56
+#: frontend/src/components/workspace.jsx:277
 msgid "Model"
 msgstr ""
 
 #: frontend/src/components/speakers.jsx:162
 msgid "More than one speaker uses the same AirPlay name."
+msgstr ""
+
+#: frontend/src/components/workspace.jsx:348
+msgid "Network and discovery"
 msgstr ""
 
 #: frontend/src/lib/presentation.js:74
@@ -363,7 +475,12 @@ msgstr ""
 msgid "No AirPlay advertisement"
 msgstr ""
 
+#: frontend/src/components/workspace.jsx:69
+msgid "No engine"
+msgstr ""
+
 #: frontend/src/components/diagnostics.jsx:139
+#: frontend/src/components/workspace.jsx:336
 msgid "No log entries."
 msgstr ""
 
@@ -371,7 +488,15 @@ msgstr ""
 msgid "No scan has been completed."
 msgstr ""
 
-#: frontend/src/App.jsx:39
+#: frontend/src/components/workspace.jsx:197
+msgid "No speaker matches this search."
+msgstr ""
+
+#: frontend/src/components/workspace.jsx:197
+msgid "No speakers discovered yet."
+msgstr ""
+
+#: frontend/src/App.jsx:33
 msgid "No unsaved changes"
 msgstr ""
 
@@ -383,19 +508,28 @@ msgstr ""
 msgid "Not currently discovered"
 msgstr ""
 
+#: frontend/src/components/workspace.jsx:92
+msgid "Not measured"
+msgstr ""
+
 #: frontend/src/lib/presentation.js:104
 msgid "Not playing"
 msgstr ""
 
 #: frontend/src/components/speakers.jsx:59
+#: frontend/src/components/workspace.jsx:280
 #: frontend/src/lib/presentation.js:19
 #: frontend/src/lib/presentation.js:24
 #: frontend/src/lib/presentation.js:26
 msgid "Not provided"
 msgstr ""
 
-#: frontend/src/App.jsx:160
+#: frontend/src/App.jsx:156
 msgid "Not saved — check settings"
+msgstr ""
+
+#: frontend/src/components/workspace.jsx:332
+msgid "Observed"
 msgstr ""
 
 #: frontend/src/lib/fields.js:51
@@ -415,10 +549,12 @@ msgid "Optional http:// or https:// image the speaker fetches itself. Leave empt
 msgstr ""
 
 #: frontend/src/components/speakers.jsx:54
+#: frontend/src/components/workspace.jsx:275
 msgid "Original name"
 msgstr ""
 
 #: frontend/src/components/diagnostics.jsx:50
+#: frontend/src/components/workspace.jsx:329
 msgid "Playback"
 msgstr ""
 
@@ -426,12 +562,25 @@ msgstr ""
 msgid "Playing"
 msgstr ""
 
+#: frontend/src/components/workspace.jsx:158
+msgid "Rail menu"
+msgstr ""
+
+#: frontend/src/components/workspace.jsx:171
+msgid "Ready to discover"
+msgstr ""
+
 #: frontend/src/components/diagnostics.jsx:132
 msgid "Recent AirConnect logs"
 msgstr ""
 
 #: frontend/src/components/diagnostics.jsx:115
+#: frontend/src/components/workspace.jsx:335
 msgid "Recent logs"
+msgstr ""
+
+#: frontend/src/components/workspace.jsx:121
+msgid "Refresh status"
 msgstr ""
 
 #: frontend/src/lib/rules.js:103
@@ -444,8 +593,16 @@ msgstr ""
 msgid "Remove spaces, quotes or control characters from the artwork URL."
 msgstr ""
 
-#: frontend/src/App.jsx:270
+#: frontend/src/components/workspace.jsx:273
+msgid "Reported by the last discovery response."
+msgstr ""
+
+#: frontend/src/components/workspace.jsx:133
 msgid "Reset"
+msgstr ""
+
+#: frontend/src/components/workspace.jsx:318
+msgid "Restart"
 msgstr ""
 
 #: frontend/src/components/diagnostics.jsx:73
@@ -456,19 +613,15 @@ msgstr ""
 msgid "Running"
 msgstr ""
 
-#: frontend/src/App.jsx:267
+#: frontend/src/components/workspace.jsx:128
 msgid "Save"
 msgstr ""
 
-#: frontend/src/App.jsx:264
-msgid "Save & Apply"
+#: frontend/src/components/workspace.jsx:131
+msgid "Save and apply"
 msgstr ""
 
-#: frontend/src/App.jsx:343
-msgid "Save keeps changes pending. Save & Apply validates settings and briefly disconnects AirPlay while applying."
-msgstr ""
-
-#: frontend/src/App.jsx:157
+#: frontend/src/App.jsx:153
 msgid "Saved; pending apply"
 msgstr ""
 
@@ -477,11 +630,21 @@ msgid "Scan failed: "
 msgstr ""
 
 #: frontend/src/components/speakers.jsx:154
+#: frontend/src/components/workspace.jsx:168
 msgid "Scan for speakers"
+msgstr ""
+
+#: frontend/src/components/workspace.jsx:168
+#: frontend/src/components/workspace.jsx:299
+msgid "Scanning speakers"
 msgstr ""
 
 #: frontend/src/components/speakers.jsx:154
 msgid "Scanning…"
+msgstr ""
+
+#: frontend/src/components/workspace.jsx:164
+msgid "Search speakers"
 msgstr ""
 
 #: frontend/src/lib/fields.js:112
@@ -493,7 +656,7 @@ msgstr ""
 msgid "Sends the title and artist to the speaker. Both engines read this. A speaker may still show nothing."
 msgstr ""
 
-#: frontend/src/App.jsx:193
+#: frontend/src/App.jsx:189
 msgid "Service action failed."
 msgstr ""
 
@@ -505,37 +668,62 @@ msgstr ""
 msgid "Service actions use the last applied settings. Stopping or restarting briefly disconnects AirPlay."
 msgstr ""
 
-#: frontend/src/App.jsx:194
-msgid "Service request accepted. Check the reported service status."
+#: frontend/src/components/workspace.jsx:313
+msgid "Service control"
 msgstr ""
 
-#: frontend/src/App.jsx:285
+#: frontend/src/App.jsx:190
+#: frontend/src/components/workspace.jsx:116
+msgid "Service running"
+msgstr ""
+
 #: frontend/src/components/diagnostics.jsx:90
 msgid "Service running does not confirm AirPlay availability or playback."
 msgstr ""
 
-#: frontend/src/App.jsx:275
-msgid "Service status"
+#: frontend/src/components/workspace.jsx:116
+msgid "Service stopped"
 msgstr ""
 
 #: frontend/src/components/speakers.jsx:150
 msgid "Set the AirPlay name and volume for each speaker."
 msgstr ""
 
-#: frontend/src/App.jsx:297
-msgid "Settings"
+#: frontend/src/components/workspace.jsx:254
+msgid "Set up this speaker"
 msgstr ""
 
-#: frontend/src/App.jsx:296
+#: frontend/src/components/workspace.jsx:323
+msgid "Signal report"
+msgstr ""
+
+#: frontend/src/components/workspace.jsx:111
+msgid "Speaker bridge"
+msgstr ""
+
 #: frontend/src/components/speakers.jsx:147
+#: frontend/src/components/workspace.jsx:156
+#: frontend/src/components/workspace.jsx:174
 msgid "Speakers"
+msgstr ""
+
+#: frontend/src/components/workspace.jsx:317
+msgid "Start"
+msgstr ""
+
+#: frontend/src/components/workspace.jsx:298
+msgid "Start a discovery scan to see compatible UPnP and Chromecast speakers. They will appear here with a separate profile for each receiver."
+msgstr ""
+
+#: frontend/src/components/workspace.jsx:299
+msgid "Start discovery"
 msgstr ""
 
 #: frontend/src/components/diagnostics.jsx:67
 msgid "Start service"
 msgstr ""
 
-#: frontend/src/App.jsx:55
+#: frontend/src/App.jsx:51
 msgid "Status unavailable. Displayed information may be stale. "
 msgstr ""
 
@@ -559,25 +747,42 @@ msgstr ""
 msgid "Stopped"
 msgstr ""
 
-#: frontend/src/App.jsx:218
+#: frontend/src/App.jsx:214
 msgid "The log response was invalid."
+msgstr ""
+
+#: frontend/src/components/workspace.jsx:263
+msgid "The settings you are most likely to change."
+msgstr ""
+
+#: frontend/src/components/workspace.jsx:252
+msgid "This speaker is discovered"
 msgstr ""
 
 #: frontend/src/components/speakers.jsx:174
 msgid "Turn on a discovery engine in Settings, then scan. Keep your speaker online on the same LAN and enable DLNA when required."
 msgstr ""
 
-#: frontend/src/App.jsx:278
 #: frontend/src/components/diagnostics.jsx:96
+#: frontend/src/components/workspace.jsx:69
 msgid "UPnP"
 msgstr ""
 
+#: frontend/src/components/workspace.jsx:184
 #: frontend/src/lib/presentation.js:31
 msgid "UPnP / DLNA"
 msgstr ""
 
+#: frontend/src/components/workspace.jsx:225
+msgid "UPnP / DLNA receiver"
+msgstr ""
+
 #: frontend/src/lib/fields.js:102
 msgid "UPnP / DLNA speakers"
+msgstr ""
+
+#: frontend/src/components/workspace.jsx:314
+msgid "UPnP discovery"
 msgstr ""
 
 #: frontend/src/lib/fields.js:125
@@ -605,10 +810,12 @@ msgid "Unknown — the engines expose no documented playback status, so this is 
 msgstr ""
 
 #: frontend/src/components/speakers.jsx:70
+#: frontend/src/components/workspace.jsx:183
+#: frontend/src/components/workspace.jsx:226
 msgid "Unnamed speaker"
 msgstr ""
 
-#: frontend/src/App.jsx:93
+#: frontend/src/App.jsx:89
 msgid "Unsaved changes"
 msgstr ""
 
@@ -644,12 +851,24 @@ msgstr ""
 msgid "Use two whole numbers from 0 to 10000 separated by a colon, for example 1000:2000."
 msgstr ""
 
-#: frontend/src/App.jsx:149
+#: frontend/src/components/workspace.jsx:227
+msgid "Using the original speaker name."
+msgstr ""
+
+#: frontend/src/App.jsx:145
 msgid "Validating…"
+msgstr ""
+
+#: frontend/src/components/workspace.jsx:399
+msgid "Version unknown"
 msgstr ""
 
 #: frontend/src/lib/fields.js:158
 msgid "Volume limit"
+msgstr ""
+
+#: frontend/src/components/workspace.jsx:155
+msgid "Workspace"
 msgstr ""
 
 #: frontend/src/lib/presentation.js:74
@@ -660,6 +879,18 @@ msgstr ""
 msgid "Yes — an AirPlay receiver is advertised"
 msgstr ""
 
+#: frontend/src/components/workspace.jsx:85
+msgid "discovery engine"
+msgstr ""
+
+#: frontend/src/components/workspace.jsx:93
+msgid "last AirPlay observation"
+msgstr ""
+
 #: frontend/src/lib/presentation.js:79
 msgid "observed"
+msgstr ""
+
+#: frontend/src/components/workspace.jsx:77
+msgid "speakers discovered"
 msgstr ""

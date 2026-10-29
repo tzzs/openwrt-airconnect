@@ -1,12 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { RotateCcw, Save } from 'lucide-react';
-
-import { Tabs, TabsContent, TabsList, TabsTrigger } from './components/ui/tabs.jsx';
-import { Button } from './components/ui/button.jsx';
-import { Alert, StatusBadge } from './components/feedback.jsx';
-import { SettingsPanel } from './components/settings.jsx';
-import { DiagnosticsPanel } from './components/diagnostics.jsx';
-import { SpeakersPanel } from './components/speakers.jsx';
+import { Alert } from './components/feedback.jsx';
+import { Workspace } from './components/workspace.jsx';
 import { createRules } from './lib/rules.js';
 import { createFields } from './lib/fields.js';
 import { createPresentation } from './lib/presentation.js';
@@ -39,6 +33,8 @@ export function App({ context, onReady }) {
 	const [saveState, setSaveState] = useState({ text: _('No unsaved changes'), tone: 'idle' });
 	const [busy, setBusy] = useState(false);
 	const [logs, setLogs] = useState(null);
+	const [selectedKey, setSelectedKey] = useState(null);
+	const [settingsOpen, setSettingsOpen] = useState(false);
 
 	// The poller owns the four polling promises (interval, hidden tab, one
 	// request in flight, backoff). It only ever touches the live snapshot and the
@@ -191,7 +187,6 @@ export function App({ context, onReady }) {
 		try {
 			const result = await services.action(action);
 			if (!result || !result.ok) throw new Error((result && result.error) || _('Service action failed.'));
-			services.notify(_('Service request accepted. Check the reported service status.'));
 			await refresh();
 		} catch (error) {
 			services.notify(message(error), 'danger');
@@ -225,6 +220,23 @@ export function App({ context, onReady }) {
 	const devices = useMemo(() => mergeDevices(model), [model]);
 	const duplicates = useMemo(() => duplicateNames(model), [model]);
 
+	useEffect(() => {
+		if (!selectedKey && devices.length > 0) setSelectedKey(devices[0].engine + '\n' + devices[0].udn);
+		if (selectedKey && !devices.some((device) => device.engine + '\n' + device.udn === selectedKey))
+			setSelectedKey(devices.length ? devices[0].engine + '\n' + devices[0].udn : null);
+	}, [devices, selectedKey]);
+
+	const selectedDevice = devices.find((device) => device.engine + '\n' + device.udn === selectedKey) || null;
+
+	const handleDeviceChange = useCallback((section, field, value) => {
+		if (field === '__configure__') {
+			configure(value);
+			setSelectedKey(value.engine + '\n' + value.udn);
+			return;
+		}
+		setDevice(section, field, value);
+	}, [configure, setDevice]);
+
 	const withBusy = (task) => {
 		setBusy(true);
 		task().catch(() => {}).finally(() => setBusy(false));
@@ -234,114 +246,49 @@ export function App({ context, onReady }) {
 		return <Alert tone="destructive">{_('Could not load settings. ')}{fatal}</Alert>;
 	}
 
-	const broadcast = (status && status.broadcast) || {};
+	if (!ready) {
+		return (
+			<div className="ac-loading-state">
+				<div className="ac-loading-line ac-loading-line-wide" />
+				<div className="ac-loading-line" />
+				<div className="ac-loading-block" />
+				<span>{_('Loading speakers and status…')}</span>
+			</div>
+		);
+	}
 
 	return (
-		<div className="space-y-5">
-			<div className="flex flex-wrap items-start justify-between gap-3">
-				<div>
-					<h1 className="text-2xl font-semibold tracking-tight">AirConnect</h1>
-					<p className="text-sm text-muted-foreground">
-						{_('Bring your network speakers to AirPlay.')}
-					</p>
-				</div>
-				<div className="flex flex-wrap items-center gap-2">
-					<span
-						className={'text-xs ' + (saveState.tone === 'warning'
-							? 'text-warning'
-							: 'text-muted-foreground')}
-						role="status"
-						aria-live="polite"
-					>
-						{saveState.text}
-					</span>
-					<Button
-						variant="outline"
-						size="sm"
-						disabled={busy}
-						onClick={() => withBusy(() => handleSaveApply(false))}
-					>
-						<Save className="size-4" /> {_('Save & Apply')}
-					</Button>
-					<Button variant="outline" size="sm" disabled={busy} onClick={() => withBusy(handleSave)}>
-						{_('Save')}
-					</Button>
-					<Button variant="ghost" size="sm" disabled={busy} onClick={() => window.location.reload()}>
-						<RotateCcw className="size-4" /> {_('Reset')}
-					</Button>
-				</div>
-			</div>
-
-			<div className="rounded-xl border border-border bg-muted/30 p-3" aria-label={_('Service status')}>
-				<div className="flex flex-wrap gap-2">
-					<StatusBadge tone={presentation.serviceTone(status && status.services && status.services.upnp)}>
-						{_('UPnP')}: {presentation.serviceLabel(status && status.services && status.services.upnp)}
-					</StatusBadge>
-					<StatusBadge tone={presentation.serviceTone(status && status.services && status.services.cast)}>
-						{_('Chromecast')}: {presentation.serviceLabel(status && status.services && status.services.cast)}
-					</StatusBadge>
-				</div>
-				<p className="mt-1.5 text-xs text-muted-foreground">
-					{_('Service running does not confirm AirPlay availability or playback.')}
-				</p>
-			</div>
-
-			{statusError ? <Alert tone="warning">{statusError}</Alert> : null}
-
-			{!ready ? (
-				<p className="text-sm text-muted-foreground">{_('Loading settings…')}</p>
-			) : (
-				<Tabs defaultValue="speakers">
-					<TabsList>
-						<TabsTrigger value="speakers">{_('Speakers')}</TabsTrigger>
-						<TabsTrigger value="settings">{_('Settings')}</TabsTrigger>
-						<TabsTrigger value="diagnostics">{_('Diagnostics')}</TabsTrigger>
-					</TabsList>
-					<TabsContent value="speakers">
-						<SpeakersPanel
-							devices={devices}
-							deviceValues={deviceValues}
-							onDeviceChange={setDevice}
-							onConfigure={configure}
-							rules={rules}
-							fields={fields.device}
-							presentation={presentation}
-							onScan={runScan}
-							scanState={scan}
-							duplicates={duplicates}
-							observation={broadcast}
-							t={t}
-							inheritLabel={inheritLabel}
-						/>
-					</TabsContent>
-					<TabsContent value="settings">
-						<SettingsPanel
-							fields={fields.main}
-							model={mainValues}
-							set={setMain}
-							rules={rules}
-							t={t}
-							inheritLabel={inheritLabel}
-						/>
-					</TabsContent>
-					<TabsContent value="diagnostics">
-						<DiagnosticsPanel
-							status={status}
-							presentation={presentation}
-							onAction={runAction}
-							onLoadLogs={loadLogs}
-							logs={logs}
-							setLogs={setLogs}
-							busy={busy}
-							t={t}
-						/>
-					</TabsContent>
-				</Tabs>
-			)}
-
-			<p className="text-xs text-muted-foreground">
-				{_('Save keeps changes pending. Save & Apply validates settings and briefly disconnects AirPlay while applying.')}
-			</p>
-		</div>
+		<Workspace
+			status={status}
+			presentation={presentation}
+			devices={devices}
+			selectedKey={selectedKey}
+			selectedDevice={selectedDevice}
+			deviceValues={deviceValues}
+			fields={fields}
+			rules={rules}
+			scanState={scan}
+			mainValues={mainValues}
+			saveState={saveState}
+			busy={busy}
+			conflicts={(status && status.conflicts) || []}
+			logs={logs}
+			onSelect={(key) => { setSelectedKey(key); setSettingsOpen(false); }}
+			onConfigure={configure}
+			onDeviceChange={handleDeviceChange}
+			onMainChange={setMain}
+			onScan={runScan}
+			onAction={runAction}
+			onLoadLogs={async () => { try { setLogs(await loadLogs()); } catch (error) { services.notify(message(error), 'danger'); } }}
+			onSave={() => withBusy(handleSave)}
+			onSaveApply={() => withBusy(() => handleSaveApply(false))}
+			onReset={() => window.location.reload()}
+			onRefresh={() => refresh()}
+			onSettings={() => setSettingsOpen(true)}
+			settingsOpen={settingsOpen}
+			onCloseSettings={() => setSettingsOpen(false)}
+			t={t}
+			inheritLabel={inheritLabel}
+		/>
 	);
 }

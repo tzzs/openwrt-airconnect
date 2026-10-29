@@ -6,8 +6,8 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: luci-app-airconnect-manager 0.1.0\n"
-"Report-Msgid-Bugs-To: \n"
-"PO-Revision-Date: 2026-10-29 00:00+0800\n"
+"POT-Creation-Date: 2026-10-30 00:00+0800\n"
+"PO-Revision-Date: 2026-10-30 00:00+0800\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: none\n"
 "Language: zh_Hans\n"
@@ -31,6 +31,10 @@ msgstr "0：固定的虚拟长度"
 msgid "Add a host after http:// or https://."
 msgstr "在 http:// 或 https:// 之后填写主机地址。"
 
+#: frontend/src/components/workspace.jsx:269
+msgid "Advanced"
+msgstr "高级"
+
 #: frontend/src/components/speakers.jsx:90
 msgid "Advanced audio settings"
 msgstr "高级音频设置"
@@ -39,11 +43,24 @@ msgstr "高级音频设置"
 msgid "Advanced settings"
 msgstr "高级设置"
 
+#: frontend/src/components/workspace.jsx:399
+msgid "AirConnect Manager"
+msgstr "AirConnect 管理器"
+
+#: frontend/src/components/workspace.jsx:72
+msgid "AirConnect health overview"
+msgstr "AirConnect 健康概览"
+
 #: frontend/src/lib/presentation.js:66
 msgid "AirPlay advertised"
 msgstr "已广播 AirPlay"
 
+#: frontend/src/components/workspace.jsx:296
+msgid "AirPlay bridge"
+msgstr "AirPlay 桥接"
+
 #: frontend/src/components/speakers.jsx:61
+#: frontend/src/components/workspace.jsx:325
 msgid "AirPlay broadcast"
 msgstr "AirPlay 广播"
 
@@ -67,21 +84,38 @@ msgstr "AirPlay 会将这些接收器显示为同一个名称。请为每个音�
 msgid "AirPlay name"
 msgstr "AirPlay 名称"
 
+#: frontend/src/components/workspace.jsx:227
+msgid "AirPlay name override is active."
+msgstr "AirPlay 名称覆盖已启用。"
+
 #: frontend/src/components/diagnostics.jsx:80
+#: frontend/src/components/workspace.jsx:320
 msgid "Another AirConnect instance was detected."
 msgstr "检测到另一个 AirConnect 实例。"
 
-#: frontend/src/App.jsx:175
+#: frontend/src/components/workspace.jsx:349
+msgid "Applied when a speaker does not define its own value."
+msgstr "在音箱没有单独设置时使用。"
+
+#: frontend/src/App.jsx:171
 msgid "Apply failed — changes remain pending"
 msgstr "应用失败 — 更改仍处于待应用状态"
 
-#: frontend/src/App.jsx:172
+#: frontend/src/App.jsx:168
 msgid "Apply requested — check LuCI confirmation"
 msgstr "已请求应用 — 请检查 LuCI 确认信息"
 
-#: frontend/src/App.jsx:169
+#: frontend/src/App.jsx:165
 msgid "Applying…"
 msgstr "正在应用…"
+
+#: frontend/src/components/workspace.jsx:269
+msgid "Audio and compatibility"
+msgstr "音频与兼容性"
+
+#: frontend/src/components/workspace.jsx:349
+msgid "Audio defaults"
+msgstr "音频默认值"
 
 #: frontend/src/lib/fields.js:108
 #: frontend/src/lib/fields.js:141
@@ -96,14 +130,14 @@ msgstr "将发现和 AirPlay 绑定到本地网络接口。"
 msgid "Both engines. Off adjusts timing by adding or dropping a frame, which can be audible as a click; on avoids the click but risks underruns."
 msgstr "两个引擎都适用。关闭时通过增加或丢弃帧来调整时序，可能听到咔嗒声；开启可避免咔嗒声，但可能发生欠载。"
 
-#: frontend/src/App.jsx:245
-msgid "Bring your network speakers to AirPlay."
-msgstr "将网络音箱接入 AirPlay。"
-
 #: frontend/src/lib/fields.js:110
 #: frontend/src/lib/fields.js:143
 msgid "Buffer and latency"
 msgstr "缓冲与延迟"
+
+#: frontend/src/components/workspace.jsx:399
+msgid "Changes are kept locally until you save."
+msgstr "更改会保留在本地，直到你保存。"
 
 #: frontend/src/lib/fields.js:139
 msgid "Changes only the virtual AirPlay receiver name. Leave empty to use the original name."
@@ -125,8 +159,13 @@ msgstr "选择 error、warn、info 或 debug。"
 msgid "Choose off (0) or on (1)."
 msgstr "选择关闭（0）或开启（1）。"
 
-#: frontend/src/App.jsx:281
+#: frontend/src/components/workspace.jsx:348
+msgid "Choose which bridge engines are available on this router."
+msgstr "选择此路由器上可用的桥接引擎。"
+
 #: frontend/src/components/diagnostics.jsx:99
+#: frontend/src/components/workspace.jsx:184
+#: frontend/src/components/workspace.jsx:69
 #: frontend/src/lib/presentation.js:31
 msgid "Chromecast"
 msgstr "Chromecast"
@@ -135,13 +174,29 @@ msgstr "Chromecast"
 msgid "Chromecast compatibility option. The UPnP engine ignores this."
 msgstr "Chromecast 兼容性选项。UPnP 引擎会忽略此项。"
 
+#: frontend/src/components/workspace.jsx:315
+msgid "Chromecast discovery"
+msgstr "Chromecast 发现"
+
 #: frontend/src/lib/fields.js:106
 msgid "Chromecast media volume"
 msgstr "Chromecast 媒体音量"
 
+#: frontend/src/components/workspace.jsx:225
+msgid "Chromecast receiver"
+msgstr "Chromecast 接收器"
+
 #: frontend/src/lib/fields.js:103
 msgid "Chromecast speakers"
 msgstr "Chromecast 音箱"
+
+#: frontend/src/components/workspace.jsx:165
+msgid "Clear search"
+msgstr "清除搜索"
+
+#: frontend/src/components/workspace.jsx:346
+msgid "Close settings"
+msgstr "关闭设置"
 
 #: frontend/src/components/settings.jsx:48
 msgid "Compatibility and detail options. Leave the defaults unless a speaker needs them."
@@ -155,7 +210,11 @@ msgstr "仅用于兼容性。当 UPnP 音箱完全无法播放时再修改此项
 msgid "Compatibility option, both engines. Turning it off can change pause and track-change behaviour, so keep it on unless a speaker misbehaves."
 msgstr "两个引擎都适用的兼容性选项。关闭后可能改变暂停和切歌行为，除非音箱表现异常，否则请保持开启。"
 
-#: frontend/src/App.jsx:153
+#: frontend/src/components/workspace.jsx:346
+msgid "Configuration"
+msgstr "配置"
+
+#: frontend/src/App.jsx:149
 msgid "Configuration validation failed."
 msgstr "配置校验失败。"
 
@@ -163,11 +222,11 @@ msgstr "配置校验失败。"
 msgid "Configure speaker"
 msgstr "配置音箱"
 
-#: frontend/src/App.jsx:234
+#: frontend/src/App.jsx:247
 msgid "Could not load settings. "
 msgstr "无法加载设置。"
 
-#: frontend/src/App.jsx:207
+#: frontend/src/App.jsx:203
 msgid "Could not start discovery."
 msgstr "无法开始发现。"
 
@@ -175,6 +234,10 @@ msgstr "无法开始发现。"
 #: frontend/src/lib/fields.js:147
 msgid "Cover art URL"
 msgstr "封面图片 URL"
+
+#: frontend/src/components/workspace.jsx:253
+msgid "Create a local profile to give it an AirPlay name, set its volume and choose how it bridges audio."
+msgstr "创建本地配置，为音箱设置 AirPlay 名称和音量，并选择音频桥接方式。"
 
 #: frontend/src/lib/fields.js:105
 msgid "Default maximum volume, from 1 to 100."
@@ -184,11 +247,22 @@ msgstr "默认最大音量，范围为 1 到 100。"
 msgid "Default media volume, from 0 to 1. This is not a volume limit."
 msgstr "默认媒体音量，范围为 0 到 1。这不是音量上限。"
 
+#: frontend/src/components/workspace.jsx:346
+msgid "Defaults for every speaker without a local override."
+msgstr "所有未单独设置的音箱默认使用这些值。"
+
+#: frontend/src/components/workspace.jsx:273
+msgid "Device facts"
+msgstr "设备信息"
+
+#: frontend/src/components/workspace.jsx:279
+msgid "Device identifier"
+msgstr "设备标识"
+
 #: frontend/src/components/speakers.jsx:58
 msgid "Device identifier (UDN)"
 msgstr "设备标识符（UDN）"
 
-#: frontend/src/App.jsx:298
 #: frontend/src/components/diagnostics.jsx:88
 msgid "Diagnostics"
 msgstr "诊断"
@@ -205,6 +279,14 @@ msgstr "已发现"
 msgid "Discovered on your network. Configure this speaker to override its AirPlay name and volume."
 msgstr "已在网络中发现。配置此音箱可以覆盖其 AirPlay 名称和音量。"
 
+#: frontend/src/components/workspace.jsx:171
+msgid "Discovery error"
+msgstr "发现错误"
+
+#: frontend/src/components/workspace.jsx:203
+msgid "Discovery is available"
+msgstr "发现功能可用"
+
 #: frontend/src/lib/presentation.js:113
 msgid "Discovery is in progress."
 msgstr "正在发现设备。"
@@ -217,6 +299,14 @@ msgstr "发现状态未知"
 msgid "Enable AirConnect"
 msgstr "启用 AirConnect"
 
+#: frontend/src/components/workspace.jsx:300
+msgid "Enable UPnP or Chromecast discovery in Global settings first."
+msgstr "请先在全局设置中启用 UPnP 或 Chromecast 发现。"
+
+#: frontend/src/components/workspace.jsx:203
+msgid "Enable an engine to scan"
+msgstr "启用引擎后才能扫描"
+
 #: frontend/src/lib/fields.js:157
 #: frontend/src/lib/fields.js:171
 msgid "Enable bridging"
@@ -226,9 +316,17 @@ msgstr "启用桥接"
 msgid "Enter an interface name of 1-15 characters that starts with a letter or digit."
 msgstr "输入 1 至 15 个字符的接口名称，以字母或数字开头。"
 
+#: frontend/src/components/workspace.jsx:263
+msgid "Everyday controls"
+msgstr "常用控制"
+
 #: frontend/src/lib/fields.js:109
 msgid "FLAC can use more CPU. Choose a format supported by your speaker."
 msgstr "FLAC 可能占用更多 CPU。请选择音箱支持的格式。"
+
+#: frontend/src/components/workspace.jsx:297
+msgid "Find the speakers on your network"
+msgstr "查找网络中的音箱"
 
 #: frontend/src/components/speakers.jsx:172
 msgid "Find your speakers"
@@ -245,6 +343,11 @@ msgstr "常规设置"
 #: frontend/src/components/settings.jsx:39
 msgid "Global defaults apply unless a speaker has its own override."
 msgstr "除非音箱有单独覆盖值，否则使用全局默认值。"
+
+#: frontend/src/components/workspace.jsx:125
+#: frontend/src/components/workspace.jsx:346
+msgid "Global settings"
+msgstr "全局设置"
 
 #: frontend/src/lib/fields.js:163
 msgid "HTTP transfer mode"
@@ -264,13 +367,14 @@ msgid "Highest UPnP MediaRenderer version to search. The Chromecast engine ignor
 msgstr "要搜索的最高 UPnP MediaRenderer 版本。Chromecast 引擎会忽略此项。"
 
 #: frontend/src/components/speakers.jsx:55
+#: frontend/src/components/workspace.jsx:276
 msgid "IP address"
 msgstr "IP 地址"
 
-#: frontend/src/App.jsx:29
-#: frontend/src/lib/fields.js:64
+#: frontend/src/App.jsx:23
 #: frontend/src/lib/fields.js:142
 #: frontend/src/lib/fields.js:165
+#: frontend/src/lib/fields.js:64
 msgid "Inherit global setting"
 msgstr "继承全局设置"
 
@@ -287,8 +391,13 @@ msgid "Last attempt:"
 msgstr "上次尝试："
 
 #: frontend/src/components/speakers.jsx:59
+#: frontend/src/components/workspace.jsx:280
 msgid "Last discovered"
 msgstr "最后发现时间"
+
+#: frontend/src/components/workspace.jsx:171
+msgid "Last scan"
+msgstr "上次扫描"
 
 #: frontend/src/lib/presentation.js:114
 msgid "Last scan: "
@@ -318,16 +427,21 @@ msgid "Let the timing reference drift"
 msgstr "允许时序参考漂移"
 
 #: frontend/src/components/diagnostics.jsx:125
+#: frontend/src/components/workspace.jsx:335
 msgid "Load recent logs"
 msgstr "加载最近日志"
 
-#: frontend/src/App.jsx:292
-msgid "Loading settings…"
-msgstr "正在加载设置…"
+#: frontend/src/App.jsx:256
+msgid "Loading speakers and status…"
+msgstr "正在加载音箱和状态…"
 
 #: frontend/src/lib/fields.js:130
 msgid "Log detail"
 msgstr "日志详细程度"
+
+#: frontend/src/components/workspace.jsx:336
+msgid "Logs appear here when requested."
+msgstr "请求后将在此显示日志。"
 
 #: frontend/src/components/diagnostics.jsx:135
 msgid "Logs are loaded only when requested."
@@ -338,6 +452,7 @@ msgid "Manager version"
 msgstr "管理器版本"
 
 #: frontend/src/components/speakers.jsx:57
+#: frontend/src/components/workspace.jsx:278
 msgid "Manufacturer"
 msgstr "制造商"
 
@@ -346,12 +461,17 @@ msgid "Media volume"
 msgstr "媒体音量"
 
 #: frontend/src/components/speakers.jsx:56
+#: frontend/src/components/workspace.jsx:277
 msgid "Model"
 msgstr "型号"
 
 #: frontend/src/components/speakers.jsx:162
 msgid "More than one speaker uses the same AirPlay name."
 msgstr "多个音箱使用了相同的 AirPlay 名称。"
+
+#: frontend/src/components/workspace.jsx:348
+msgid "Network and discovery"
+msgstr "网络与发现"
 
 #: frontend/src/lib/presentation.js:74
 msgid "No"
@@ -361,7 +481,12 @@ msgstr "否"
 msgid "No AirPlay advertisement"
 msgstr "没有 AirPlay 广播"
 
+#: frontend/src/components/workspace.jsx:69
+msgid "No engine"
+msgstr "无引擎"
+
 #: frontend/src/components/diagnostics.jsx:139
+#: frontend/src/components/workspace.jsx:336
 msgid "No log entries."
 msgstr "没有日志条目。"
 
@@ -369,7 +494,15 @@ msgstr "没有日志条目。"
 msgid "No scan has been completed."
 msgstr "尚未完成扫描。"
 
-#: frontend/src/App.jsx:39
+#: frontend/src/components/workspace.jsx:197
+msgid "No speaker matches this search."
+msgstr "没有匹配此搜索的音箱。"
+
+#: frontend/src/components/workspace.jsx:197
+msgid "No speakers discovered yet."
+msgstr "尚未发现音箱。"
+
+#: frontend/src/App.jsx:33
 msgid "No unsaved changes"
 msgstr "没有未保存的更改"
 
@@ -381,20 +514,29 @@ msgstr "否 — 扫描未发现广播"
 msgid "Not currently discovered"
 msgstr "当前未发现"
 
+#: frontend/src/components/workspace.jsx:92
+msgid "Not measured"
+msgstr "未测量"
+
 #: frontend/src/lib/presentation.js:104
 msgid "Not playing"
 msgstr "未播放"
 
 #: frontend/src/components/speakers.jsx:59
+#: frontend/src/components/workspace.jsx:280
 #: frontend/src/lib/presentation.js:19
 #: frontend/src/lib/presentation.js:24
 #: frontend/src/lib/presentation.js:26
 msgid "Not provided"
 msgstr "未提供"
 
-#: frontend/src/App.jsx:160
+#: frontend/src/App.jsx:156
 msgid "Not saved — check settings"
 msgstr "未保存 — 请检查设置"
+
+#: frontend/src/components/workspace.jsx:332
+msgid "Observed"
+msgstr "观测时间"
 
 #: frontend/src/lib/fields.js:51
 msgid "Off (0)"
@@ -413,10 +555,12 @@ msgid "Optional http:// or https:// image the speaker fetches itself. Leave empt
 msgstr "可选的 http:// 或 https:// 图片地址，由音箱自行获取。留空表示不使用。路由器不会下载图片。"
 
 #: frontend/src/components/speakers.jsx:54
+#: frontend/src/components/workspace.jsx:275
 msgid "Original name"
 msgstr "原名称"
 
 #: frontend/src/components/diagnostics.jsx:50
+#: frontend/src/components/workspace.jsx:329
 msgid "Playback"
 msgstr "播放"
 
@@ -424,13 +568,26 @@ msgstr "播放"
 msgid "Playing"
 msgstr "播放中"
 
+#: frontend/src/components/workspace.jsx:158
+msgid "Rail menu"
+msgstr "列表菜单"
+
+#: frontend/src/components/workspace.jsx:171
+msgid "Ready to discover"
+msgstr "可以开始发现"
+
 #: frontend/src/components/diagnostics.jsx:132
 msgid "Recent AirConnect logs"
 msgstr "最近的 AirConnect 日志"
 
 #: frontend/src/components/diagnostics.jsx:115
+#: frontend/src/components/workspace.jsx:335
 msgid "Recent logs"
 msgstr "最近日志"
+
+#: frontend/src/components/workspace.jsx:121
+msgid "Refresh status"
+msgstr "刷新状态"
 
 #: frontend/src/lib/rules.js:103
 #: frontend/src/lib/rules.js:108
@@ -442,9 +599,17 @@ msgstr "从 AirPlay 名称中移除控制字符或无效字符。"
 msgid "Remove spaces, quotes or control characters from the artwork URL."
 msgstr "从封面图片 URL 中移除空格、引号或控制字符。"
 
-#: frontend/src/App.jsx:270
+#: frontend/src/components/workspace.jsx:273
+msgid "Reported by the last discovery response."
+msgstr "由上次发现响应提供。"
+
+#: frontend/src/components/workspace.jsx:133
 msgid "Reset"
 msgstr "重置"
+
+#: frontend/src/components/workspace.jsx:318
+msgid "Restart"
+msgstr "重启"
 
 #: frontend/src/components/diagnostics.jsx:73
 msgid "Restart service"
@@ -454,19 +619,15 @@ msgstr "重启服务"
 msgid "Running"
 msgstr "运行中"
 
-#: frontend/src/App.jsx:267
+#: frontend/src/components/workspace.jsx:128
 msgid "Save"
 msgstr "保存"
 
-#: frontend/src/App.jsx:264
-msgid "Save & Apply"
+#: frontend/src/components/workspace.jsx:131
+msgid "Save and apply"
 msgstr "保存并应用"
 
-#: frontend/src/App.jsx:343
-msgid "Save keeps changes pending. Save & Apply validates settings and briefly disconnects AirPlay while applying."
-msgstr "保存会保留待应用的更改。保存并应用会校验设置，并在应用期间使 AirPlay 短暂断开。"
-
-#: frontend/src/App.jsx:157
+#: frontend/src/App.jsx:153
 msgid "Saved; pending apply"
 msgstr "已保存；等待应用"
 
@@ -475,12 +636,22 @@ msgid "Scan failed: "
 msgstr "扫描失败："
 
 #: frontend/src/components/speakers.jsx:154
+#: frontend/src/components/workspace.jsx:168
 msgid "Scan for speakers"
 msgstr "扫描音箱"
+
+#: frontend/src/components/workspace.jsx:168
+#: frontend/src/components/workspace.jsx:299
+msgid "Scanning speakers"
+msgstr "正在扫描音箱"
 
 #: frontend/src/components/speakers.jsx:154
 msgid "Scanning…"
 msgstr "扫描中…"
+
+#: frontend/src/components/workspace.jsx:164
+msgid "Search speakers"
+msgstr "搜索音箱"
 
 #: frontend/src/lib/fields.js:112
 #: frontend/src/lib/fields.js:145
@@ -491,7 +662,7 @@ msgstr "发送曲目信息"
 msgid "Sends the title and artist to the speaker. Both engines read this. A speaker may still show nothing."
 msgstr "将标题和艺术家发送给音箱。两个引擎都会读取此项，但音箱仍可能不显示。"
 
-#: frontend/src/App.jsx:193
+#: frontend/src/App.jsx:189
 msgid "Service action failed."
 msgstr "服务操作失败。"
 
@@ -503,37 +674,63 @@ msgstr "服务操作"
 msgid "Service actions use the last applied settings. Stopping or restarting briefly disconnects AirPlay."
 msgstr "服务操作使用最近一次应用的设置。停止或重启服务会使 AirPlay 短暂断开。"
 
-#: frontend/src/App.jsx:194
-msgid "Service request accepted. Check the reported service status."
-msgstr "服务请求已接受。请检查报告的服务状态。"
+#: frontend/src/components/workspace.jsx:313
+msgid "Service control"
+msgstr "服务控制"
 
-#: frontend/src/App.jsx:285
+#: frontend/src/App.jsx:190
+
+#: frontend/src/components/workspace.jsx:116
+msgid "Service running"
+msgstr "服务运行中"
+
 #: frontend/src/components/diagnostics.jsx:90
 msgid "Service running does not confirm AirPlay availability or playback."
 msgstr "服务运行不代表 AirPlay 可用或正在播放。"
 
-#: frontend/src/App.jsx:275
-msgid "Service status"
-msgstr "服务状态"
+#: frontend/src/components/workspace.jsx:116
+msgid "Service stopped"
+msgstr "服务已停止"
 
 #: frontend/src/components/speakers.jsx:150
 msgid "Set the AirPlay name and volume for each speaker."
 msgstr "为每个音箱设置 AirPlay 名称和音量。"
 
-#: frontend/src/App.jsx:297
-msgid "Settings"
-msgstr "设置"
+#: frontend/src/components/workspace.jsx:254
+msgid "Set up this speaker"
+msgstr "设置此音箱"
 
-#: frontend/src/App.jsx:296
+#: frontend/src/components/workspace.jsx:323
+msgid "Signal report"
+msgstr "信号报告"
+
+#: frontend/src/components/workspace.jsx:111
+msgid "Speaker bridge"
+msgstr "音箱桥接"
+
 #: frontend/src/components/speakers.jsx:147
+#: frontend/src/components/workspace.jsx:156
+#: frontend/src/components/workspace.jsx:174
 msgid "Speakers"
 msgstr "音箱"
+
+#: frontend/src/components/workspace.jsx:317
+msgid "Start"
+msgstr "启动"
+
+#: frontend/src/components/workspace.jsx:298
+msgid "Start a discovery scan to see compatible UPnP and Chromecast speakers. They will appear here with a separate profile for each receiver."
+msgstr "开始发现扫描以查找兼容的 UPnP 和 Chromecast 音箱。每个接收器都会以独立配置显示在这里。"
+
+#: frontend/src/components/workspace.jsx:299
+msgid "Start discovery"
+msgstr "开始发现"
 
 #: frontend/src/components/diagnostics.jsx:67
 msgid "Start service"
 msgstr "启动服务"
 
-#: frontend/src/App.jsx:55
+#: frontend/src/App.jsx:51
 msgid "Status unavailable. Displayed information may be stale. "
 msgstr "状态不可用。显示的信息可能已过期。"
 
@@ -557,26 +754,43 @@ msgstr "停止接收器（仅 Chromecast）"
 msgid "Stopped"
 msgstr "已停止"
 
-#: frontend/src/App.jsx:218
+#: frontend/src/App.jsx:214
 msgid "The log response was invalid."
 msgstr "日志响应无效。"
+
+#: frontend/src/components/workspace.jsx:263
+msgid "The settings you are most likely to change."
+msgstr "最常修改的设置。"
+
+#: frontend/src/components/workspace.jsx:252
+msgid "This speaker is discovered"
+msgstr "已发现此音箱"
 
 #: frontend/src/components/speakers.jsx:174
 msgid "Turn on a discovery engine in Settings, then scan. Keep your speaker online on the same LAN and enable DLNA when required."
 msgstr "先在“设置”中启用发现引擎，再进行扫描。请保持音箱在线并与路由器处于同一局域网；必要时启用 DLNA。"
 
-#: frontend/src/App.jsx:278
 #: frontend/src/components/diagnostics.jsx:96
+#: frontend/src/components/workspace.jsx:69
 msgid "UPnP"
 msgstr "UPnP"
 
+#: frontend/src/components/workspace.jsx:184
 #: frontend/src/lib/presentation.js:31
 msgid "UPnP / DLNA"
 msgstr "UPnP / DLNA"
 
+#: frontend/src/components/workspace.jsx:225
+msgid "UPnP / DLNA receiver"
+msgstr "UPnP / DLNA 接收器"
+
 #: frontend/src/lib/fields.js:102
 msgid "UPnP / DLNA speakers"
 msgstr "UPnP / DLNA 音箱"
+
+#: frontend/src/components/workspace.jsx:314
+msgid "UPnP discovery"
+msgstr "UPnP 发现"
 
 #: frontend/src/lib/fields.js:125
 msgid "UPnP search version (UPnP only)"
@@ -603,10 +817,12 @@ msgid "Unknown — the engines expose no documented playback status, so this is 
 msgstr "未知 — 引擎没有文档化的播放状态，因此不会根据广播状态推断。"
 
 #: frontend/src/components/speakers.jsx:70
+#: frontend/src/components/workspace.jsx:183
+#: frontend/src/components/workspace.jsx:226
 msgid "Unnamed speaker"
 msgstr "未命名音箱"
 
-#: frontend/src/App.jsx:93
+#: frontend/src/App.jsx:89
 msgid "Unsaved changes"
 msgstr "未保存的更改"
 
@@ -642,13 +858,25 @@ msgstr "AirPlay 名称长度不超过 63 字节。"
 msgid "Use two whole numbers from 0 to 10000 separated by a colon, for example 1000:2000."
 msgstr "使用两个 0 到 10000 之间的整数，以冒号分隔，例如 1000:2000。"
 
-#: frontend/src/App.jsx:149
+#: frontend/src/components/workspace.jsx:227
+msgid "Using the original speaker name."
+msgstr "正在使用音箱原始名称。"
+
+#: frontend/src/App.jsx:145
 msgid "Validating…"
 msgstr "正在校验…"
+
+#: frontend/src/components/workspace.jsx:399
+msgid "Version unknown"
+msgstr "版本未知"
 
 #: frontend/src/lib/fields.js:158
 msgid "Volume limit"
 msgstr "音量上限"
+
+#: frontend/src/components/workspace.jsx:155
+msgid "Workspace"
+msgstr "工作区"
 
 #: frontend/src/lib/presentation.js:74
 msgid "Yes"
@@ -658,6 +886,18 @@ msgstr "是"
 msgid "Yes — an AirPlay receiver is advertised"
 msgstr "是 — 已广播 AirPlay 接收器"
 
+#: frontend/src/components/workspace.jsx:85
+msgid "discovery engine"
+msgstr "发现引擎"
+
+#: frontend/src/components/workspace.jsx:93
+msgid "last AirPlay observation"
+msgstr "上次 AirPlay 观测"
+
 #: frontend/src/lib/presentation.js:79
 msgid "observed"
 msgstr "已观测"
+
+#: frontend/src/components/workspace.jsx:77
+msgid "speakers discovered"
+msgstr "已发现音箱"
