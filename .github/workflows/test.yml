@@ -59,6 +59,9 @@ jobs:
           test -f "$GITHUB_WORKSPACE/packages/luci-app-airconnect-manager/htdocs/luci-static/resources/airconnect-manager/app.js"
           test -f "$GITHUB_WORKSPACE/packages/luci-app-airconnect-manager/htdocs/luci-static/resources/airconnect-manager/app.css"
 
+      - name: Check translation catalogues
+        run: node scripts/update-i18n.mjs --check
+
       - name: Install build dependencies for ucode
         # json-c is a hard build requirement of ucode itself. libmd provides the
         # pkg-config file ucode's optional digest module requires; keeping it

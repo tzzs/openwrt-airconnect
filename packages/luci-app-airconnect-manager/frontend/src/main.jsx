@@ -10,9 +10,11 @@ import './styles.css';
  * The LuCI view owns the page globals (`uci`, `rpc`, `ui`, `poll`, `_`); it
  * passes them in `context`, so nothing in the React tree reads `window`
  * directly and the same components can be rendered against a fake context in a
- * test. Saving is driven by the page's own toolbar (the view defines no
- * handleSave/handleSaveApply, so LuCI renders no footer buttons), which leaves
- * `unmount` as the only thing the view needs back.
+ * test.
+ *
+ * `mode` selects the page: 'overview' is the device workspace, 'settings' is
+ * the global configuration. Both are the same application, so the bundle is
+ * shared and only the body differs.
  *
  * `themeHost` is the `.ac-root` element the view wraps us in: the CSS tokens
  * live on that element, and it sits outside the React tree, so the app cannot
@@ -20,12 +22,19 @@ import './styles.css';
  */
 export function mount(container, context) {
 	const services = createServices(context);
-	const themeHost = typeof container.closest === 'function'
-		? (container.closest('.ac-root') || container)
-		: container;
+	const themeHost =
+		typeof container.closest === 'function'
+			? container.closest('.ac-root') || container
+			: container;
 	const root = createRoot(container);
 	root.render(
-		<App context={{ services, themeHost }} />
+		<App
+			context={{
+				services,
+				themeHost,
+				mode: context.mode || 'overview'
+			}}
+		/>
 	);
 	return {
 		unmount: () => root.unmount()

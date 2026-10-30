@@ -179,12 +179,35 @@ export function createFields(t) {
 		]
 	);
 
-	// Grouping is presentation only: the panels show the everyday controls first
-	// and fold the compatibility options away. It never changes which fields
-	// exist, so the contract tests ignore it.
-	const MAIN_PRIMARY = ['enabled', 'interface', 'airupnp', 'aircast', 'max_volume', 'media_volume'];
+	// Grouping is presentation only: the device panels show the everyday
+	// controls first and fold the compatibility options away, and the global
+	// settings page sorts the fields into named sections. It never changes
+	// which fields exist, so the contract tests ignore it.
+	//
+	// `section` is the global page's grouping: each section becomes one card
+	// with a heading, so a long list of sixteen options reads as four topics
+	// instead of one wall of controls.
+	const MAIN_SECTIONS = {
+		enabled: 'service',
+		interface: 'service',
+		airupnp: 'service',
+		aircast: 'service',
+		max_volume: 'audio',
+		media_volume: 'audio',
+		codec: 'audio',
+		latency: 'audio',
+		metadata: 'compatibility',
+		artwork: 'compatibility',
+		flush: 'compatibility',
+		drift: 'compatibility',
+		http_length: 'compatibility',
+		upnp_max: 'compatibility',
+		stop_receiver: 'compatibility',
+		log_level: 'diagnostics'
+	};
 	for (const field of main)
-		field.group = MAIN_PRIMARY.indexOf(field.name) >= 0 ? 'primary' : 'advanced';
+		field.section = MAIN_SECTIONS[field.name] || 'audio';
+
 	const DEVICE_PRIMARY = ['enabled', 'name', 'max_volume', 'media_volume'];
 	for (const field of upnp.concat(cast))
 		field.group = DEVICE_PRIMARY.indexOf(field.name) >= 0 ? 'primary' : 'advanced';

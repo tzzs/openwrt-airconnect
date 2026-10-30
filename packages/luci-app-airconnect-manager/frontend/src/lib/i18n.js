@@ -23,10 +23,15 @@ const STORAGE_KEY = 'airconnect.lang';
 const VALID_LANGS = new Set(LANGUAGES.map((entry) => entry.value));
 
 // Built-in Simplified Chinese table. Covers every translatable source string
-// in frontend/src/** (213 entries) so the page never shows a mixed-language view
+// in frontend/src/** (220 entries) so the page never shows a mixed-language view
 // even when the device's `.lmo` is stale. Proper nouns are kept in English per
 // the spec: UPnP / DLNA, Chromecast, AirPlay, AirConnect, FLAC, HTTP.
-const ZH = {
+//
+// The table is exported because it is also the source of truth for the
+// gettext catalogue that ships with the package: scripts/update-i18n.mjs
+// copies it into po/zh_Hans, so the bundle and the catalogue cannot disagree
+// about a translation.
+export const ZH = {
 	'-1: no content-length (default)': '-1：无 content-length（默认）',
 	'-3: chunked encoding': '-3：分块传输',
 	'0: fixed dummy length': '0：固定的虚拟长度',
@@ -52,6 +57,7 @@ const ZH = {
 	'Applying…': '正在应用…',
 	'Audio and compatibility': '音频与兼容性',
 	'Audio defaults': '音频默认值',
+	'Compatibility': '兼容性',
 	'Audio format': '音频格式',
 	'Bind discovery and AirPlay to your local network interface.': '将发现和 AirPlay 绑定到本地网络接口。',
 	'Both engines. Off adjusts timing by adding or dropping a frame, which can be audible as a click; on avoids the click but risks underruns.': '两个引擎都适用。关闭时通过增加或丢弃帧来调整时序，可能听到咔嗒声；开启可避免咔嗒声，但可能发生欠载。',
@@ -89,6 +95,7 @@ const ZH = {
 	'Device identifier': '设备标识',
 	'Device identifier (UDN)': '设备标识符（UDN）',
 	'Diagnostics': '诊断',
+	'Engines': '引擎',
 	'Disabled': '已禁用',
 	'Discovered': '已发现',
 	'Discovered on your network. Configure this speaker to override its AirPlay name and volume.': '已在网络中发现。配置此音箱可以覆盖其 AirPlay 名称和音量。',
@@ -185,6 +192,7 @@ const ZH = {
 	'Service actions': '服务操作',
 	'Service actions use the last applied settings. Stopping or restarting briefly disconnects AirPlay.': '服务操作使用最近一次应用的设置。停止或重启服务会使 AirPlay 短暂断开。',
 	'Service control': '服务控制',
+	'Service status': '服务状态',
 	'Service running': '服务运行中',
 	'Service running does not confirm AirPlay availability or playback.': '服务运行不代表 AirPlay 可用或正在播放。',
 	'Service stopped': '服务已停止',
@@ -239,7 +247,11 @@ const ZH = {
 	'discovery engine': '发现引擎',
 	'last AirPlay observation': '上次 AirPlay 观测',
 	'observed': '已观测',
-	'speakers discovered': '已发现音箱'
+	'speakers discovered': '已发现音箱',
+	'No settings available': '没有可用的设置',
+	'Options for hardware that misbehaves. Leave the defaults unless a speaker needs them.': '针对异常设备的选项。除非音箱需要，否则请保持默认设置。',
+	'Service and discovery': '服务与发现',
+	'The configuration could not be read. Reload the page and try again.': '无法读取配置。请重新加载页面后重试。',
 };
 
 // navigator.language may be undefined in non-browser test contexts; fall back

@@ -12,34 +12,38 @@ Argon 主题的 `#maincontent > .container` 使用 `margin: 0 1.25rem 1rem` 且 
 
 实测：`document.documentElement.scrollWidth` = 1458 > `clientWidth` = 1240。
 
-**修法**：`.ac-root` 必须自己约束宽度，不能跟随父级的 `width:100%`：
+**修法（当前实现）**：在页面作用域内覆盖 Argon 的直接容器，避免 `width: 100%`
+与宿主左右外边距叠加；`.ac-root` 本身再使用 `width: auto`、`max-width: 100%` 和
+`box-sizing: border-box`，所有 grid/flex 子项设置 `min-width: 0`：
 
 ```css
-.ac-root {
-    margin-right: 20px;   /* 抵消 Argon .container 的右外边距 */
-    width: auto;          /* 不再继承 width:100% */
-    max-width: 100%;
+#maincontent > .container {
     box-sizing: border-box;
+    max-width: 100%;
+    width: auto;
+}
+
+.ac-root {
+    box-sizing: border-box;
+    max-width: 1400px;
+    min-width: 0;
+    width: auto;
 }
 ```
 
-同时 `.ac-console` 及所有子元素必须 `min-width: 0`，否则 grid/flex 子项的
-`min-content` 会撑破容器。
+这样修复的是溢出的来源，而不是用额外右边距抵消结果。
 
 **验收**：任意窗口宽度下 `document.documentElement.scrollWidth === document.documentElement.clientWidth`。
 
 ### 2. 纵向超高
 
-当前 `.ac-root { min-height: 600px }`、`.ac-console { min-height: 680px }` 是硬编码高度，
-与视口无关，页面总高 1068px 超出视口 834px。
+旧版 `.ac-root` 和三栏工作区使用了与视口无关的硬编码最小高度，导致页面被无意义地
+撑高。当前实现移除这些固定高度，主工作区由内容自然撑开，服务抽屉内部单独纵向滚动。
 
 **修法**：
-- 去掉硬编码 `min-height`，改为 `min-height: 100%` 语义（由内容撑开）。
-- 三个工作区（设备列表 / 中央内容 / 工具栏）内部各自滚动，页面本身不产生多余滚动：
-  `.ac-console-layout` 用 `min-height: 0`，`.ac-device-list`、`.ac-main-workspace`、
-  `.ac-utility-rail` 各自 `overflow-y: auto`。
-- 若三栏在低高度下过于拥挤，允许中央内容区自然增高（纵向滚动是允许的，
-  用户明确说"上下滑动还是可以的"），但**不得出现横向滚动**。
+- 主页面不设置固定最小高度，允许中央内容在低高度窗口中自然增高；
+- 设备栏在窄屏收起，展开后的列表只在自身内容区滚动；
+- 页面允许正常纵向滚动，但不得出现横向滚动。
 
 ### 3. 语言混杂
 
@@ -140,36 +144,44 @@ handleSaveApply ? new ComboButton(...) : E([])
 - 图标按钮必须有 `title` 和 `aria-label`。
 - 所有按钮 `type="button"`，防止误触发表单提交。
 
-## 二、布局重新设计
+## 二、布局重新设计（当前实现）
 
 用户要求"基于对应的空间对当前的 UI 布局进行重新设计，让它更加合理"。
 
-### 桌面（容器宽度 ≥ 1120px）
+### 设计原则
 
-三栏，但**宽度按内容重要性重新分配**：
-- 设备列表栏：固定 260px（当前 270px），深色，可折叠。
-- 中央工作区：`minmax(0, 1fr)`，自适应剩余空间，**这是页面的主角**。
-- 工具栏：固定 260px，当前 278px。
+- **同一色系**：设备栏、中央工作区、顶栏和设置页都使用同一组 surface token；
+  设备栏用浅色表面和分隔线建立层次，不再使用近黑色的第二套配色。
+- **单一容器**：每个页面是一个 `12px` 圆角、带边框和阴影的 `.ac-root` 浮层，
+  内部面板统一 `8–10px` 圆角，避免四角直角的表格感。
+- **主页面精简**：主页面只保留设备列表、当前音箱配置和健康摘要；服务控制、
+  信号报告、最近日志放进右侧 `Drawer`，不再永久占据第三列。
+- **设置独立成页**：全局设置位于 `/cgi-bin/luci/admin/services/airconnect-manager/settings`，
+  按服务与发现、音频默认值、兼容性、诊断四组展示。
 
-三栏之间用 1px 分隔线，不留大间隙。
+### 桌面（容器宽度 > 1180px）
 
-### 中等（760px ≤ 容器宽度 < 1120px）
+- 设备列表栏：固定 `272px`，与主区使用同一色系，以 1px 分隔线区分。
+- 中央工作区：`minmax(0, 1fr)`，自适应剩余空间，这是页面的主角。
+- 服务状态不占列宽，通过顶部/底部入口打开右侧抽屉。
 
-- 设备列表栏 + 中央工作区两栏。
-- 工具栏移到中央工作区**下方**，横向排列为三个区块（服务控制 / 信号 / 日志），
-  与当前 `@media (max-width:1120px)` 的做法一致，但容器查询要基于 `.ac-root` 的
-  容器宽度（已实现），不是视口宽度。
+### 中等（720px < 容器宽度 ≤ 1180px）
 
-### 窄（容器宽度 < 760px）
+- 设备列表栏收窄至 `240px`，主区保留自适应宽度。
+- 容器宽度 ≤ `980px` 时，设备设置表单切换为单列，事实信息切换为两列。
 
-- 单列纵向堆叠：设备列表（横向滚动的紧凑行）→ 中央工作区 → 工具栏。
-- 设备列表横向滚动是允许的，但**只在设备列表内部滚动**，不能让整页横向滚动。
+### 窄（容器宽度 ≤ 720px）
 
-### 高度
+- 设备列表变为可折叠面板，默认收起；当前音箱工作区占据首屏。
+- 设备列表只在自身内容区滚动，页面允许纵向滚动。
+- 容器宽度 ≤ `460px` 时，事实信息切换为单列并隐藏次要品牌副标题。
 
-- `.ac-console-layout` 高度用 `min-height: 0` + 内部滚动，让工具栏和设备列表
-  在长内容时各自滚动，而不是把页面撑得很长。
-- 中央工作区内容多时允许整页纵向滚动。
+### 高度与溢出
+
+- 主工作区不设置固定最小高度，由内容自然撑开。
+- 必须保持 `document.documentElement.scrollWidth === document.documentElement.clientWidth`；
+  宽度约束修在 Argon 的 `.container` 祖先上，而不是只修子元素。
+- 抽屉使用 Radix Portal 固定在视口右侧，内部独立纵向滚动。
 
 ## 三、断点实现方式
 
@@ -187,32 +199,33 @@ handleSaveApply ? new ComboButton(...) : E([])
 ## 四、代码组织
 
 新增文件：
-- `frontend/src/lib/i18n.js` — 内置中英文案表、`createTranslator(lang, luciTranslate)`、
-  `detectLanguage()`、`readPreference()` / `writePreference()`。
-- `frontend/src/lib/theme.js` — 主题状态管理（`readTheme()` / `applyTheme()` /
-  `toggleTheme()`）。
+- `frontend/src/lib/i18n.js` — 内置中英文案表和统一 translator；
+- `frontend/src/lib/theme.js` — 主题状态管理；
+- `frontend/src/components/chrome.jsx` — 两个页面共用的顶栏与操作区；
+- `frontend/src/components/rail.jsx`、`device.jsx` — 设备列表和设备编辑器；
+- `frontend/src/components/service-panel.jsx`、`ui/drawer.jsx` — 服务状态抽屉；
+- `frontend/src/components/settings-page.jsx` — 独立设置页分组；
+- `htdocs/luci-static/resources/view/airconnect-manager/common.js` — LuCI 共享 bundle loader；
+- `htdocs/luci-static/resources/view/airconnect-manager/settings.js` — 独立 settings view；
+- `scripts/update-i18n.mjs` — 从源码同步 POT/PO 并支持 `--check`。
 
 修改文件：
-- `frontend/src/App.jsx` — 接入语言/主题状态，把统一的 `t` 传给 rules/fields/presentation。
-- `frontend/src/components/workspace.jsx` — 顶栏加入语言与主题控件；按钮统一。
-- `frontend/src/styles.css` — 横向溢出修复、高度修复、dark token 抽取、按钮统一。
-- `frontend/src/components/feedback.jsx` — `Alert` 的两种 tone 当前图标相同，修正。
-- `htdocs/luci-static/resources/view/airconnect-manager/overview.js` — 删除三个
-  handle 方法，传入语言/主题上下文。
+- `frontend/src/App.jsx` — 接入语言/主题状态，并按 `mode` 渲染 overview/settings；
+- `frontend/src/components/workspace.jsx` — 两栏设备工作台、健康摘要和 drawer 入口；
+- `frontend/src/styles.css` — 统一 token、圆角、容器查询和溢出约束；
+- `frontend/src/lib/fields.js`、`lib/i18n.js`、`main.jsx` — 字段分组、文案和挂载上下文；
+- `htdocs/.../overview.js`、菜单 JSON、POT/PO — 主页面路由、设置入口和翻译目录。
 
-不改动：`frontend/src/lib/rules.js`、`fields.js`、`presentation.js` 的**逻辑**，
-只改它们的 `t` 参数来源（保持函数签名不变）。
+overview 和 settings 两个 LuCI view 都显式将 `handleSave`、`handleSaveApply`、
+`handleReset` 设为 `null`，避免 LuCI 基类生成重复页脚按钮。
 
 ## 五、测试要求
 
 - `tests/i18n/check.sh` 必须通过：POT 覆盖前端全部 `_()` 字符串，PO 无空 msgstr。
 - `tests/luci/run.mjs`、`tests/luci/diagnostics.mjs` 必须通过（签名未变）。
 - `tests/parity/check-frontend.mjs` 必须通过。
-- `tests/performance/measure-payload.sh` 必须通过。注意 `app.css` 当前 32672 字节，
-  上限 32768，**只剩 96 字节余量**。新增样式前必须先腾出空间：
-  - 把 `styles.css` 中的重复声明合并；
-  - 或临时提高 `tests/performance/measure-payload.sh` 中 app.css 的 cap，
-    并在注释里写明新的实测值和理由（该脚本注释明确允许按实测值调整 cap）。
+- `tests/performance/measure-payload.sh` 必须通过。当前脚本记录并约束 app.js/app.css
+  的实测值与预算，样式或依赖变更后必须重新运行该检查并同步预算说明（如确实需要调整）。
 - `npm run build` 必须成功，且 `check-bundle.mjs` 通过。
 - 完整 `bash scripts/run-tests.sh` 全部通过。
 
