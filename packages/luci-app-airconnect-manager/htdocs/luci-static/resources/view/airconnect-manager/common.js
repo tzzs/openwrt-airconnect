@@ -39,7 +39,7 @@ function loadApp() {
 		};
 		script.onerror = function () {
 			reject(new Error('could not load ' + url));
-	};
+		};
 		document.head.appendChild(script);
 	});
 	return appPromise;

@@ -449,8 +449,9 @@ export function App({ context }) {
 				}
 			}}
 			onOpenSettings={() => {
-				window.location.href =
-					'/cgi-bin/luci/admin/services/airconnect-manager/settings';
+				const settingsUrl = new URL(window.location.href);
+				settingsUrl.pathname = settingsUrl.pathname.replace(/\/+$/, '') + '/settings';
+				window.location.href = settingsUrl.href;
 			}}
 			t={t}
 			inheritLabel={inheritLabel}
