@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Alert } from './components/feedback.jsx';
 import { PageChrome } from './components/chrome.jsx';
+import { ThemeContext } from './components/theme-context.jsx';
 import { Workspace } from './components/workspace.jsx';
 import { SettingsPage } from './components/settings-page.jsx';
 import { createRules } from './lib/rules.js';
@@ -14,6 +15,11 @@ import {
 import { applyTheme, detectTheme, writeTheme } from './lib/theme.js';
 import { applySnapshot, createPoller, POLL_SECONDS } from './lib/polling.js';
 import { buildCanonicalConfig } from './lib/config.js';
+import {
+	interfaceOptionsFrom,
+	interfaceValue,
+	withInterfaceSelect
+} from './lib/interfaces.js';
 import { duplicateNames, mergeDevices, readState } from './lib/model.js';
 
 function message(error) {
@@ -85,6 +91,7 @@ export function App({ context }) {
 	});
 	const [mainValues, setMainValues] = useState({});
 	const [deviceValues, setDeviceValues] = useState({});
+	const [interfaceOptions, setInterfaceOptions] = useState(null);
 	const [configured, setConfigured] = useState([]);
 	const [saveState, setSaveState] = useState({
 		text: t('No unsaved changes'),
@@ -129,9 +136,19 @@ export function App({ context }) {
 			get: (section, option) => services.get(section, option),
 			sections: (type, callback) => services.sections(type, callback)
 		});
+		// uci may not hold an interface yet; show the one the service will
+		// actually bind to (config.uc's default) rather than an empty select.
+		state.main.interface = interfaceValue(state.main.interface);
 		setMainValues(state.main);
 		setDeviceValues(state.devices);
 		setConfigured(state.sections);
+		try {
+			setInterfaceOptions(
+				interfaceOptionsFrom(await services.interfaces(), state.main.interface)
+			);
+		} catch (error) {
+			setInterfaceOptions(null);
+		}
 	}, [services]);
 
 	useEffect(() => {
@@ -331,6 +348,11 @@ export function App({ context }) {
 	const devices = useMemo(() => mergeDevices(model), [model]);
 	const duplicates = useMemo(() => duplicateNames(model), [model]);
 
+	const mainFields = useMemo(
+		() => withInterfaceSelect(fields.main, interfaceOptions),
+		[fields, interfaceOptions]
+	);
+
 	useEffect(() => {
 		if (!selectedKey && devices.length > 0)
 			setSelectedKey(devices[0].engine + '\n' + devices[0].udn);
@@ -389,30 +411,34 @@ export function App({ context }) {
 		);
 	}
 
+	// The provider is what lets portalled content (the drawer, the select menu)
+	// pick the same palette as the card it belongs to.
 	const chrome = (body) => (
-		<PageChrome
-			themeHost={themeHost}
-			theme={theme}
-			lang={lang}
-			onLanguageChange={setLanguage}
-			onThemeChange={setThemePreference}
-			t={t}
-			status={status}
-			saveState={saveState}
-			busy={busy}
-			onSave={() => withBusy(handleSave)}
-			onSaveApply={() => withBusy(() => handleSaveApply(false))}
-			onReset={() => window.location.reload()}
-			onRefresh={() => refresh()}
-		>
-			{body}
-		</PageChrome>
+		<ThemeContext.Provider value={theme}>
+			<PageChrome
+				themeHost={themeHost}
+				theme={theme}
+				lang={lang}
+				onLanguageChange={setLanguage}
+				onThemeChange={setThemePreference}
+				t={t}
+				status={status}
+				saveState={saveState}
+				busy={busy}
+				onSave={() => withBusy(handleSave)}
+				onSaveApply={() => withBusy(() => handleSaveApply(false))}
+				onReset={() => window.location.reload()}
+				onRefresh={mode === 'overview' ? () => refresh() : null}
+			>
+				{body}
+			</PageChrome>
+		</ThemeContext.Provider>
 	);
 
 	if (mode === 'settings') {
 		return chrome(
 			<SettingsPage
-				fields={fields.main}
+				fields={mainFields}
 				model={mainValues}
 				set={setMain}
 				rules={rules}

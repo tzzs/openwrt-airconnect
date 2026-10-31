@@ -233,3 +233,64 @@ overview 和 settings 两个 LuCI view 都显式将 `handleSave`、`handleSaveAp
 
 改造完成后由主 agent 统一提交、推送和部署。subagent **不要**执行 git commit、
 git push 或任何写入远程设备的操作。
+
+## 七、本轮修复记录（2026-10-31）
+
+### 1. 页面高度
+
+短内容页面此前在卡片下方留下大片空白。`.ac-root → .ac-app → .ac-chrome →
+.ac-workspace → .ac-workspace-body` 改为纵向 flex 链，`.ac-root` 用
+`min-height: calc(100dvh - 8rem)` 兜底：内容少时占满视口，内容多时自然撑开并由
+文档纵向滚动。窄屏（`@container airconnect (max-width: 720px)`）取消这个兜底，
+避免移动端出现空滚动区。
+
+### 2. 顶栏分段控件的选中态
+
+语言/主题按钮由 `aria-pressed` 驱动样式。选中段使用
+`hsl(var(--primary) / 0.18)` 半透明填充：浅色下叠在轨道上得到浅靛蓝，深色下得到
+更亮的靛蓝。不能直接用 `--accent`，因为浅色主题的 `--accent` 与轨道只差两三个色阶，
+选中态几乎不可见。未选中段保持透明，hover 用前景色 7% 叠加，避免"两个都像被选中"。
+
+### 3. Argon 对 `button` 的级联覆盖
+
+Argon 的 `.float-list,.btn,button,select,input` 规则是**未分层**样式，优先级高于
+任何 `@layer`。页面用 `:where(.ac-root, .ac-portal) button` 重置
+（`appearance`、背景、`border-width`、颜色、`margin`、`padding`），
+`:where()` 保证它的特异性与 Argon 相同（0,0,1），Tailwind 工具类（0,1,0）仍然获胜。
+
+两个必须记住的细节：
+
+- 重置只写 `border-width: 0`，**不能**用 `border` 简写：简写会同时写入
+  `border-style: none`，之后任何 `border-*` 工具类都无法恢复，开关的 2px 透明边框
+  会消失，滑块在开启/关闭时左右间距不对称（2px vs 4px）。
+- 基础层的元素规则（`color: inherit; font: inherit`）也必须写成
+  `:where(...)`。写成 `.ac-root button`（0,1,1）会压过工具类（0,1,0），
+  导致"保存并应用"丢掉 `text-primary-foreground`、所有按钮丢掉 `text-xs`。
+
+### 4. 局域网接口改为下拉
+
+`lib/interfaces.js` 把 `network.interface dump` 归一化成选项：值取 Linux 设备名
+（`l3_device`，回退 `device`），因为引擎用 `SO_BINDTODEVICE` 绑定；标签在逻辑名与
+设备名不同时显示 `lan (br-lan)`。`loopback` 不列出；已配置但当前 down 的接口仍保留，
+否则 Radix Select 会因为没有匹配项而显示空白；dump 为空（权限或调用失败）时返回
+`null`，字段退回文本框而不是一个只有一项的下拉。uci 未写 `interface` 时表单显示
+`config.uc` 的默认值 `br-lan`，但不会写回 uci。ACL 需要
+`network.interface: ["dump"]` 读权限。
+
+### 5. Portal 内容的主题作用域
+
+Radix 把抽屉和下拉菜单 portal 到 `<body>`，而 `.ac-root` 既是 token 作用域，
+又带 `overflow: hidden`，所以它们既不能留在卡内，也拿不到卡内的样式。现在：
+
+- 这两个组件给自己加 `ac-portal` 和与根元素相同的 `ac-theme-light` /
+  `ac-theme-dark` 类（`components/theme-context.jsx`，由 `App` 提供当前偏好）；
+- 三套 token 块（浅色、显式深色、`prefers-color-scheme`）都覆盖 `.ac-portal`；
+- `tailwind.config.mjs` 的 `important` 改为 `':where(.ac-root, .ac-portal)'`，
+  否则 portal 内容拿不到任何工具类；
+- 工具类只匹配**后代**，所以下拉菜单自身的盒子由 `.ac-select-content` 写在
+  `styles.css` 里。
+
+### 6. 页面动作归属
+
+刷新只对设备工作台有意义，`PageChrome` 在 settings 页收到 `onRefresh={null}` 时不
+渲染刷新按钮；保存、保存并应用、重置两页都保留。

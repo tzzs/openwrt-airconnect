@@ -25,6 +25,8 @@ const ROOT = resolve(HERE, '..', '..');
 const FRONTEND_SRC = join(ROOT, 'packages/luci-app-airconnect-manager/frontend/src');
 const { createFields } = await import(new URL(
 	'../../packages/luci-app-airconnect-manager/frontend/src/lib/fields.js', import.meta.url));
+const INTERFACES = await import(new URL(
+	'../../packages/luci-app-airconnect-manager/frontend/src/lib/interfaces.js', import.meta.url));
 
 let passed = 0;
 let failed = 0;
@@ -189,9 +191,154 @@ function main() {
 			field.name + ' names a documented rule', String(field.rule));
 	}
 
+	interfaceSection(fields);
+	portalSection();
+
 	console.log(passed + ' passed; ' + failed + ' failed');
 	process.exitCode = failed === 0 ? 0 : 1;
 }
+
+/**
+ * The drawer and the select menu are portalled into <body>, which is outside
+ * `.ac-root` - the element that carries the palette, the button reset and the
+ * scope every generated utility is written against. Without its own marker the
+ * portal content lost all three: the interface dropdown rendered with no
+ * background, Argon's text colour and a currentColor border, and it was
+ * invisible in dark mode.
+ *
+ * These are source-level assertions because the failure is a cascade problem,
+ * not a function's return value: no host test runner renders CSS.
+ */
+function portalSection() {
+	section('portalled content keeps the theme');
+	const uiDir = join(FRONTEND_SRC, 'components');
+	const portalled = sourceFiles(uiDir).filter((path) =>
+		/\.Portal>/.test(readFileSync(path, 'utf8')));
+	check(portalled.length > 0, 'at least one component portals its content');
+	for (const path of portalled) {
+		const source = readFileSync(path, 'utf8');
+		check(/ac-portal/.test(source),
+			path.slice(ROOT.length + 1) + ' marks its portal content with ac-portal');
+	}
+
+	// The utilities are scoped to a selector prefix, so the scope has to list
+	// the portal marker too or the portalled markup receives none of them.
+	const tailwind = readFileSync(join(FRONTEND_SRC, '..', 'tailwind.config.mjs'), 'utf8');
+	const important = (tailwind.match(/important:\s*'([^']+)'/) || [])[1] || '';
+	check(important.includes('.ac-root') && important.includes('.ac-portal'),
+		'generated utilities are scoped to .ac-root and .ac-portal', important);
+
+	// The palette has three blocks: light, the explicit dark class, and the
+	// prefers-color-scheme fallback. A portal marker missing from one of them
+	// makes the drawer light on a dark page (or the reverse).
+	const css = readFileSync(join(FRONTEND_SRC, 'styles.css'), 'utf8');
+	check(/\.ac-root,\s*\n\.ac-portal\s*\{/.test(css),
+		'the light palette is declared for .ac-portal as well as .ac-root');
+	check(/\.ac-portal\.ac-theme-dark\s*\{/.test(css),
+		'the explicit dark palette covers .ac-portal');
+	check(/\.ac-portal:not\(\.ac-theme-light\):not\(\.ac-theme-dark\)/.test(css),
+		'the system dark palette covers .ac-portal');
+
+	// The reset has to stay at Argon's specificity. A plain `.ac-root button`
+	// rule (0,1,1) outranks the generated utilities (0,1,0), which silently
+	// dropped `text-primary-foreground` from Save & Apply.
+	check(/:where\(\.ac-root, \.ac-portal\) button\s*\{/.test(css),
+		'the button reset uses :where() so utilities still win over it');
+}
+
+/**
+ * The LAN interface select.
+ *
+ * The value has to be a Linux device name because the engines bind with
+ * SO_BINDTODEVICE; the logical UCI name is only what the router's pages call
+ * it. The two cases that used to break the control are covered here: a device
+ * whose logical name differs, and a configured interface that is currently
+ * down (so it is absent from the dump and would otherwise render blank).
+ */
+function interfaceSection(fields) {
+	const { DEFAULT_INTERFACE, interfaceOptionsFrom, interfaceValue, withInterfaceSelect } =
+		INTERFACES;
+
+	section('LAN interface select');
+	const dump = {
+		interface: [
+			{ interface: 'lan', l3_device: 'br-lan', device: 'br-lan', up: true },
+			{ interface: 'wan', l3_device: 'eth1', device: 'eth1', up: true },
+			{ interface: 'loopback', l3_device: 'lo', device: 'lo', up: true },
+			{ interface: 'guest', l3_device: '', device: 'br-guest', up: false },
+			{ interface: 'wan6', l3_device: '', device: '', up: false }
+		]
+	};
+	const options = interfaceOptionsFrom(dump, 'br-lan');
+	const values = options.map((o) => o.value);
+	check(values.join(',') === 'br-lan,eth1,br-guest',
+		'the select lists the Linux devices of the up and down interfaces',
+		values.join(','));
+	check(options[0].label === 'lan (br-lan)',
+		'a device whose logical name differs is labelled with both', options[0].label);
+	check(options[1].label === 'wan (eth1)',
+		'the logical name is kept next to the device', options[1].label);
+	check(values.indexOf('lo') < 0, 'loopback is not offered as a LAN interface');
+
+	// A down interface with no l3_device still reports its device; skipping it
+	// would hide the one interface the user is trying to configure.
+	check(values.includes('br-guest'),
+		'a down interface is still offered through its device name');
+	// An interface with neither l3_device nor device carries no usable value.
+	check(values.indexOf('') < 0, 'an interface without a device is dropped');
+
+	const down = interfaceOptionsFrom(dump, 'pppoe-wan');
+	check(down[0].value === 'pppoe-wan',
+		'the configured interface is kept when the dump does not list it', down[0].value);
+	check(down.filter((o) => o.value === 'br-lan').length === 1,
+		'keeping the configured value does not duplicate a listed one');
+	check(interfaceOptionsFrom(dump, 'eth1').filter((o) => o.value === 'eth1').length === 1,
+		'a listed configured interface is not prepended twice');
+
+	const asObject = interfaceOptionsFrom({
+		interface: {
+			lan: { l3_device: 'br-lan', device: 'br-lan' },
+			guest: { device: 'br-guest' }
+		}
+	}, 'br-lan');
+	check(asObject.map((o) => o.value).join(',') === 'br-lan,br-guest',
+		'the object form of the dump is accepted too',
+		asObject.map((o) => o.value).join(','));
+
+	// The select is only as good as its options: with none, the field must stay
+	// a text input rather than become an empty dropdown that cannot be saved.
+	check(interfaceOptionsFrom({ interface: [] }, 'br-lan') === null,
+		'an empty dump yields no options, so the field stays a text input');
+	check(interfaceOptionsFrom(null, '') === null, 'a missing dump yields no options');
+
+	const select = withInterfaceSelect(fields.main, options);
+	const interfaceField = select.find((f) => f.name === 'interface');
+	check(interfaceField.kind === 'select', 'the interface field becomes a select');
+	check(interfaceField.rule === 'interfaceValue',
+		'the select keeps the same validation rule as the text input');
+	check(interfaceField.options === options, 'the select uses the dumped devices');
+	check(select.filter((f) => f.name !== 'interface').every((f) =>
+		fields.main.find((m) => m.name === f.name) === f),
+		'no other field descriptor is rebuilt');
+	check(withInterfaceSelect(fields.main, null) === fields.main,
+		'without options the original descriptors are returned untouched');
+
+	// The form shows what the service will actually bind to, so an unset uci
+	// option must not render as an empty select.
+	check(interfaceValue(undefined) === DEFAULT_INTERFACE,
+		'an unset interface shows the backend default', DEFAULT_INTERFACE);
+	check(interfaceValue('') === DEFAULT_INTERFACE, 'an empty interface shows the default');
+	check(interfaceValue('eth1') === 'eth1', 'a configured interface is shown as it is');
+
+	// The default is not ours to choose: it is config.uc's, and the form must
+	// agree with the file that decides it.
+	const configSource = readFileSync(
+		join(ROOT, 'packages/airconnect-manager/files/usr/share/airconnect-manager/config.uc'),
+		'utf8');
+	check(configSource.includes("'interface', '" + DEFAULT_INTERFACE + "'"),
+		'the frontend default interface matches config.uc', DEFAULT_INTERFACE);
+}
+
 
 try {
 	main();

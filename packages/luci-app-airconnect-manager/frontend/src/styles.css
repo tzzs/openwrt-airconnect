@@ -14,8 +14,14 @@
  * rather than as one of its columns. Now every column draws from the same
  * tokens and the columns are separated by rules and by small tints, so the
  * dark theme is one coherent surface instead of two.
+ *
+ * `.ac-portal` is the same token set for content Radix renders into <body>
+ * (the drawer, the select menu). It cannot be inside `.ac-root`, because that
+ * element clips with `overflow: hidden`, so it carries the tokens and the
+ * theme class itself.
  */
-.ac-root {
+.ac-root,
+.ac-portal {
 	--background: 220 22% 97%;
 	--foreground: 224 27% 15%;
 	--surface: 0 0% 100%;
@@ -63,7 +69,8 @@
  * cannot be part of a selector list.
  */
 .ac-root.dark,
-.ac-root.ac-theme-dark {
+.ac-root.ac-theme-dark,
+.ac-portal.ac-theme-dark {
 	--background: 224 26% 10%;
 	--foreground: 220 20% 95%;
 	--surface: 224 23% 13%;
@@ -97,7 +104,8 @@
 }
 
 @media (prefers-color-scheme: dark) {
-	.ac-root:not(.ac-theme-light):not(.ac-theme-dark) {
+	.ac-root:not(.ac-theme-light):not(.ac-theme-dark),
+	.ac-portal:not(.ac-theme-light):not(.ac-theme-dark) {
 		--background: 224 26% 10%;
 		--foreground: 220 20% 95%;
 		--surface: 224 23% 13%;
@@ -135,11 +143,16 @@
 	.ac-root,
 	.ac-root *,
 	.ac-root *::before,
-	.ac-root *::after {
+	.ac-root *::after,
+	.ac-portal,
+	.ac-portal *,
+	.ac-portal *::before,
+	.ac-portal *::after {
 		box-sizing: border-box;
 	}
 
-	.ac-root {
+	.ac-root,
+	.ac-portal {
 		background: hsl(var(--background));
 		color: hsl(var(--foreground));
 		font-family: ui-sans-serif, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
@@ -147,25 +160,29 @@
 		line-height: 1.5;
 	}
 
-	.ac-root button,
-	.ac-root input,
-	.ac-root select,
-	.ac-root textarea {
+	/* `:where()` keeps these element rules at Argon's own specificity. Without
+	 * it `.ac-root button` (0,1,1) outranks the generated utilities (0,1,0), so
+	 * `text-primary-foreground` and `text-xs` on a button were silently
+	 * dropped and every button inherited the page colour and size. */
+	:where(.ac-root, .ac-portal) button,
+	:where(.ac-root, .ac-portal) input,
+	:where(.ac-root, .ac-portal) select,
+	:where(.ac-root, .ac-portal) textarea {
 		color: inherit;
 		font: inherit;
 		letter-spacing: inherit;
 		margin: 0;
 	}
 
-	.ac-root button {
+	:where(.ac-root, .ac-portal) button {
 		cursor: pointer;
 	}
 
-	.ac-root button:disabled {
+	:where(.ac-root, .ac-portal) button:disabled {
 		cursor: not-allowed;
 	}
 
-	.ac-root :focus-visible {
+	:where(.ac-root, .ac-portal) :focus-visible {
 		outline: 2px solid hsl(var(--ring));
 		outline-offset: 2px;
 	}
@@ -227,14 +244,47 @@
 	min-height: 0;
 }
 
-/* Argon turns a bare `h2` into a white card (background, padding, radius,
+/*
+ * Argon styles every bare `button` as a bordered grey form control
+ * (padding: .5rem .75rem; border: 1px solid #dee2e6; color: #8898aa). Those
+ * rules are unlayered, so they beat Tailwind's @layer base reset. The result
+ * inside the card was a grey box behind ghost buttons, Argon's grey text in
+ * both themes, and a 12px padding on each side of the 36px switch that pushed
+ * its 16px thumb out of bounds when checked.
+ *
+ * `:where()` keeps this reset at the same specificity as Argon's bare element
+ * selector. app.css loads after cascade.css, so the reset wins, while shadcn's
+ * utility classes (0,1,0) and the component classes below still win over it.
+ *
+ * `border-width` and not the `border` shorthand: the shorthand also sets
+ * `border-style: none`, which no later `border-*` utility can undo, and the
+ * switch needs its 2px transparent border to keep the thumb inside the track.
+ */
+:where(.ac-root, .ac-portal) button {
+	appearance: none;
+	background-color: transparent;
+	border-width: 0;
+	color: inherit;
+	margin: 0;
+	padding: 0;
+}
+
+/*
+ * Argon turns a bare `h2` into a white card (background, padding, radius,
  * shadow). Inside the workspace that surfaced as a white pill reading
  * "Speakers 0" on the device rail, in both themes. Strip the card; the size,
- * weight and colour come from the class rules below. */
-.ac-root h2 {
+ * weight and colour come from the class rules below.
+ *
+ * Argon also paints it with its own heading colour (#32325d). That is legible
+ * in light mode and invisible on the dark surface, so the heading takes the
+ * surrounding colour instead. `:where()` keeps the rule at Argon's own
+ * specificity; a utility class on a heading still wins.
+ */
+:where(.ac-root, .ac-portal) h2 {
 	background: none;
 	border-radius: 0;
 	box-shadow: none;
+	color: inherit;
 	padding: 0;
 }
 
@@ -367,17 +417,53 @@
 	padding: 0.15rem;
 }
 
+/*
+ * A segmented switch needs a selected segment, not a selected tint. The
+ * secondary button variant was the same grey as the track, so the current
+ * language and theme were impossible to see in both themes. The accent fill
+ * comes from `aria-pressed`, so the visible state is also the state a screen
+ * reader announces.
+ */
+.ac-root .ac-preferences button {
+	color: hsl(var(--muted-foreground));
+}
+
+.ac-root .ac-preferences button[aria-pressed='true'] {
+	/* A translucent tint of the action colour, not the `--accent` token: in
+	 * light mode `--accent` sits within a couple of levels of the track, so the
+	 * selected segment was invisible. Composited over the track, the same rule
+	 * reads as a lighter indigo in dark mode, where a flat accent fill would
+	 * have been the same lightness as the track. */
+	background: hsl(var(--primary) / 0.18);
+	box-shadow: inset 0 0 0 1px hsl(var(--ring) / 0.32);
+	color: hsl(var(--accent-foreground));
+	font-weight: 650;
+}
+
+/* An unselected hover must not imitate the selected fill; otherwise moving the
+ * pointer makes two segments look chosen at once. */
+.ac-root .ac-preferences button[aria-pressed='false']:hover {
+	background: hsl(var(--foreground) / 0.07);
+	color: hsl(var(--foreground));
+}
+
 /* `size="icon"` is 2.25rem in the button variants; the chrome uses 2rem so a
  * row of icon and text buttons shares one height. The `.ac-root` prefix
  * matches Tailwind's `.ac-root .size-9` specificity, so no !important is
- * needed. */
-.ac-root .ac-icon-button {
+ * needed. `.ac-portal` covers the copy inside the drawer, which is portalled
+ * outside the card. */
+.ac-root .ac-icon-button,
+.ac-portal .ac-icon-button {
+	/* A flex item shrinks by default; in the drawer header the description
+	 * beside the button squeezed it to 27px. */
+	flex: 0 0 auto;
 	height: 2rem;
 	padding: 0;
 	width: 2rem;
 }
 
-.ac-root .ac-icon-button svg {
+.ac-root .ac-icon-button svg,
+.ac-portal .ac-icon-button svg {
 	height: 1rem;
 	width: 1rem;
 }
@@ -1131,6 +1217,10 @@
 	align-items: center;
 	background: hsl(var(--surface));
 	border-top: 1px solid hsl(var(--border));
+	/* Argon colours a bare `footer` #aaa for its own page footer, which is
+	 * 2.2:1 on the card. The footer's own controls take the page colour; the
+	 * note on the right sets its own muted tone. */
+	color: hsl(var(--foreground));
 	display: flex;
 	flex-wrap: wrap;
 	gap: 0.75rem;
@@ -1174,6 +1264,39 @@
 }
 
 /* --- drawer ---------------------------------------------------------------- */
+
+/* --- drawer and menus ------------------------------------------------------ */
+
+/*
+ * The select menu.
+ *
+ * Radix portals it to <body>, and Tailwind's utilities are scoped to
+ * `.ac-root, .ac-portal` *descendants* (tailwind.config.mjs), so a utility on
+ * the menu element itself never matches. Its box is therefore written here,
+ * next to the tokens it uses.
+ */
+.ac-select-content {
+	background: hsl(var(--popover));
+	border: 1px solid hsl(var(--border));
+	border-radius: calc(var(--radius) - 2px);
+	box-shadow: var(--shadow-lift);
+	color: hsl(var(--popover-foreground));
+	max-height: 24rem;
+	min-width: 8rem;
+	overflow: hidden;
+	position: relative;
+	z-index: 50;
+}
+
+/* A small gap between the trigger and the menu, in place of the translate
+ * utility shadcn uses (see above for why it cannot apply). */
+.ac-select-content[data-side='bottom'] {
+	margin-top: 0.25rem;
+}
+
+.ac-select-content[data-side='top'] {
+	margin-bottom: 0.25rem;
+}
 
 /*
  * The service panel and the logs moved into a drawer. Radix renders the
@@ -1311,7 +1434,8 @@
 	min-width: 0;
 }
 
-.ac-root .ac-utility-actions svg {
+.ac-root .ac-utility-actions svg,
+.ac-portal .ac-utility-actions svg {
 	height: 13px;
 	width: 13px;
 }

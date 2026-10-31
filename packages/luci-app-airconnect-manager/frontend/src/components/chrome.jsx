@@ -94,7 +94,7 @@ export function PageChrome({
 						{LANGUAGES.map((entry) => (
 							<Button
 								key={entry.value}
-								variant={entry.value === lang ? 'secondary' : 'ghost'}
+								variant="ghost"
 								size="sm"
 								type="button"
 								className="ac-lang-button"
@@ -118,7 +118,7 @@ export function PageChrome({
 							return (
 								<Button
 									key={entry.value}
-									variant={entry.value === theme ? 'secondary' : 'ghost'}
+									variant="ghost"
 									size="icon"
 									type="button"
 									className="ac-icon-button"

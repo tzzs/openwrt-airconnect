@@ -11,7 +11,11 @@ export default {
 	corePlugins: { preflight: false },
 	// Scope every generated utility to the app root and let it win over Argon's
 	// Bootstrap-derived utilities (`.hidden`, `.block`, ...) that share names.
-	important: '.ac-root',
+	// `.ac-portal` is the second scope: Radix portals the drawer and the select
+	// menu into <body>, outside `.ac-root`, and a single-selector scope left
+	// them with no utilities at all (no layout, no background, a border painted
+	// in currentColor).
+	important: ':where(.ac-root, .ac-portal)',
 	theme: {
 		extend: {
 			colors: {

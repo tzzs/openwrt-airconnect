@@ -3,6 +3,7 @@ import * as DialogPrimitive from '@radix-ui/react-dialog';
 import { X } from 'lucide-react';
 
 import { cn } from '../../lib/utils.js';
+import { useThemeClass } from '../theme-context.jsx';
 
 /**
  * A right-hand side drawer, used for the service panel and the logs.
@@ -24,12 +25,15 @@ const DrawerContent = React.forwardRef(function DrawerContent(
 	{ className, children, ...props },
 	ref
 ) {
+	// Portalled to <body>, so the panel carries the palette and the button reset
+	// itself; see components/theme-context.jsx.
+	const themeClass = useThemeClass();
 	return (
 		<DialogPrimitive.Portal>
 			<DialogPrimitive.Overlay className="ac-drawer-overlay" />
 			<DialogPrimitive.Content
 				ref={ref}
-				className={cn('ac-drawer-panel', className)}
+				className={cn('ac-drawer-panel ac-portal', themeClass, className)}
 				{...props}
 			>
 				{children}

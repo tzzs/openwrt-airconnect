@@ -16,6 +16,7 @@ export function createServices(context) {
 
 	const call = {
 		status: rpc.declare({ object: 'airconnect.manager', method: 'status', expect: {} }),
+		interfaces: rpc.declare({ object: 'network.interface', method: 'dump', expect: {} }),
 		scan: rpc.declare({ object: 'airconnect.manager', method: 'scan', expect: {} }),
 		logs: rpc.declare({ object: 'airconnect.manager', method: 'logs', expect: {} }),
 		validate: rpc.declare({
@@ -54,6 +55,9 @@ export function createServices(context) {
 		},
 		status() {
 			return call.status();
+		},
+		interfaces() {
+			return call.interfaces();
 		},
 		scan() {
 			return call.scan();
