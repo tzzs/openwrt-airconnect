@@ -4,5 +4,12 @@
     "order": 60,
     "action": { "type": "view", "path": "airconnect-manager/overview" },
     "depends": { "acl": [ "luci-app-airconnect-manager" ], "uci": { "airconnect-manager": true } }
+  },
+  "admin/services/airconnect-manager/settings": {
+    "title": "AirConnect Settings",
+    "order": 61,
+    "parent": "admin/services/airconnect-manager",
+    "action": { "type": "view", "path": "airconnect-manager/settings" },
+    "depends": { "acl": [ "luci-app-airconnect-manager" ], "uci": { "airconnect-manager": true } }
   }
 }

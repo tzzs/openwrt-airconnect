@@ -53,9 +53,11 @@ contract; both runners must agree with it.
   versus `0/10`, `http://` versus `ftp://`), in both the `main` section and a
   device override. The backend runner decides each case
   with the real `normalizeConfig`; the node runner loads
-  `airconnect-manager/rules.js` in a shim, asks the ucode runner for the backend
-  verdicts and fails when the two disagree. It also proves `rules.js` loads
-  without LuCI's `_()` and returns message strings, not `false`.
+  `airconnect-manager/rules.js` the way LuCI's `require` does (a class factory
+  given `_` and a minimal `L.Class`, then instantiated), asks the ucode runner
+  for the backend verdicts and fails when the two disagree. It also proves
+  `rules.js` loads without LuCI's `_()` and returns message strings, not
+  `false`.
 
 ## luci
 

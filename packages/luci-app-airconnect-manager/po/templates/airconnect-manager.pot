@@ -1,604 +1,647 @@
-# SOME DESCRIPTIVE TITLE.
-# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
-# This file is distributed under the same license as the luci-app-airconnect-manager package.
-# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+# AirConnect Manager translation template.
+# This file is distributed under the same license as the package.
 #
-#, fuzzy
 msgid ""
 msgstr ""
 "Project-Id-Version: luci-app-airconnect-manager 0.1.0\n"
-"Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-24 01:14+0800\n"
-"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
-"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
-"Language-Team: LANGUAGE <LL@li.org>\n"
-"Language: \n"
+"POT-Creation-Date: 2026-10-31 00:00+0800\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:19
-#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:22
-#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:24
-msgid "Not provided"
-msgstr ""
-
-#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:53
-msgid "Audio format"
-msgstr ""
-
-#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:53
-msgid "FLAC can use more CPU. Choose a format supported by your speaker."
-msgstr ""
-
-#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:54
-#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:69
-#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:82
-msgid "Inherit global setting"
-msgstr ""
-
-#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:70
-msgid "On (1)"
-msgstr ""
-
-#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:70
-msgid "Off (0)"
-msgstr ""
-
-#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:80
-msgid "HTTP transfer mode (UPnP only)"
-msgstr ""
-
-#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:81
-msgid ""
-"Compatibility only. Change this when a UPnP speaker cannot play at all; the "
-"default works for most devices."
-msgstr ""
-
-#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:83
+#: frontend/src/lib/fields.js
 msgid "-1: no content-length (default)"
 msgstr ""
 
-#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:84
+#: frontend/src/lib/fields.js
 msgid "-3: chunked encoding"
 msgstr ""
 
-#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:85
+#: frontend/src/lib/fields.js
 msgid "0: fixed dummy length"
 msgstr ""
 
-#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:93
-msgid "UPnP search version (UPnP only)"
+#: frontend/src/lib/rules.js
+msgid "Add a host after http:// or https://."
 msgstr ""
 
-#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:94
-msgid ""
-"Highest UPnP MediaRenderer version to search. The Chromecast engine ignores "
-"this."
+#: frontend/src/components/device.jsx
+msgid "Advanced"
 msgstr ""
 
-#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:116
-msgid "Unsaved changes"
+#: frontend/src/components/workspace.jsx
+msgid "AirConnect Manager"
 msgstr ""
 
-#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:131
-msgid "General settings"
+#: frontend/src/components/workspace.jsx
+msgid "AirConnect health overview"
 msgstr ""
 
-#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:133
-msgid "Enable AirConnect"
-msgstr ""
-
-#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:133
-msgid ""
-"Changes take effect after Save & Apply. Applying briefly disconnects AirPlay."
-msgstr ""
-
-#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:135
-msgid "LAN interface"
-msgstr ""
-
-#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:135
-msgid "Bind discovery and AirPlay to your local network interface."
-msgstr ""
-
-#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:138
-msgid "UPnP / DLNA speakers"
-msgstr ""
-
-#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:139
-msgid "Chromecast speakers"
-msgstr ""
-
-#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:140
-msgid "UPnP volume limit"
-msgstr ""
-
-#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:140
-msgid "Default maximum volume, from 1 to 100."
-msgstr ""
-
-#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:142
-msgid "Chromecast media volume"
-msgstr ""
-
-#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:142
-msgid "Default media volume, from 0 to 1. This is not a volume limit."
-msgstr ""
-
-#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:147
-#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:183
-msgid "Buffer and latency"
-msgstr ""
-
-#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:147
-msgid "Format: 1000:2000. Lower values may cause audio dropouts."
-msgstr ""
-
-#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:150
-#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:187
-msgid "Send track information"
-msgstr ""
-
-#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:150
-msgid ""
-"Sends the title and artist to the speaker. Both engines read this. A speaker "
-"may still show nothing."
-msgstr ""
-
-#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:151
-#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:188
-msgid "Cover art URL"
-msgstr ""
-
-#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:151
-msgid ""
-"Optional http:// or https:// image the speaker fetches itself. Leave empty "
-"for none. The router never downloads it."
-msgstr ""
-
-#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:153
-#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:190
-msgid "Handle FLUSH"
-msgstr ""
-
-#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:153
-msgid ""
-"Compatibility option, both engines. Turning it off can change pause and "
-"track-change behaviour, so keep it on unless a speaker misbehaves."
-msgstr ""
-
-#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:154
-#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:191
-msgid "Let the timing reference drift"
-msgstr ""
-
-#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:154
-msgid ""
-"Both engines. Off adjusts timing by adding or dropping a frame, which can be "
-"audible as a click; on avoids the click but risks underruns."
-msgstr ""
-
-#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:158
-msgid "Stop the receiver (Chromecast only)"
-msgstr ""
-
-#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:158
-msgid "Chromecast compatibility option. The UPnP engine ignores this."
-msgstr ""
-
-#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:159
-msgid "Log detail"
-msgstr ""
-
-#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:164
-msgid "Advanced settings"
-msgstr ""
-
-#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:170
-msgid "Enable bridging"
-msgstr ""
-
-#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:171
-msgid "AirPlay name"
-msgstr ""
-
-#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:171
-msgid ""
-"Changes only the virtual AirPlay receiver name. Leave empty to use the "
-"original name."
-msgstr ""
-
-#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:172
-#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:317
-msgid "Original name"
-msgstr ""
-
-#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:174
-msgid "Volume limit"
-msgstr ""
-
-#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:174
-msgid "Leave empty to inherit the global UPnP limit."
-msgstr ""
-
-#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:177
-msgid "Media volume"
-msgstr ""
-
-#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:177
-msgid "Leave empty to inherit the global Chromecast volume."
-msgstr ""
-
-#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:183
-#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:187
-#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:188
-#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:190
-#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:191
-#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:196
-msgid "Leave empty to inherit the global setting."
-msgstr ""
-
-#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:189
-msgid "No cover art"
-msgstr ""
-
-#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:196
-msgid "Stop the receiver"
-msgstr ""
-
-#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:203
-msgid "Advanced audio settings"
-msgstr ""
-
-#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:266
-msgid "More than one speaker uses the same AirPlay name."
-msgstr ""
-
-#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:268
-msgid ""
-"AirPlay lists these receivers under one name. Give each speaker its own name."
-msgstr ""
-
-#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:280
-msgid "Device information"
-msgstr ""
-
-#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:294
-msgid "Configure speaker"
-msgstr ""
-
-#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:295
-msgid ""
-"Discovered on your network. Configure this speaker to override its AirPlay "
-"name and volume."
-msgstr ""
-
-#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:303
-msgid "Discovered"
-msgstr ""
-
-#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:303
-msgid "Not currently discovered"
-msgstr ""
-
-#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:303
-msgid "Discovery unknown"
-msgstr ""
-
-#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:309
+#: frontend/src/lib/presentation.js
 msgid "AirPlay advertised"
 msgstr ""
 
-#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:311
-msgid "No AirPlay advertisement"
-msgstr ""
-
-#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:313
-msgid "AirPlay broadcast unknown"
-msgstr ""
-
-#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:317
-msgid "IP address"
-msgstr ""
-
-#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:317
-msgid "Model"
-msgstr ""
-
-#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:318
-msgid "Manufacturer"
-msgstr ""
-
-#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:318
-msgid "Device identifier (UDN)"
-msgstr ""
-
-#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:319
-msgid "Last discovered"
-msgstr ""
-
-#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:321
+#: frontend/src/components/service-panel.jsx
 msgid "AirPlay broadcast"
 msgstr ""
 
-#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:322
-msgid "Yes"
+#: frontend/src/lib/presentation.js
+msgid "AirPlay broadcast unknown"
 msgstr ""
 
-#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:322
-#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:324
-#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:337
-#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:339
-msgid "observed"
+#: frontend/src/lib/fields.js
+msgid "AirPlay name"
 msgstr ""
 
-#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:324
-msgid "No"
+#: frontend/src/components/device.jsx
+msgid "AirPlay name override is active."
 msgstr ""
 
-#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:325
-msgid "Unknown — not measured"
-msgstr ""
-
-#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:337
-msgid "Yes — an AirPlay receiver is advertised"
-msgstr ""
-
-#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:339
-msgid "No — the scan found no advertisement"
-msgstr ""
-
-#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:342
-msgid "Last attempt:"
-msgstr ""
-
-#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:343
-msgid ""
-"Unknown — no completed mDNS observation. This needs the engine running and "
-"its receiver advertised on this LAN."
-msgstr ""
-
-#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:351
-msgid "Playing"
-msgstr ""
-
-#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:353
-msgid "Not playing"
-msgstr ""
-
-#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:354
-msgid ""
-"Unknown — the engines expose no documented playback status, so this is never "
-"inferred from the broadcast state."
-msgstr ""
-
-#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:366
-msgid "Disabled"
-msgstr ""
-
-#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:366
-msgid "Running"
-msgstr ""
-
-#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:366
-msgid "Stopped"
-msgstr ""
-
-#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:366
-msgid "Unknown"
-msgstr ""
-
-#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:369
-msgid "Service running does not confirm AirPlay availability or playback."
-msgstr ""
-
-#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:372
+#: frontend/src/components/service-panel.jsx
 msgid "Another AirConnect instance was detected."
 msgstr ""
 
-#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:372
-msgid "Stop the existing instance before starting these engines."
+#: frontend/src/components/device.jsx
+msgid "Audio and compatibility"
 msgstr ""
 
-#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:395
-msgid "Scanning…"
+#: frontend/src/lib/fields.js
+#: frontend/src/lib/fields.js
+msgid "Audio format"
 msgstr ""
 
-#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:395
-#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:440
-msgid "Scan for speakers"
+#: frontend/src/lib/fields.js
+msgid "Bind discovery and AirPlay to your local network interface."
 msgstr ""
 
-#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:396
-msgid "Scan failed: "
+#: frontend/src/lib/fields.js
+msgid "Both engines. Off adjusts timing by adding or dropping a frame, which can be audible as a click; on avoids the click but risks underruns."
 msgstr ""
 
-#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:396
+#: frontend/src/lib/fields.js
+#: frontend/src/lib/fields.js
+msgid "Buffer and latency"
+msgstr ""
+
+#: frontend/src/components/workspace.jsx
+msgid "Changes are kept locally until you save."
+msgstr ""
+
+#: frontend/src/lib/fields.js
+msgid "Changes only the virtual AirPlay receiver name. Leave empty to use the original name."
+msgstr ""
+
+#: frontend/src/lib/fields.js
+msgid "Changes take effect after Save & Apply. Applying briefly disconnects AirPlay."
+msgstr ""
+
+#: frontend/src/lib/rules.js
+msgid "Choose -3 (chunked), -1 (no content-length) or 0 (fixed length)."
+msgstr ""
+
+#: frontend/src/lib/rules.js
+msgid "Choose error, warn, info or debug."
+msgstr ""
+
+#: frontend/src/lib/rules.js
+msgid "Choose off (0) or on (1)."
+msgstr ""
+
+#: frontend/src/components/rail.jsx
+#: frontend/src/components/workspace.jsx
+#: frontend/src/lib/presentation.js
+msgid "Chromecast"
+msgstr ""
+
+#: frontend/src/lib/fields.js
+msgid "Chromecast compatibility option. The UPnP engine ignores this."
+msgstr ""
+
+#: frontend/src/components/service-panel.jsx
+msgid "Chromecast discovery"
+msgstr ""
+
+#: frontend/src/lib/fields.js
+msgid "Chromecast media volume"
+msgstr ""
+
+#: frontend/src/components/device.jsx
+msgid "Chromecast receiver"
+msgstr ""
+
+#: frontend/src/lib/fields.js
+msgid "Chromecast speakers"
+msgstr ""
+
+#: frontend/src/components/rail.jsx
+#: frontend/src/components/rail.jsx
+msgid "Clear search"
+msgstr ""
+
+#: frontend/src/lib/fields.js
+msgid "Compatibility only. Change this when a UPnP speaker cannot play at all; the default works for most devices."
+msgstr ""
+
+#: frontend/src/lib/fields.js
+msgid "Compatibility option, both engines. Turning it off can change pause and track-change behaviour, so keep it on unless a speaker misbehaves."
+msgstr ""
+
+#: frontend/src/lib/fields.js
+#: frontend/src/lib/fields.js
+msgid "Cover art URL"
+msgstr ""
+
+#: frontend/src/components/device.jsx
+msgid "Create a local profile to give it an AirPlay name, set its volume and choose how it bridges audio."
+msgstr ""
+
+#: frontend/src/lib/fields.js
+msgid "Default maximum volume, from 1 to 100."
+msgstr ""
+
+#: frontend/src/lib/fields.js
+msgid "Default media volume, from 0 to 1. This is not a volume limit."
+msgstr ""
+
+#: frontend/src/components/device.jsx
+msgid "Device facts"
+msgstr ""
+
+#: frontend/src/components/device.jsx
+msgid "Device identifier"
+msgstr ""
+
+#: frontend/src/lib/presentation.js
+msgid "Disabled"
+msgstr ""
+
+#: frontend/src/lib/presentation.js
+msgid "Discovered"
+msgstr ""
+
+#: frontend/src/components/rail.jsx
+msgid "Discovery is available"
+msgstr ""
+
+#: frontend/src/lib/presentation.js
 msgid "Discovery is in progress."
 msgstr ""
 
-#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:396
+#: frontend/src/lib/presentation.js
+msgid "Discovery unknown"
+msgstr ""
+
+#: frontend/src/lib/fields.js
+msgid "Enable AirConnect"
+msgstr ""
+
+#: frontend/src/components/workspace.jsx
+msgid "Enable UPnP or Chromecast discovery in Global settings first."
+msgstr ""
+
+#: frontend/src/components/rail.jsx
+msgid "Enable an engine to scan"
+msgstr ""
+
+#: frontend/src/lib/fields.js
+#: frontend/src/lib/fields.js
+msgid "Enable bridging"
+msgstr ""
+
+#: frontend/src/components/service-panel.jsx
+msgid "Engines"
+msgstr ""
+
+#: frontend/src/lib/rules.js
+msgid "Enter an interface name of 1-15 characters that starts with a letter or digit."
+msgstr ""
+
+#: frontend/src/components/device.jsx
+msgid "Everyday controls"
+msgstr ""
+
+#: frontend/src/lib/fields.js
+msgid "FLAC can use more CPU. Choose a format supported by your speaker."
+msgstr ""
+
+#: frontend/src/components/workspace.jsx
+msgid "Find the speakers on your network"
+msgstr ""
+
+#: frontend/src/lib/fields.js
+msgid "Format: 1000:2000. Lower values may cause audio dropouts."
+msgstr ""
+
+#: frontend/src/components/workspace.jsx
+msgid "Global settings"
+msgstr ""
+
+#: frontend/src/lib/fields.js
+msgid "HTTP transfer mode"
+msgstr ""
+
+#: frontend/src/lib/fields.js
+msgid "HTTP transfer mode (UPnP only)"
+msgstr ""
+
+#: frontend/src/lib/fields.js
+#: frontend/src/lib/fields.js
+msgid "Handle FLUSH"
+msgstr ""
+
+#: frontend/src/lib/fields.js
+msgid "Highest UPnP MediaRenderer version to search. The Chromecast engine ignores this."
+msgstr ""
+
+#: frontend/src/components/device.jsx
+msgid "IP address"
+msgstr ""
+
+#: frontend/src/lib/fields.js
+#: frontend/src/lib/fields.js
+#: frontend/src/lib/fields.js
+msgid "Inherit global setting"
+msgstr ""
+
+#: frontend/src/lib/fields.js
+msgid "LAN interface"
+msgstr ""
+
+#: frontend/src/lib/presentation.js
+msgid "Last attempt:"
+msgstr ""
+
+#: frontend/src/components/device.jsx
+msgid "Last discovered"
+msgstr ""
+
+#: frontend/src/lib/presentation.js
 msgid "Last scan: "
 msgstr ""
 
-#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:396
-msgid "No scan has been completed."
+#: frontend/src/lib/fields.js
+msgid "Leave empty to inherit the global Chromecast volume."
 msgstr ""
 
-#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:403
-msgid "Interface"
+#: frontend/src/lib/fields.js
+msgid "Leave empty to inherit the global UPnP limit."
 msgstr ""
 
-#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:404
-msgid "Manager version"
+#: frontend/src/lib/fields.js
+#: frontend/src/lib/fields.js
+#: frontend/src/lib/fields.js
+#: frontend/src/lib/fields.js
+#: frontend/src/lib/fields.js
+#: frontend/src/lib/fields.js
+#: frontend/src/lib/fields.js
+msgid "Leave empty to inherit the global setting."
 msgstr ""
 
-#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:405
-msgid "AirPlay broadcast (UPnP)"
+#: frontend/src/lib/fields.js
+#: frontend/src/lib/fields.js
+msgid "Let the timing reference drift"
 msgstr ""
 
-#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:406
-msgid "AirPlay broadcast (Chromecast)"
-msgstr ""
-
-#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:407
-msgid "Playback"
-msgstr ""
-
-#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:418
-msgid "Status unavailable. Displayed information may be stale. "
-msgstr ""
-
-#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:425
-msgid "Could not start discovery."
-msgstr ""
-
-#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:426
-msgid "Discovery requested. Results will update automatically."
-msgstr ""
-
-#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:434
-msgid "No unsaved changes"
-msgstr ""
-
-#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:442
-msgid "Find your speakers"
-msgstr ""
-
-#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:442
-msgid ""
-"Turn on a discovery engine in Settings, then scan. Keep your speaker online "
-"on the same LAN and enable DLNA when required."
-msgstr ""
-
-#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:446
-#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:474
-msgid "Speakers"
-msgstr ""
-
-#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:446
-msgid "Set the AirPlay name and volume for each speaker."
-msgstr ""
-
-#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:448
-msgid "Loading settings…"
-msgstr ""
-
-#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:449
-#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:474
-msgid "Settings"
-msgstr ""
-
-#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:449
-msgid "Global defaults apply unless a speaker has its own override."
-msgstr ""
-
-#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:450
-msgid "Recent AirConnect logs"
-msgstr ""
-
-#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:450
-msgid "Logs are loaded only when requested."
-msgstr ""
-
-#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:453
-msgid "The log response was invalid."
-msgstr ""
-
-#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:454
-msgid "Older log lines were omitted."
-msgstr ""
-
-#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:454
-msgid "No log entries."
-msgstr ""
-
-#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:456
+#: frontend/src/components/service-panel.jsx
+#: frontend/src/components/service-panel.jsx
 msgid "Load recent logs"
 msgstr ""
 
-#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:458
-msgid "Start service"
+#: frontend/src/lib/fields.js
+msgid "Log detail"
 msgstr ""
 
-#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:458
-msgid "Stop service"
+#: frontend/src/components/service-panel.jsx
+msgid "Logs appear here when requested."
 msgstr ""
 
-#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:458
-msgid "Restart service"
+#: frontend/src/components/device.jsx
+msgid "Manufacturer"
 msgstr ""
 
-#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:461
-msgid "Service action failed."
+#: frontend/src/lib/fields.js
+msgid "Media volume"
 msgstr ""
 
-#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:462
-msgid "Service request accepted. Check the reported service status."
+#: frontend/src/components/device.jsx
+msgid "Model"
 msgstr ""
 
-#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:469
-#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:474
-msgid "Diagnostics"
+#: frontend/src/lib/presentation.js
+msgid "No"
 msgstr ""
 
-#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:469
-msgid ""
-"Service actions use the last applied settings. Stopping or restarting "
-"briefly disconnects AirPlay."
+#: frontend/src/lib/presentation.js
+msgid "No AirPlay advertisement"
 msgstr ""
 
-#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:471
+#: frontend/src/components/workspace.jsx
+msgid "No engine"
+msgstr ""
+
+#: frontend/src/components/service-panel.jsx
+msgid "No log entries."
+msgstr ""
+
+#: frontend/src/lib/presentation.js
+msgid "No scan has been completed."
+msgstr ""
+
+#: frontend/src/components/settings-page.jsx
+msgid "No settings available"
+msgstr ""
+
+#: frontend/src/components/rail.jsx
+msgid "No speaker matches this search."
+msgstr ""
+
+#: frontend/src/components/rail.jsx
+msgid "No speakers discovered yet."
+msgstr ""
+
+#: frontend/src/lib/presentation.js
+msgid "No — the scan found no advertisement"
+msgstr ""
+
+#: frontend/src/lib/presentation.js
+msgid "Not currently discovered"
+msgstr ""
+
+#: frontend/src/components/workspace.jsx
+msgid "Not measured"
+msgstr ""
+
+#: frontend/src/lib/presentation.js
+msgid "Not playing"
+msgstr ""
+
+#: frontend/src/components/device.jsx
+#: frontend/src/lib/presentation.js
+#: frontend/src/lib/presentation.js
+#: frontend/src/lib/presentation.js
+msgid "Not provided"
+msgstr ""
+
+#: frontend/src/components/service-panel.jsx
+msgid "Observed"
+msgstr ""
+
+#: frontend/src/lib/fields.js
+msgid "Off (0)"
+msgstr ""
+
+#: frontend/src/lib/fields.js
+msgid "On (1)"
+msgstr ""
+
+#: frontend/src/lib/fields.js
+msgid "Optional http:// or https:// image the speaker fetches itself. Leave empty for none. The router never downloads it."
+msgstr ""
+
+#: frontend/src/components/device.jsx
+msgid "Original name"
+msgstr ""
+
+#: frontend/src/components/service-panel.jsx
+msgid "Playback"
+msgstr ""
+
+#: frontend/src/lib/presentation.js
+msgid "Playing"
+msgstr ""
+
+#: frontend/src/components/service-panel.jsx
 msgid "Recent logs"
 msgstr ""
 
-#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:473
-msgid "AirConnect pages"
+#: frontend/src/lib/rules.js
+#: frontend/src/lib/rules.js
+#: frontend/src/lib/rules.js
+msgid "Remove control or invalid characters from the AirPlay name."
 msgstr ""
 
-#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:488
-msgid "Bring your network speakers to AirPlay."
+#: frontend/src/lib/rules.js
+msgid "Remove spaces, quotes or control characters from the artwork URL."
 msgstr ""
 
-#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:489
+#: frontend/src/components/device.jsx
+msgid "Reported by the last discovery response."
+msgstr ""
+
+#: frontend/src/components/service-panel.jsx
+#: frontend/src/components/service-panel.jsx
+#: frontend/src/components/service-panel.jsx
+msgid "Restart"
+msgstr ""
+
+#: frontend/src/lib/presentation.js
+msgid "Running"
+msgstr ""
+
+#: frontend/src/lib/presentation.js
+msgid "Scan failed: "
+msgstr ""
+
+#: frontend/src/components/rail.jsx
+msgid "Scan for speakers"
+msgstr ""
+
+#: frontend/src/components/rail.jsx
+#: frontend/src/components/workspace.jsx
+msgid "Scanning speakers"
+msgstr ""
+
+#: frontend/src/components/rail.jsx
+#: frontend/src/components/rail.jsx
+msgid "Search speakers"
+msgstr ""
+
+#: frontend/src/lib/fields.js
+#: frontend/src/lib/fields.js
+msgid "Send track information"
+msgstr ""
+
+#: frontend/src/lib/fields.js
+msgid "Sends the title and artist to the speaker. Both engines read this. A speaker may still show nothing."
+msgstr ""
+
+#: frontend/src/components/service-panel.jsx
+msgid "Service actions use the last applied settings. Stopping or restarting briefly disconnects AirPlay."
+msgstr ""
+
+#: frontend/src/components/service-panel.jsx
+msgid "Service control"
+msgstr ""
+
+#: frontend/src/components/service-panel.jsx
+#: frontend/src/components/service-panel.jsx
 msgid "Service status"
 msgstr ""
 
-#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:491
-msgid ""
-"Save keeps changes pending. Save & Apply validates settings and briefly "
-"disconnects AirPlay while applying."
+#: frontend/src/components/device.jsx
+msgid "Set up this speaker"
 msgstr ""
 
-#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:495
-msgid "Could not load status. "
+#: frontend/src/components/service-panel.jsx
+msgid "Signal report"
 msgstr ""
 
-#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:502
-msgid "Validating…"
+#: frontend/src/components/rail.jsx
+#: frontend/src/components/rail.jsx
+#: frontend/src/components/workspace.jsx
+msgid "Speakers"
 msgstr ""
 
-#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:510
-msgid "Configuration validation failed."
+#: frontend/src/components/service-panel.jsx
+msgid "Start"
 msgstr ""
 
-#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:513
-msgid "Saved; pending apply"
+#: frontend/src/components/workspace.jsx
+msgid "Start a discovery scan to see compatible UPnP and Chromecast speakers. They will appear here with a separate profile for each receiver."
 msgstr ""
 
-#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:516
-msgid "Not saved — check settings"
+#: frontend/src/components/workspace.jsx
+msgid "Start discovery"
 msgstr ""
 
-#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:523
-msgid "Applying…"
+#: frontend/src/lib/fields.js
+msgid "Stop the receiver"
 msgstr ""
 
-#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:527
-msgid "Apply requested — check LuCI confirmation"
+#: frontend/src/lib/fields.js
+msgid "Stop the receiver (Chromecast only)"
 msgstr ""
 
-#: packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js:529
-msgid "Apply failed — changes remain pending"
+#: frontend/src/lib/presentation.js
+msgid "Stopped"
+msgstr ""
+
+#: frontend/src/components/settings-page.jsx
+msgid "The configuration could not be read. Reload the page and try again."
+msgstr ""
+
+#: frontend/src/components/device.jsx
+msgid "The settings you are most likely to change."
+msgstr ""
+
+#: frontend/src/components/device.jsx
+msgid "This speaker is discovered"
+msgstr ""
+
+#: frontend/src/components/workspace.jsx
+msgid "UPnP"
+msgstr ""
+
+#: frontend/src/components/rail.jsx
+#: frontend/src/lib/presentation.js
+msgid "UPnP / DLNA"
+msgstr ""
+
+#: frontend/src/components/device.jsx
+msgid "UPnP / DLNA receiver"
+msgstr ""
+
+#: frontend/src/lib/fields.js
+msgid "UPnP / DLNA speakers"
+msgstr ""
+
+#: frontend/src/components/service-panel.jsx
+msgid "UPnP discovery"
+msgstr ""
+
+#: frontend/src/lib/fields.js
+msgid "UPnP search version (UPnP only)"
+msgstr ""
+
+#: frontend/src/lib/fields.js
+msgid "UPnP volume limit"
+msgstr ""
+
+#: frontend/src/lib/presentation.js
+msgid "Unknown"
+msgstr ""
+
+#: frontend/src/lib/presentation.js
+msgid "Unknown — no completed mDNS observation. This needs the engine running and its receiver advertised on this LAN."
+msgstr ""
+
+#: frontend/src/lib/presentation.js
+msgid "Unknown — not measured"
+msgstr ""
+
+#: frontend/src/lib/presentation.js
+msgid "Unknown — the engines expose no documented playback status, so this is never inferred from the broadcast state."
+msgstr ""
+
+#: frontend/src/components/device.jsx
+#: frontend/src/components/rail.jsx
+msgid "Unnamed speaker"
+msgstr ""
+
+#: frontend/src/lib/rules.js
+msgid "Use a lowercase http:// or https:// URL."
+msgstr ""
+
+#: frontend/src/lib/rules.js
+msgid "Use a name that is not only spaces."
+msgstr ""
+
+#: frontend/src/lib/rules.js
+msgid "Use a number from 0 to 1, for example 0.5."
+msgstr ""
+
+#: frontend/src/lib/rules.js
+msgid "Use a whole number from 1 to 100."
+msgstr ""
+
+#: frontend/src/lib/rules.js
+msgid "Use a whole number from 1 to 9."
+msgstr ""
+
+#: frontend/src/lib/rules.js
+msgid "Use at most 512 bytes for the artwork URL."
+msgstr ""
+
+#: frontend/src/lib/rules.js
+msgid "Use at most 63 bytes for the AirPlay name."
+msgstr ""
+
+#: frontend/src/lib/rules.js
+msgid "Use two whole numbers from 0 to 10000 separated by a colon, for example 1000:2000."
+msgstr ""
+
+#: frontend/src/components/device.jsx
+msgid "Using the original speaker name."
+msgstr ""
+
+#: frontend/src/components/workspace.jsx
+msgid "Version unknown"
+msgstr ""
+
+#: frontend/src/lib/fields.js
+msgid "Volume limit"
+msgstr ""
+
+#: frontend/src/lib/presentation.js
+msgid "Yes"
+msgstr ""
+
+#: frontend/src/lib/presentation.js
+msgid "Yes — an AirPlay receiver is advertised"
+msgstr ""
+
+#: frontend/src/components/workspace.jsx
+msgid "discovery engine"
+msgstr ""
+
+#: frontend/src/components/workspace.jsx
+msgid "last AirPlay observation"
+msgstr ""
+
+#: frontend/src/lib/presentation.js
+msgid "observed"
+msgstr ""
+
+#: frontend/src/components/workspace.jsx
+msgid "speakers discovered"
 msgstr ""

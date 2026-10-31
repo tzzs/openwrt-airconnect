@@ -1,0 +1,1681 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/*
+ * AirConnect workspace tokens.
+ *
+ * The interface is a router console, so its scene is a quiet cool-white work
+ * surface with a single indigo action colour. Everything is scoped to .ac-root
+ * so Argon cannot recolor the surrounding LuCI chrome.
+ *
+ * One palette, not two. An earlier revision gave the device rail its own near
+ * black surface, which read as a second application sitting inside the page
+ * rather than as one of its columns. Now every column draws from the same
+ * tokens and the columns are separated by rules and by small tints, so the
+ * dark theme is one coherent surface instead of two.
+ */
+.ac-root {
+	--background: 220 22% 97%;
+	--foreground: 224 27% 15%;
+	--surface: 0 0% 100%;
+	--surface-subtle: 220 18% 95%;
+	--surface-raised: 220 20% 98%;
+	--surface-sunken: 220 20% 94%;
+	--card: 0 0% 100%;
+	--card-foreground: 224 27% 15%;
+	--popover: 0 0% 100%;
+	--popover-foreground: 224 27% 15%;
+	--primary: 235 68% 47%;
+	--primary-foreground: 0 0% 100%;
+	--secondary: 220 18% 94%;
+	--secondary-foreground: 224 27% 15%;
+	--muted: 220 16% 94%;
+	--muted-foreground: 220 11% 42%;
+	--accent: 235 62% 95%;
+	--accent-foreground: 235 68% 35%;
+	--destructive: 0 68% 45%;
+	--destructive-foreground: 0 0% 100%;
+	--success: 151 55% 30%;
+	--success-foreground: 0 0% 100%;
+	--warning: 32 81% 38%;
+	--warning-foreground: 0 0% 100%;
+	--border: 220 16% 87%;
+	--border-strong: 220 14% 78%;
+	--input: 220 15% 82%;
+	--ring: 235 68% 47%;
+	--radius: 0.5rem;
+	--shadow-soft: 0 1px 2px rgb(25 35 55 / 0.05), 0 6px 20px rgb(25 35 55 / 0.05);
+	--shadow-lift: 0 2px 4px rgb(25 35 55 / 0.06), 0 12px 32px rgb(25 35 55 / 0.09);
+}
+
+/*
+ * Dark tokens.
+ *
+ * `ac-theme-dark` is the explicit choice; `dark` is kept for the class the
+ * page used before the theme switcher. With neither class the
+ * prefers-color-scheme block below applies the same tokens, so "system"
+ * follows the OS. `ac-theme-light` opts out of that block, which is how an
+ * explicit light choice wins over a dark OS.
+ *
+ * The values are repeated in the two blocks because CSS has no mixin: the
+ * explicit class must win even when the OS is light, and the media query
+ * cannot be part of a selector list.
+ */
+.ac-root.dark,
+.ac-root.ac-theme-dark {
+	--background: 224 26% 10%;
+	--foreground: 220 20% 95%;
+	--surface: 224 23% 13%;
+	--surface-subtle: 224 21% 17%;
+	--surface-raised: 224 22% 19%;
+	--surface-sunken: 225 25% 7%;
+	--card: 224 23% 13%;
+	--card-foreground: 220 20% 95%;
+	--popover: 224 23% 13%;
+	--popover-foreground: 220 20% 95%;
+	--primary: 232 80% 70%;
+	--primary-foreground: 231 45% 12%;
+	--secondary: 224 20% 21%;
+	--secondary-foreground: 220 20% 95%;
+	--muted: 224 20% 18%;
+	--muted-foreground: 220 14% 70%;
+	--accent: 232 45% 22%;
+	--accent-foreground: 232 86% 82%;
+	--destructive: 0 72% 60%;
+	--destructive-foreground: 0 0% 100%;
+	--success: 151 51% 62%;
+	--success-foreground: 151 52% 12%;
+	--warning: 35 88% 66%;
+	--warning-foreground: 35 70% 12%;
+	--border: 224 18% 26%;
+	--border-strong: 224 16% 34%;
+	--input: 224 17% 30%;
+	--ring: 232 80% 70%;
+	--shadow-soft: 0 1px 2px rgb(0 0 0 / 0.28), 0 6px 20px rgb(0 0 0 / 0.22);
+	--shadow-lift: 0 2px 6px rgb(0 0 0 / 0.32), 0 16px 40px rgb(0 0 0 / 0.34);
+}
+
+@media (prefers-color-scheme: dark) {
+	.ac-root:not(.ac-theme-light):not(.ac-theme-dark) {
+		--background: 224 26% 10%;
+		--foreground: 220 20% 95%;
+		--surface: 224 23% 13%;
+		--surface-subtle: 224 21% 17%;
+		--surface-raised: 224 22% 19%;
+		--surface-sunken: 225 25% 7%;
+		--card: 224 23% 13%;
+		--card-foreground: 220 20% 95%;
+		--popover: 224 23% 13%;
+		--popover-foreground: 220 20% 95%;
+		--primary: 232 80% 70%;
+		--primary-foreground: 231 45% 12%;
+		--secondary: 224 20% 21%;
+		--secondary-foreground: 220 20% 95%;
+		--muted: 224 20% 18%;
+		--muted-foreground: 220 14% 70%;
+		--accent: 232 45% 22%;
+		--accent-foreground: 232 86% 82%;
+		--destructive: 0 72% 60%;
+		--destructive-foreground: 0 0% 100%;
+		--success: 151 51% 62%;
+		--success-foreground: 151 52% 12%;
+		--warning: 35 88% 66%;
+		--warning-foreground: 35 70% 12%;
+		--border: 224 18% 26%;
+		--border-strong: 224 16% 34%;
+		--input: 224 17% 30%;
+		--ring: 232 80% 70%;
+		--shadow-soft: 0 1px 2px rgb(0 0 0 / 0.28), 0 6px 20px rgb(0 0 0 / 0.22);
+		--shadow-lift: 0 2px 6px rgb(0 0 0 / 0.32), 0 16px 40px rgb(0 0 0 / 0.34);
+	}
+}
+
+@layer base {
+	.ac-root,
+	.ac-root *,
+	.ac-root *::before,
+	.ac-root *::after {
+		box-sizing: border-box;
+	}
+
+	.ac-root {
+		background: hsl(var(--background));
+		color: hsl(var(--foreground));
+		font-family: ui-sans-serif, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+		font-size: 14px;
+		line-height: 1.5;
+	}
+
+	.ac-root button,
+	.ac-root input,
+	.ac-root select,
+	.ac-root textarea {
+		color: inherit;
+		font: inherit;
+		letter-spacing: inherit;
+		margin: 0;
+	}
+
+	.ac-root button {
+		cursor: pointer;
+	}
+
+	.ac-root button:disabled {
+		cursor: not-allowed;
+	}
+
+	.ac-root :focus-visible {
+		outline: 2px solid hsl(var(--ring));
+		outline-offset: 2px;
+	}
+
+	.ac-root [hidden] {
+		display: none !important;
+	}
+}
+
+/*
+ * Argon wraps the view in `#maincontent > .container`, which is `width: 100%`
+ * with a 20px inline margin. A percentage width ignores its own margins, so the
+ * container's right edge lands one margin past #maincontent's right edge and
+ * the whole document scrolls sideways (measured: 20px at 900-1100px viewports,
+ * 16px once Argon narrows its gutter). `width: auto` makes the container honour
+ * its margins, which is the only place this can be fixed: the overflow belongs
+ * to the ancestor, not to `.ac-root`. app.css loads only on these views, so the
+ * rule cannot leak into other LuCI pages.
+ *
+ * `container` must stay in the plain cascade (not in @layer base): Tailwind's
+ * base layer would drop it, and the @container rules below would never match.
+ */
+#maincontent > .container {
+	box-sizing: border-box;
+	max-width: 100%;
+	width: auto;
+}
+
+/*
+ * The page is one rounded card floating on LuCI's page background.
+ *
+ * The old layout painted the header, the health strip and the three columns
+ * as separate full-bleed rectangles with square corners, so the result looked
+ * like a spreadsheet pasted into the theme rather than a page of its own. One
+ * outer radius plus `overflow: hidden` gives the header its own rounded top
+ * corners and the columns their own edges, and the card reads as a single
+ * object with a shadow against the LuCI page.
+ */
+.ac-root {
+	border: 1px solid hsl(var(--border));
+	border-radius: 12px;
+	box-shadow: var(--shadow-lift);
+	box-sizing: border-box;
+	container: airconnect / inline-size;
+	display: flex;
+	flex-direction: column;
+	margin: 0 auto;
+	max-width: 1400px;
+	min-height: calc(100dvh - 8rem);
+	min-width: 0;
+	overflow: hidden;
+	width: auto;
+}
+
+.ac-root > .ac-app {
+	display: flex;
+	flex: 1 1 auto;
+	flex-direction: column;
+	min-height: 0;
+}
+
+/* Argon turns a bare `h2` into a white card (background, padding, radius,
+ * shadow). Inside the workspace that surfaced as a white pill reading
+ * "Speakers 0" on the device rail, in both themes. Strip the card; the size,
+ * weight and colour come from the class rules below. */
+.ac-root h2 {
+	background: none;
+	border-radius: 0;
+	box-shadow: none;
+	padding: 0;
+}
+
+.ac-load-error {
+	color: hsl(var(--destructive));
+	font-size: 0.8rem;
+	padding: 1rem;
+}
+
+/* --- chrome ---------------------------------------------------------------- */
+
+.ac-chrome {
+	background: hsl(var(--surface));
+	display: flex;
+	flex: 1 1 auto;
+	flex-direction: column;
+	min-height: 0;
+	min-width: 0;
+}
+
+.ac-chrome-bar {
+	align-items: center;
+	border-bottom: 1px solid hsl(var(--border));
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.85rem;
+	justify-content: space-between;
+	min-height: 62px;
+	min-width: 0;
+	padding: 0.7rem 1.25rem;
+}
+
+.ac-brand-lockup {
+	align-items: center;
+	display: flex;
+	gap: 0.65rem;
+	min-width: 0;
+}
+
+.ac-brand-mark {
+	align-items: center;
+	background: hsl(var(--primary));
+	border-radius: 9px;
+	color: hsl(var(--primary-foreground));
+	display: flex;
+	height: 32px;
+	justify-content: center;
+	width: 32px;
+}
+
+.ac-brand-mark svg {
+	height: 17px;
+	width: 17px;
+}
+
+.ac-brand-lockup strong {
+	display: block;
+	font-size: 0.92rem;
+	line-height: 1.15;
+}
+
+.ac-brand-lockup span {
+	color: hsl(var(--muted-foreground));
+	display: block;
+	font-size: 0.67rem;
+	margin-top: 0.1rem;
+}
+
+.ac-chrome-status {
+	align-items: center;
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.6rem;
+	justify-content: flex-end;
+	min-width: 0;
+}
+
+/* The service state is a quiet dot plus a label, not a coloured pill: it is
+ * ambient information, and a filled pill in the header competed with the
+ * primary action. */
+.ac-service-indicator {
+	align-items: center;
+	color: hsl(var(--muted-foreground));
+	display: inline-flex;
+	font-size: 0.74rem;
+	gap: 0.4rem;
+	white-space: nowrap;
+}
+
+.ac-service-indicator-dot {
+	background: hsl(var(--muted-foreground));
+	border-radius: 50%;
+	height: 7px;
+	width: 7px;
+}
+
+.ac-service-indicator.is-running {
+	color: hsl(var(--success));
+}
+
+.ac-service-indicator.is-running .ac-service-indicator-dot {
+	background: hsl(var(--success));
+	box-shadow: 0 0 0 3px hsl(var(--success) / 0.16);
+}
+
+.ac-save-state {
+	color: hsl(var(--muted-foreground));
+	font-size: 0.72rem;
+	white-space: nowrap;
+}
+
+.ac-save-warning {
+	color: hsl(var(--warning));
+	font-weight: 600;
+}
+
+.ac-chrome-actions {
+	align-items: center;
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.35rem;
+}
+
+.ac-preferences {
+	align-items: center;
+	background: hsl(var(--muted));
+	border-radius: 8px;
+	display: flex;
+	gap: 0.1rem;
+	padding: 0.15rem;
+}
+
+/* `size="icon"` is 2.25rem in the button variants; the chrome uses 2rem so a
+ * row of icon and text buttons shares one height. The `.ac-root` prefix
+ * matches Tailwind's `.ac-root .size-9` specificity, so no !important is
+ * needed. */
+.ac-root .ac-icon-button {
+	height: 2rem;
+	padding: 0;
+	width: 2rem;
+}
+
+.ac-root .ac-icon-button svg {
+	height: 1rem;
+	width: 1rem;
+}
+
+.ac-root .ac-lang-button {
+	padding-left: 0.55rem;
+	padding-right: 0.55rem;
+}
+
+.ac-chrome-title {
+	border-bottom: 1px solid hsl(var(--border));
+	padding: 1.15rem 1.5rem 1rem;
+}
+
+.ac-chrome-title h1 {
+	font-size: 1.32rem;
+	font-weight: 680;
+	letter-spacing: -0.018em;
+	line-height: 1.2;
+	margin: 0;
+	text-wrap: balance;
+}
+
+.ac-chrome-title p {
+	color: hsl(var(--muted-foreground));
+	font-size: 0.76rem;
+	margin: 0.22rem 0 0;
+}
+
+/* --- health strip ---------------------------------------------------------- */
+
+/*
+ * A row of figures separated by rules, not a row of boxes. The three numbers
+ * are glanceable, so a strip costs one line of height instead of three cards'
+ * worth of padding.
+ */
+.ac-strip {
+	background: hsl(var(--surface-raised));
+	border-bottom: 1px solid hsl(var(--border));
+	display: grid;
+	grid-template-columns: repeat(3, minmax(0, 1fr));
+	min-width: 0;
+	padding: 0 1.25rem;
+}
+
+.ac-strip-item {
+	align-items: center;
+	display: flex;
+	gap: 0.6rem;
+	min-width: 0;
+	padding: 0.7rem 1.1rem;
+}
+
+.ac-strip-item + .ac-strip-item {
+	border-left: 1px solid hsl(var(--border));
+}
+
+.ac-strip-icon {
+	align-items: center;
+	background: hsl(var(--accent));
+	border-radius: 8px;
+	color: hsl(var(--primary));
+	display: flex;
+	flex: 0 0 auto;
+	height: 27px;
+	justify-content: center;
+	width: 27px;
+}
+
+.ac-strip-icon svg {
+	height: 14px;
+	width: 14px;
+}
+
+.ac-strip-copy {
+	display: flex;
+	flex: 1;
+	flex-direction: column;
+	min-width: 0;
+}
+
+.ac-strip-copy strong {
+	font-size: 0.79rem;
+	font-weight: 660;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.ac-strip-copy small {
+	color: hsl(var(--muted-foreground));
+	font-size: 0.65rem;
+	margin-top: 0.08rem;
+}
+
+/* --- workspace ------------------------------------------------------------- */
+
+/*
+ * Two columns: the device list and the speaker's own controls. The service
+ * column became a drawer, which is what gives the middle column room for a
+ * two-column form instead of a squeezed single column.
+ */
+.ac-workspace {
+	display: flex;
+	flex: 1 1 auto;
+	flex-direction: column;
+	min-height: 0;
+	min-width: 0;
+}
+
+.ac-workspace-body {
+	display: grid;
+	flex: 1 1 auto;
+	grid-template-columns: 272px minmax(0, 1fr);
+	min-height: 0;
+	min-width: 0;
+}
+
+.ac-main {
+	background: hsl(var(--background));
+	min-width: 0;
+	padding: 1.25rem clamp(0.95rem, 2vw, 1.75rem) 1.75rem;
+}
+
+.ac-rail-panel {
+	min-width: 0;
+}
+
+.ac-rail-toggle {
+	display: none;
+}
+
+/* --- device rail ----------------------------------------------------------- */
+
+/*
+ * The rail shares the page's palette. It is separated from the main column by
+ * a rule and by a faint tint, which says "different column" without saying
+ * "different application".
+ */
+.ac-rail {
+	background: hsl(var(--surface-raised));
+	border-right: 1px solid hsl(var(--border));
+	display: flex;
+	flex-direction: column;
+	height: 100%;
+	min-height: 0;
+	min-width: 0;
+	padding: 0.95rem 0.7rem 0.7rem;
+}
+
+.ac-rail-top {
+	display: flex;
+	flex-direction: column;
+	gap: 0.7rem;
+}
+
+.ac-rail-heading {
+	align-items: baseline;
+	display: flex;
+	gap: 0.45rem;
+	padding: 0 0.35rem;
+}
+
+.ac-rail-heading h2 {
+	font-size: 0.92rem;
+	font-weight: 680;
+	letter-spacing: -0.01em;
+}
+
+.ac-rail-count {
+	background: hsl(var(--muted));
+	border-radius: 999px;
+	color: hsl(var(--muted-foreground));
+	font-size: 0.66rem;
+	font-weight: 620;
+	padding: 0.05rem 0.42rem;
+}
+
+.ac-search-field {
+	align-items: center;
+	background: hsl(var(--surface));
+	border: 1px solid hsl(var(--input));
+	border-radius: 8px;
+	color: hsl(var(--muted-foreground));
+	display: flex;
+	gap: 0.4rem;
+	padding: 0 0.4rem 0 0.55rem;
+}
+
+.ac-search-field:focus-within {
+	border-color: hsl(var(--ring));
+}
+
+.ac-root .ac-search-field > svg {
+	height: 14px;
+	width: 14px;
+}
+
+.ac-search-field input {
+	background: transparent;
+	border: 0;
+	font-size: 0.73rem;
+	height: 2rem;
+	min-width: 0;
+	outline: 0;
+	width: 100%;
+}
+
+.ac-search-field input::placeholder {
+	color: hsl(var(--muted-foreground));
+}
+
+/* A shadcn Button with size="icon" is 2.25rem; the search row is 2rem tall,
+ * so the clear button is shrunk here. */
+.ac-root .ac-search-clear {
+	color: hsl(var(--muted-foreground));
+	flex: 0 0 auto;
+	height: 1.35rem;
+	padding: 0;
+	width: 1.35rem;
+}
+
+.ac-root .ac-search-clear:hover {
+	background: hsl(var(--muted));
+	color: hsl(var(--foreground));
+}
+
+.ac-root .ac-search-clear svg {
+	height: 13px;
+	width: 13px;
+}
+
+.ac-root .ac-scan-button {
+	background: hsl(var(--surface));
+	border-color: hsl(var(--input));
+	color: hsl(var(--foreground));
+	justify-content: flex-start;
+}
+
+.ac-root .ac-scan-button:hover {
+	background: hsl(var(--accent));
+	border-color: hsl(var(--border-strong));
+	color: hsl(var(--accent-foreground));
+}
+
+.ac-root .ac-scan-button svg {
+	height: 15px;
+	width: 15px;
+}
+
+.ac-device-list {
+	display: flex;
+	flex: 1;
+	flex-direction: column;
+	gap: 0.15rem;
+	margin-top: 0.75rem;
+	min-height: 0;
+	overflow-y: auto;
+}
+
+.ac-device-row {
+	align-items: center;
+	background: transparent;
+	border: 1px solid transparent;
+	border-radius: 8px;
+	color: hsl(var(--foreground));
+	display: flex;
+	gap: 0.5rem;
+	padding: 0.5rem 0.45rem;
+	position: relative;
+	text-align: left;
+	transition: background-color 140ms ease, border-color 140ms ease;
+	width: 100%;
+}
+
+.ac-device-row:hover {
+	background: hsl(var(--muted));
+}
+
+.ac-device-row.is-selected {
+	background: hsl(var(--accent));
+	border-color: hsl(var(--border-strong));
+}
+
+.ac-device-avatar {
+	align-items: center;
+	background: hsl(var(--muted));
+	border-radius: 7px;
+	color: hsl(var(--muted-foreground));
+	display: flex;
+	flex: 0 0 auto;
+	height: 29px;
+	justify-content: center;
+	width: 29px;
+}
+
+.ac-device-row.is-selected .ac-device-avatar {
+	background: hsl(var(--primary));
+	color: hsl(var(--primary-foreground));
+}
+
+.ac-device-avatar svg {
+	height: 14px;
+	width: 14px;
+}
+
+.ac-device-row-copy {
+	display: flex;
+	flex: 1;
+	flex-direction: column;
+	min-width: 0;
+}
+
+.ac-device-row-copy strong {
+	font-size: 0.75rem;
+	font-weight: 620;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+	width: 100%;
+}
+
+.ac-device-row-copy span {
+	color: hsl(var(--muted-foreground));
+	font-size: 0.63rem;
+	margin-top: 0.05rem;
+}
+
+.ac-device-row-state {
+	align-items: flex-end;
+	display: flex;
+	flex-direction: column;
+	gap: 0.2rem;
+	max-width: 74px;
+}
+
+.ac-device-row-state small {
+	color: hsl(var(--muted-foreground));
+	font-size: 0.56rem;
+	max-width: 74px;
+	overflow: hidden;
+	text-align: right;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.ac-device-row-state .text-positive {
+	color: hsl(var(--success));
+}
+
+.ac-row-chevron {
+	color: hsl(var(--muted-foreground));
+	flex: 0 0 auto;
+	height: 13px;
+	width: 13px;
+}
+
+.ac-rail-empty {
+	align-items: center;
+	color: hsl(var(--muted-foreground));
+	display: flex;
+	flex-direction: column;
+	gap: 0.4rem;
+	margin: 1.6rem 0.5rem;
+	text-align: center;
+}
+
+.ac-rail-empty svg {
+	height: 18px;
+	width: 18px;
+}
+
+.ac-rail-empty p {
+	font-size: 0.71rem;
+	margin: 0;
+}
+
+.ac-rail-bottom {
+	align-items: center;
+	border-top: 1px solid hsl(var(--border));
+	color: hsl(var(--muted-foreground));
+	display: flex;
+	font-size: 0.63rem;
+	gap: 0.4rem;
+	margin-top: 0.7rem;
+	padding: 0.7rem 0.35rem 0.1rem;
+}
+
+/* --- device hero ----------------------------------------------------------- */
+
+.ac-device-hero {
+	align-items: flex-start;
+	display: flex;
+	gap: 0.9rem;
+	justify-content: space-between;
+	margin-bottom: 1.15rem;
+	min-width: 0;
+}
+
+.ac-hero-icon {
+	align-items: center;
+	background: hsl(var(--accent));
+	border-radius: 10px;
+	color: hsl(var(--primary));
+	display: flex;
+	flex: 0 0 auto;
+	height: 44px;
+	justify-content: center;
+	width: 44px;
+}
+
+.ac-hero-icon svg {
+	height: 22px;
+	width: 22px;
+}
+
+.ac-hero-copy {
+	flex: 1;
+	min-width: 0;
+}
+
+.ac-hero-engine {
+	color: hsl(var(--muted-foreground));
+	display: block;
+	font-size: 0.64rem;
+	font-weight: 700;
+	letter-spacing: 0.07em;
+	text-transform: uppercase;
+}
+
+.ac-hero-copy h1 {
+	font-size: 1.32rem;
+	font-weight: 680;
+	letter-spacing: -0.02em;
+	line-height: 1.2;
+	margin: 0.14rem 0 0;
+	text-wrap: balance;
+}
+
+.ac-hero-copy p {
+	color: hsl(var(--muted-foreground));
+	font-size: 0.75rem;
+	margin: 0.18rem 0 0;
+}
+
+.ac-hero-state {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.4rem;
+	justify-content: flex-end;
+	min-width: 0;
+}
+
+.ac-hero-pill {
+	align-items: center;
+	border: 1px solid hsl(var(--border));
+	border-radius: 999px;
+	display: inline-flex;
+	font-size: 0.71rem;
+	font-weight: 600;
+	gap: 0.32rem;
+	line-height: 1;
+	padding: 0.38rem 0.6rem;
+	white-space: nowrap;
+}
+
+.ac-hero-pill svg {
+	height: 11px;
+	width: 11px;
+}
+
+.ac-hero-pill.is-positive {
+	background: hsl(var(--success) / 0.1);
+	border-color: hsl(var(--success) / 0.4);
+	color: hsl(var(--success));
+}
+
+.ac-hero-pill.is-neutral {
+	color: hsl(var(--muted-foreground));
+}
+
+.ac-hero-pill.is-unknown {
+	color: hsl(var(--muted-foreground));
+}
+
+.ac-hero-pill.is-warning {
+	background: hsl(var(--warning) / 0.1);
+	border-color: hsl(var(--warning) / 0.4);
+	color: hsl(var(--warning));
+}
+
+/* --- panels and forms ------------------------------------------------------ */
+
+.ac-editor-stack {
+	display: flex;
+	flex-direction: column;
+	gap: 0.8rem;
+	max-width: 880px;
+	min-width: 0;
+}
+
+/*
+ * One card shape for everything the user can fill in. The earlier revision
+ * had three different treatments (an elevated section, a disclosure and a
+ * fact sheet), which made the page look like three unrelated screens.
+ */
+.ac-panel {
+	background: hsl(var(--surface));
+	border: 1px solid hsl(var(--border));
+	border-radius: 10px;
+	min-width: 0;
+	padding: 1.05rem 1.15rem;
+}
+
+.ac-panel-accent {
+	border-color: hsl(var(--border-strong));
+}
+
+.ac-panel-heading {
+	align-items: flex-start;
+	display: flex;
+	gap: 0.9rem;
+	justify-content: space-between;
+	margin-bottom: 0.95rem;
+	min-width: 0;
+}
+
+.ac-panel-heading > div {
+	min-width: 0;
+}
+
+.ac-panel-heading h2 {
+	font-size: 0.85rem;
+	font-weight: 680;
+	margin: 0;
+}
+
+.ac-panel-heading p {
+	color: hsl(var(--muted-foreground));
+	font-size: 0.7rem;
+	margin: 0.15rem 0 0;
+}
+
+.ac-panel-heading > svg {
+	color: hsl(var(--muted-foreground));
+	flex: 0 0 auto;
+	height: 15px;
+	width: 15px;
+}
+
+.ac-form-grid {
+	display: grid;
+	gap: 0.95rem 1.15rem;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+	min-width: 0;
+}
+
+.ac-form-grid > .space-y-1\.5 {
+	min-width: 0;
+}
+
+.ac-form-grid label {
+	color: hsl(var(--foreground));
+	font-size: 0.73rem;
+	font-weight: 620;
+}
+
+.ac-form-grid input,
+.ac-form-grid button[role='combobox'] {
+	background: hsl(var(--surface));
+	font-size: 0.75rem;
+	height: 34px;
+}
+
+.ac-form-grid p {
+	line-height: 1.35;
+}
+
+.ac-disclosure {
+	padding: 0;
+}
+
+.ac-disclosure summary {
+	align-items: center;
+	color: hsl(var(--foreground));
+	cursor: pointer;
+	display: flex;
+	font-size: 0.78rem;
+	font-weight: 650;
+	justify-content: space-between;
+	list-style: none;
+	padding: 0.9rem 1.15rem;
+}
+
+.ac-disclosure summary::-webkit-details-marker {
+	display: none;
+}
+
+.ac-disclosure summary > span:first-child {
+	align-items: center;
+	display: flex;
+	gap: 0.45rem;
+}
+
+.ac-disclosure summary svg {
+	color: hsl(var(--muted-foreground));
+	height: 15px;
+	width: 15px;
+}
+
+.ac-disclosure-hint {
+	align-items: center;
+	color: hsl(var(--muted-foreground));
+	display: inline-flex;
+	font-size: 0.66rem;
+	font-weight: 500;
+	gap: 0.3rem;
+}
+
+/* The chevron points down when the panel is closed and rotates when it opens,
+ * which is the direction the panel moves. */
+.ac-disclosure-chevron {
+	transition: transform 160ms ease;
+}
+
+.ac-disclosure[open] .ac-disclosure-chevron {
+	transform: rotate(180deg);
+}
+
+.ac-disclosure[open] summary {
+	border-bottom: 1px solid hsl(var(--border));
+}
+
+.ac-disclosure > .ac-form-grid {
+	padding: 0.95rem 1.15rem 1.15rem;
+}
+
+.ac-fact-grid {
+	display: grid;
+	gap: 0.85rem 1.2rem;
+	grid-template-columns: repeat(3, minmax(0, 1fr));
+	margin: 0;
+	min-width: 0;
+}
+
+.ac-fact {
+	min-width: 0;
+}
+
+.ac-fact dt {
+	color: hsl(var(--muted-foreground));
+	font-size: 0.65rem;
+	margin-bottom: 0.14rem;
+}
+
+.ac-fact dd {
+	font-size: 0.73rem;
+	margin: 0;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+/* --- setup and empty states ------------------------------------------------ */
+
+.ac-setup-state,
+.ac-empty-workspace {
+	align-items: center;
+	display: flex;
+	flex-direction: column;
+	margin: 4.5rem auto;
+	max-width: 430px;
+	text-align: center;
+}
+
+.ac-setup-illustration {
+	align-items: center;
+	background: hsl(var(--accent));
+	border-radius: 50%;
+	color: hsl(var(--primary));
+	display: flex;
+	height: 66px;
+	justify-content: center;
+	margin-bottom: 0.9rem;
+	width: 66px;
+}
+
+.ac-setup-illustration svg {
+	height: 25px;
+	width: 25px;
+}
+
+.ac-setup-state h2 {
+	font-size: 1.02rem;
+	margin: 0;
+}
+
+.ac-setup-state p,
+.ac-empty-workspace p {
+	color: hsl(var(--muted-foreground));
+	font-size: 0.77rem;
+	line-height: 1.6;
+	margin: 0.5rem 0 1.1rem;
+	max-width: 38ch;
+}
+
+.ac-empty-workspace {
+	margin-top: 5.5rem;
+}
+
+.ac-empty-workspace h1 {
+	font-size: 1.42rem;
+	font-weight: 680;
+	letter-spacing: -0.02em;
+	line-height: 1.2;
+	margin: 0;
+	text-wrap: balance;
+}
+
+.ac-empty-workspace p {
+	max-width: 42ch;
+}
+
+.ac-empty-workspace small {
+	color: hsl(var(--muted-foreground));
+	font-size: 0.67rem;
+	margin-top: 0.65rem;
+}
+
+.ac-empty-orbit {
+	align-items: center;
+	background: hsl(var(--accent));
+	border-radius: 18px;
+	color: hsl(var(--primary));
+	display: flex;
+	height: 74px;
+	justify-content: center;
+	margin-bottom: 1.1rem;
+	position: relative;
+	width: 74px;
+}
+
+.ac-empty-orbit svg {
+	height: 26px;
+	width: 26px;
+}
+
+/* --- footer ---------------------------------------------------------------- */
+
+.ac-footer {
+	align-items: center;
+	background: hsl(var(--surface));
+	border-top: 1px solid hsl(var(--border));
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.75rem;
+	justify-content: space-between;
+	min-width: 0;
+	padding: 0.7rem 1.25rem;
+}
+
+.ac-footer-left {
+	align-items: center;
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.45rem;
+}
+
+.ac-footer-right {
+	align-items: center;
+	color: hsl(var(--muted-foreground));
+	display: flex;
+	flex-wrap: wrap;
+	font-size: 0.64rem;
+	gap: 0.85rem;
+	justify-content: flex-end;
+}
+
+.ac-footer-note {
+	align-items: center;
+	display: inline-flex;
+	gap: 0.35rem;
+}
+
+.ac-footer-dot {
+	background: hsl(var(--success));
+	border-radius: 50%;
+	height: 6px;
+	width: 6px;
+}
+
+.ac-footer-version {
+	color: hsl(var(--muted-foreground));
+}
+
+/* --- drawer ---------------------------------------------------------------- */
+
+/*
+ * The service panel and the logs moved into a drawer. Radix renders the
+ * overlay and the panel in a portal at the end of the body, so they are
+ * positioned against the viewport rather than against the page card.
+ */
+.ac-drawer-overlay {
+	background: rgb(15 20 30 / 0.42);
+	inset: 0;
+	position: fixed;
+	z-index: 50;
+}
+
+.ac-drawer-panel {
+	background: hsl(var(--surface));
+	border-left: 1px solid hsl(var(--border));
+	box-shadow: var(--shadow-lift);
+	display: flex;
+	flex-direction: column;
+	height: 100vh;
+	max-width: min(420px, 92vw);
+	overflow-y: auto;
+	padding: 1.1rem 1.15rem 1.4rem;
+	position: fixed;
+	right: 0;
+	top: 0;
+	width: 100%;
+	z-index: 51;
+}
+
+.ac-drawer-close {
+	align-items: center;
+	background: transparent;
+	border: 0;
+	border-radius: 7px;
+	color: hsl(var(--muted-foreground));
+	display: flex;
+	height: 1.85rem;
+	justify-content: center;
+	position: absolute;
+	right: 0.85rem;
+	top: 0.95rem;
+	width: 1.85rem;
+}
+
+.ac-drawer-close:hover {
+	background: hsl(var(--muted));
+	color: hsl(var(--foreground));
+}
+
+.ac-drawer-close svg {
+	height: 15px;
+	width: 15px;
+}
+
+.ac-drawer-header {
+	align-items: flex-start;
+	border-bottom: 1px solid hsl(var(--border));
+	display: flex;
+	gap: 0.6rem;
+	justify-content: space-between;
+	margin-bottom: 1rem;
+	padding-bottom: 0.85rem;
+	padding-right: 2rem;
+}
+
+.ac-drawer-header h2 {
+	font-size: 0.95rem;
+	font-weight: 680;
+	margin: 0;
+}
+
+.ac-drawer-header p {
+	color: hsl(var(--muted-foreground));
+	font-size: 0.68rem;
+	margin: 0.2rem 0 0;
+}
+
+.ac-drawer-body {
+	display: flex;
+	flex-direction: column;
+	gap: 1.15rem;
+}
+
+.ac-drawer-section {
+	min-width: 0;
+}
+
+.ac-utility-heading {
+	align-items: center;
+	color: hsl(var(--foreground));
+	display: flex;
+	font-size: 0.73rem;
+	font-weight: 680;
+	gap: 0.4rem;
+	justify-content: space-between;
+	margin-bottom: 0.6rem;
+}
+
+.ac-utility-heading > svg {
+	color: hsl(var(--muted-foreground));
+	height: 14px;
+	width: 14px;
+}
+
+.ac-service-row {
+	align-items: center;
+	color: hsl(var(--muted-foreground));
+	display: flex;
+	font-size: 0.7rem;
+	justify-content: space-between;
+	padding: 0.32rem 0;
+}
+
+.ac-service-row > span {
+	align-items: center;
+	display: flex;
+	gap: 0.4rem;
+}
+
+.ac-service-row strong {
+	color: hsl(var(--foreground));
+	font-size: 0.69rem;
+	font-weight: 620;
+}
+
+.ac-utility-actions {
+	display: flex;
+	gap: 0.45rem;
+	margin-top: 0.7rem;
+}
+
+.ac-utility-actions button {
+	flex: 1;
+	min-width: 0;
+}
+
+.ac-root .ac-utility-actions svg {
+	height: 13px;
+	width: 13px;
+}
+
+.ac-signal-card {
+	align-items: center;
+	background: hsl(var(--surface-subtle));
+	border-radius: 8px;
+	display: flex;
+	gap: 0.6rem;
+	justify-content: space-between;
+	margin-top: 0.4rem;
+	min-width: 0;
+	padding: 0.6rem 0.65rem;
+}
+
+.ac-signal-card > div {
+	display: flex;
+	flex-direction: column;
+	min-width: 0;
+}
+
+.ac-signal-card span {
+	color: hsl(var(--muted-foreground));
+	font-size: 0.63rem;
+}
+
+.ac-signal-card strong {
+	font-size: 0.68rem;
+	font-weight: 620;
+	line-height: 1.3;
+	margin-top: 0.15rem;
+}
+
+.ac-observed-time {
+	align-items: center;
+	color: hsl(var(--muted-foreground));
+	display: inline-flex;
+	font-size: 0.61rem;
+	gap: 0.3rem;
+	margin-top: 0.55rem;
+}
+
+.ac-observed-time svg {
+	height: 12px;
+	width: 12px;
+}
+
+.ac-log-output {
+	background: hsl(var(--surface-subtle));
+	border-radius: 8px;
+	color: hsl(var(--muted-foreground));
+	font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+	font-size: 0.6rem;
+	line-height: 1.55;
+	margin: 0;
+	max-height: 220px;
+	overflow: auto;
+	padding: 0.65rem;
+	white-space: pre-wrap;
+}
+
+.ac-service-trigger svg {
+	height: 14px;
+	width: 14px;
+}
+
+/* --- settings page --------------------------------------------------------- */
+
+.ac-settings-page {
+	display: flex;
+	flex-direction: column;
+	gap: 0.9rem;
+	min-width: 0;
+	padding: 1.25rem clamp(0.95rem, 2vw, 1.75rem) 1.75rem;
+}
+
+.ac-settings-section {
+	background: hsl(var(--surface));
+	border: 1px solid hsl(var(--border));
+	border-radius: 10px;
+	min-width: 0;
+	padding: 1.15rem 1.25rem 1.25rem;
+}
+
+.ac-settings-section-heading {
+	align-items: flex-start;
+	display: flex;
+	gap: 0.7rem;
+	margin-bottom: 1.05rem;
+	min-width: 0;
+}
+
+.ac-settings-section-icon {
+	align-items: center;
+	background: hsl(var(--accent));
+	border-radius: 9px;
+	color: hsl(var(--primary));
+	display: flex;
+	flex: 0 0 auto;
+	height: 30px;
+	justify-content: center;
+	width: 30px;
+}
+
+.ac-settings-section-icon svg {
+	height: 15px;
+	width: 15px;
+}
+
+.ac-settings-section-heading h2 {
+	font-size: 0.88rem;
+	font-weight: 680;
+	margin: 0;
+}
+
+.ac-settings-section-heading p {
+	color: hsl(var(--muted-foreground));
+	font-size: 0.7rem;
+	margin: 0.15rem 0 0;
+}
+
+/* --- status dots ----------------------------------------------------------- */
+
+.ac-dot {
+	background: hsl(var(--border));
+	border-radius: 50%;
+	display: inline-block;
+	flex: 0 0 auto;
+	height: 7px;
+	width: 7px;
+}
+
+.ac-dot-positive {
+	background: hsl(var(--success));
+	box-shadow: 0 0 0 3px hsl(var(--success) / 0.15);
+}
+
+.ac-dot-warning {
+	background: hsl(var(--warning));
+	box-shadow: 0 0 0 3px hsl(var(--warning) / 0.15);
+}
+
+.ac-dot-unknown {
+	background: hsl(var(--muted-foreground));
+	opacity: 0.6;
+}
+
+.ac-dot-neutral {
+	background: hsl(var(--border-strong));
+}
+
+/* --- loading --------------------------------------------------------------- */
+
+.ac-loading-state {
+	align-items: flex-start;
+	display: flex;
+	flex-direction: column;
+	gap: 0.7rem;
+	margin: 4rem auto;
+	max-width: 620px;
+}
+
+.ac-loading-line,
+.ac-loading-block {
+	animation: ac-pulse 1.5s ease-in-out infinite;
+	background: hsl(var(--muted));
+	border-radius: 6px;
+	height: 12px;
+	width: 55%;
+}
+
+.ac-loading-line-wide {
+	width: 82%;
+}
+
+.ac-loading-block {
+	height: 260px;
+	margin-top: 0.6rem;
+	width: 100%;
+}
+
+.ac-loading-state span {
+	color: hsl(var(--muted-foreground));
+	font-size: 0.72rem;
+}
+
+@keyframes ac-pulse {
+	50% {
+		opacity: 0.48;
+	}
+}
+
+/* --- breakpoints ----------------------------------------------------------- */
+
+/*
+ * The page is embedded in LuCI's #maincontent, so the usable width depends on
+ * the host layout (iStoreOS's sidebar, for one), not on the viewport. Every
+ * rule below is therefore a container query against `.ac-root`.
+ *
+ * The thresholds are where the two-column form stops working: the form needs
+ * about 300px per column, so a 640px main column is the floor. The rail is
+ * dropped entirely below that, because a 272px navigation column next to a
+ * 300px form does not fit in a phone.
+ */
+@container airconnect (max-width: 1180px) {
+	.ac-workspace-body {
+		grid-template-columns: 240px minmax(0, 1fr);
+	}
+
+	.ac-hero-state {
+		justify-content: flex-start;
+	}
+}
+
+@container airconnect (max-width: 980px) {
+	.ac-form-grid {
+		grid-template-columns: minmax(0, 1fr);
+	}
+
+	.ac-fact-grid {
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+	}
+
+	.ac-strip {
+		padding: 0 0.9rem;
+	}
+
+	.ac-strip-item {
+		padding: 0.65rem 0.75rem;
+	}
+}
+
+/*
+ * Below this width the rail stops being a column and becomes a panel above
+ * the content, collapsed by default. A device list is navigation, and on a
+ * narrow screen the speaker's own controls matter more.
+ */
+@container airconnect (max-width: 720px) {
+	.ac-root {
+		min-height: 0;
+	}
+
+	.ac-workspace {
+		flex: 0 0 auto;
+	}
+
+	.ac-workspace-body {
+		display: block;
+	}
+
+	.ac-rail-panel {
+		border-bottom: 1px solid hsl(var(--border));
+	}
+
+	.ac-rail-toggle {
+		align-items: center;
+		background: hsl(var(--surface-raised));
+		border: 0;
+		border-bottom: 1px solid hsl(var(--border));
+		color: hsl(var(--foreground));
+		display: flex;
+		font-size: 0.78rem;
+		font-weight: 650;
+		gap: 0.4rem;
+		padding: 0.6rem 0.9rem;
+		text-align: left;
+		width: 100%;
+	}
+
+	.ac-rail-panel:not(.is-open) .ac-rail {
+		display: none;
+	}
+
+	.ac-rail-panel:not(.is-open) .ac-rail-toggle {
+		border-bottom: 0;
+	}
+
+	.ac-rail {
+		border-right: 0;
+		height: auto;
+		max-height: 320px;
+		padding: 0.8rem 0.7rem;
+	}
+
+	.ac-device-list {
+		max-height: 190px;
+	}
+
+	.ac-rail-bottom {
+		display: none;
+	}
+
+	.ac-chrome-bar {
+		padding: 0.7rem 0.9rem;
+	}
+
+	.ac-chrome-status {
+		justify-content: flex-start;
+		width: 100%;
+	}
+
+	.ac-chrome-actions {
+		width: 100%;
+	}
+
+	.ac-strip {
+		grid-template-columns: minmax(0, 1fr);
+	}
+
+	.ac-strip-item + .ac-strip-item {
+		border-left: 0;
+		border-top: 1px solid hsl(var(--border));
+	}
+
+	.ac-strip-item {
+		padding: 0.55rem 0.35rem;
+	}
+
+	.ac-device-hero {
+		flex-wrap: wrap;
+	}
+
+	.ac-hero-state {
+		width: 100%;
+	}
+
+	.ac-footer {
+		flex-direction: column;
+		gap: 0.5rem;
+	}
+
+	.ac-footer-right {
+		justify-content: flex-start;
+	}
+}
+
+@container airconnect (max-width: 460px) {
+	.ac-brand-lockup span {
+		display: none;
+	}
+
+	.ac-hero-copy h1 {
+		font-size: 1.15rem;
+	}
+
+	.ac-fact-grid {
+		grid-template-columns: minmax(0, 1fr);
+	}
+
+	.ac-footer-right {
+		flex-direction: column;
+		gap: 0.2rem;
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.ac-loading-line,
+	.ac-loading-block {
+		animation: none;
+	}
+
+	.ac-device-row,
+	.ac-disclosure-chevron {
+		transition: none;
+	}
+}

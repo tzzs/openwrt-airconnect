@@ -42,11 +42,12 @@ exists in exactly one place.
 
 `check-frontend.mjs` evaluates
 `packages/luci-app-airconnect-manager/htdocs/luci-static/resources/airconnect-manager/rules.js`
-in a `new Function` shim with `_` supplied (and again with `_` absent), runs the
-same values through the exported rule functions, and compares them with the
-backend verdicts. It fails when a rule is missing, when a rejection returns
-something other than a non-empty message string, or when the frontend and the
-backend disagree on any case.
+the way LuCI's `require` does: a class factory that receives `_` and a minimal
+`L.Class`, which it then instantiates (LuCI rejects anything that is not a
+class, and hands the view the instance). It runs the same values through the
+rule methods and compares them with the backend verdicts. It fails when a rule
+is missing, when a rejection returns something other than a non-empty message
+string, or when the frontend and the backend disagree on any case.
 
 Empty values are the one place the scopes differ on purpose: on a device an
 empty `max_volume`, `media_volume`, `latency` or advanced parameter means
