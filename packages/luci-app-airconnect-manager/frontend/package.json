@@ -1,8 +1,8 @@
 {
-  "name": "luci-app-airconnect-manager-frontend",
+  "name": "luci-app-airbridge-frontend",
   "private": true,
   "version": "0.1.0",
-  "description": "React + shadcn/ui frontend for the AirConnect Manager LuCI page",
+  "description": "React + shadcn/ui frontend for the AirBridge LuCI page",
   "license": "MIT",
   "type": "module",
   "scripts": {

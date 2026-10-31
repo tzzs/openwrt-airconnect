@@ -41,7 +41,7 @@ verdicts instead of TAP output; the node runner consumes it so backend logic
 exists in exactly one place.
 
 `check-frontend.mjs` evaluates
-`packages/luci-app-airconnect-manager/htdocs/luci-static/resources/airconnect-manager/rules.js`
+`packages/luci-app-airconnect-manager/htdocs/luci-static/resources/airbridge/rules.js`
 the way LuCI's `require` does: a class factory that receives `_` and a minimal
 `L.Class`, which it then instantiates (LuCI rejects anything that is not a
 class, and hands the view the instance). It runs the same values through the

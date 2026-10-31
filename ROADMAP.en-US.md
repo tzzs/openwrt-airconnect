@@ -1,4 +1,4 @@
-# OpenWrt AirConnect Implementation Roadmap / 实施计划
+# OpenWrt AirBridge Implementation Roadmap / 实施计划
 
 <div align="center">
 
@@ -10,7 +10,7 @@ English Version | [中文版本](ROADMAP.zh-CN.md)
 
 ## Overview
 
-This project provides standalone OpenWrt/iStoreOS adaptation for [philippe44/AirConnect](https://github.com/philippe44/AirConnect). It maintains engine packages, management layer, and LuCI interface independently. See [Architecture Decisions](docs/ARCHITECTURE.en-US.md) for details.
+AirBridge provides standalone OpenWrt/iStoreOS adaptation for [philippe44/AirConnect](https://github.com/philippe44/AirConnect). It maintains engine packages, management layer, and LuCI interface independently. See [Architecture Decisions](docs/ARCHITECTURE.en-US.md) for details.
 
 ## Version 1: New UI, Device Management & Configuration Persistence
 

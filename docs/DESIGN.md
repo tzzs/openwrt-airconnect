@@ -1,4 +1,4 @@
-# AirConnect management UI
+# AirBridge management UI
 
 The approved direction is a quiet system settings page with shadcn-inspired neutral surfaces, 6–9px control/card radii, thin borders and text-first service states. It uses native LuCI forms, navigation, permissions and save/apply. No React, runtime Node, online fonts or CDN are shipped.
 
@@ -14,7 +14,7 @@ Broadcasting is the only one of the four that is newly measurable, and it is mea
 
 A state that was not measured renders as unknown. `false` is allowed only when a scan really ran, completed, and found nothing — a failure, a timeout, an unparsable packet, an expired observation or an unreadable file all produce unknown. The observation expires after five minutes, because it describes a running process, and a stopped engine must not keep showing a positive. Polling never produces it: `status` only reads the cached file, the observation comes from the existing scan action, and no resident process is added.
 
-Field validation lives in one place: `airconnect-manager/rules.js` is loaded by the view and holds the same limits `config.uc` enforces, so the browser rejects what the router would reject, with one message instead of two. `tests/parity/cases.json` is the shared contract and both sides are tested against it. Two speakers resolving to the same effective AirPlay name (an override, else the discovered original name, compared after trailing whitespace) raise a warning row in the Speakers panel on save and on status refresh. It is advisory: the save proceeds, because the engines accept the configuration.
+Field validation lives in one place: `airbridge/rules.js` is loaded by the view and holds the same limits `config.uc` enforces, so the browser rejects what the router would reject, with one message instead of two. `tests/parity/cases.json` is the shared contract and both sides are tested against it. Two speakers resolving to the same effective AirPlay name (an override, else the discovered original name, compared after trailing whitespace) raise a warning row in the Speakers panel on save and on status refresh. It is advisory: the save proceeds, because the engines accept the configuration.
 
 CSS is scoped to `.ac-manager`; neutral background/surface/text/border and positive/warning/focus semantic tokens have light/dark values. Typography inherits the host's system font, preserving LuCI. The page uses 28/19/16px heading sizes, 13px labels and 11–12px supplementary facts. A single column and stacked labels below 600px keep controls reachable on a phone. Native labels, validation, focus rings, semantic disclosure controls, keyboard tabs and textual status states support keyboard and assistive technology use. The interface does not animate.
 

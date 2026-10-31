@@ -56,8 +56,8 @@ jobs:
           cd "$GITHUB_WORKSPACE/packages/luci-app-airconnect-manager/frontend"
           npm ci
           npm run build
-          test -f "$GITHUB_WORKSPACE/packages/luci-app-airconnect-manager/htdocs/luci-static/resources/airconnect-manager/app.js"
-          test -f "$GITHUB_WORKSPACE/packages/luci-app-airconnect-manager/htdocs/luci-static/resources/airconnect-manager/app.css"
+          test -f "$GITHUB_WORKSPACE/packages/luci-app-airconnect-manager/htdocs/luci-static/resources/airbridge/app.js"
+          test -f "$GITHUB_WORKSPACE/packages/luci-app-airconnect-manager/htdocs/luci-static/resources/airbridge/app.css"
 
       - name: Check translation catalogues
         run: node scripts/update-i18n.mjs --check

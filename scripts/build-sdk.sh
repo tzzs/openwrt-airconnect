@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: MIT
 # Copyright (c) 2026 tzzs
 #
-# build-sdk.sh - compile the AirConnect packages with an OpenWrt SDK.
+# build-sdk.sh - compile the AirBridge packages with an OpenWrt SDK.
 #
 # HOST/LINUX TOOL, NOT A ROUTER SCRIPT. The OpenWrt SDK is a Linux x86_64
 # toolchain and this script drives `make` inside it. It never runs on the
@@ -54,7 +54,7 @@ usage() {
 	cat <<EOF
 usage: bash scripts/build-sdk.sh --sdk <path> [--packages "<list>"] [--jobs N]
 
-Compiles the AirConnect packages with an OpenWrt SDK. Host/Linux tool: it runs
+Compiles the AirBridge packages with an OpenWrt SDK. Host/Linux tool: it runs
 inside the SDK toolchain directory, never on the router.
 
   --sdk <path>        required. The extracted SDK directory, e.g.

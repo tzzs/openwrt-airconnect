@@ -1,10 +1,10 @@
-# AirConnect LuCI 增强版计划
+# 隔空音箱（AirBridge）LuCI 增强版计划
 
-直接使用 philippe44/AirConnect 原生引擎，建立独立的 OpenWrt/iStoreOS 适配封装；sbwml/luci-app-airconnect 只作为封装方式参考。独立维护引擎包、管理适配层和 LuCI 页面，详见 [架构决策](docs/ARCHITECTURE.zh-CN.md)。
+AirBridge 直接使用 philippe44/AirConnect 原生引擎，建立独立的 OpenWrt/iStoreOS 适配封装；sbwml/luci-app-airconnect 只作为封装方式参考。独立维护引擎包、管理适配层和 LuCI 页面，详见 [架构决策](docs/ARCHITECTURE.zh-CN.md)。
 
 ## 第一版：新版界面、设备管理与配置持久化
 
-- [x] 重做整个 AirConnect 管理界面，采用用户确认的 shadcn 风格、系统设置式布局；继续嵌入 LuCI，不改其他管理页面。（`overview.js`、`manager.css`）
+- [x] 重做整个 AirBridge 管理界面，采用用户确认的 shadcn 风格、系统设置式布局；继续嵌入 LuCI，不改其他管理页面。（`overview.js`、`manager.css`）
 - [x] 建立“音箱 / 设置 / 诊断”的信息结构，常用操作优先，高级参数渐进展开；适配手机与明暗模式。（`overview.js` 的三个 tabpanel，`manager.css` 的 600px 断点与深色 token）
 - [x] 支持配置每台设备的 AirPlay 显示名称，并展示设备原名称、型号、厂商、地址、协议、最后发现时间和可验证的桥接状态。AirPlay 名称与原厂设备名称明确区分。（`overview.js` 的 `updateDevice`，`config.uc` 的名称校验）
 - [x] 将原生 AirConnect 能力逐项映射到增强版，按适用引擎、继承关系和优先级呈现，不把 Chromecast 参数误套到 UPnP。（`config.uc` 覆盖 `codec`/`latency`/`max_volume`/`media_volume`/`log_level` 及高级项 `metadata`/`artwork`/`flush`/`drift`（两引擎）、`http_length`/`upnp_max`（仅 UPnP）、`stop_receiver`（仅 Chromecast），全部按上游默认值接入并逐设备继承；`upnp_max` 仅全局，因为上游只读 `glMRConfig.UPnPMax`。XML 渲染按引擎隔离并有测试（`tests/config`、`tests/runtime`），界面按引擎给出控件（`tests/luci`），前后端契约在 `tests/parity`。`stream_type`（Sonos 专用）、型号/名称筛选 CLI 选项、`max_players`/`ports`/`log_limit` 全局项与延迟格式第三段尚未接入，理由见[能力审计](docs/AIRCONNECT-CAPABILITIES.zh-CN.md)。上游未验证 `metadata`/`artwork` 在真实音箱上的显示效果，这属于设备验收）

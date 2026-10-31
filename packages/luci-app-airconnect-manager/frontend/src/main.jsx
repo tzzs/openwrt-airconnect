@@ -42,4 +42,4 @@ export function mount(container, context) {
 }
 
 // The IIFE build exposes this global for the LuCI view to call.
-window.AirConnectApp = { mount };
+window.AirBridgeApp = { mount };

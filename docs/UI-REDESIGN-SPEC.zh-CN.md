@@ -1,4 +1,4 @@
-# AirConnect LuCI 界面改造规格
+# AirBridge LuCI 界面改造规格
 
 本文件是这次改造的唯一事实来源。subagent 按此实现，不自行增加范围。
 
@@ -62,7 +62,7 @@ Argon 主题的 `#maincontent > .container` 使用 `margin: 0 1.25rem 1rem` 且 
   - Working directory → 工作目录；Devices → 设备；Settings → 设置
   - Log level → 日志级别；Max volume → 最大音量；Interface → 接口
   - Enable → 启用；Disabled → 已禁用；Enabled → 已启用；Unknown → 未知
-- 保留英文专有名词不翻译：UPnP / DLNA、Chromecast、AirPlay、AirConnect、FLAC、HTTP。
+- 保留英文专有名词不翻译：UPnP / DLNA、Chromecast、AirPlay、AirBridge、AirConnect、FLAC、HTTP。
 - 重新生成 `.lmo` 需要在设备上执行：
   `msgfmt -o /usr/lib/lua/luci/i18n/airconnect-manager.zh-cn.lmo po/zh_Hans/airconnect-manager.po`
 
@@ -156,7 +156,7 @@ handleSaveApply ? new ComboButton(...) : E([])
   内部面板统一 `8–10px` 圆角，避免四角直角的表格感。
 - **主页面精简**：主页面只保留设备列表、当前音箱配置和健康摘要；服务控制、
   信号报告、最近日志放进右侧 `Drawer`，不再永久占据第三列。
-- **设置独立成页**：全局设置位于 `/cgi-bin/luci/admin/services/airconnect-manager/settings`，
+- **设置独立成页**：全局设置位于 `/cgi-bin/luci/admin/services/airbridge/settings`，
   按服务与发现、音频默认值、兼容性、诊断四组展示。
 
 ### 桌面（容器宽度 > 1180px）
@@ -205,8 +205,8 @@ handleSaveApply ? new ComboButton(...) : E([])
 - `frontend/src/components/rail.jsx`、`device.jsx` — 设备列表和设备编辑器；
 - `frontend/src/components/service-panel.jsx`、`ui/drawer.jsx` — 服务状态抽屉；
 - `frontend/src/components/settings-page.jsx` — 独立设置页分组；
-- `htdocs/luci-static/resources/view/airconnect-manager/common.js` — LuCI 共享 bundle loader；
-- `htdocs/luci-static/resources/view/airconnect-manager/settings.js` — 独立 settings view；
+- `htdocs/luci-static/resources/view/airbridge/common.js` — LuCI 共享 bundle loader；
+- `htdocs/luci-static/resources/view/airbridge/settings.js` — 独立 settings view；
 - `scripts/update-i18n.mjs` — 从源码同步 POT/PO 并支持 `--check`。
 
 修改文件：

@@ -209,7 +209,7 @@ function main() {
 function navigationSection() {
 	section('moving between the two pages');
 	const { parentPageUrl, settingsPageUrl } = NAVIGATION;
-	const base = 'http://192.168.100.1/cgi-bin/luci/admin/services/airconnect-manager';
+	const base = 'http://192.168.100.1/cgi-bin/luci/admin/services/admin/services/airbridge';
 
 	check(settingsPageUrl(base) === base + '/settings',
 		'global settings is the workspace URL plus one segment', settingsPageUrl(base));
@@ -222,7 +222,7 @@ function navigationSection() {
 		'back returns to the device workspace', parentPageUrl(base + '/settings'));
 	check(parentPageUrl(base + '/settings/') === base,
 		'a trailing slash is ignored');
-	const custom = 'http://router/foo/bar/airconnect-manager';
+	const custom = 'http://router/foo/bar/admin/services/airbridge';
 	check(parentPageUrl(custom + '/settings') === custom,
 		'a custom dispatcher prefix is kept', parentPageUrl(custom + '/settings'));
 	check(parentPageUrl(base) === base,
@@ -231,6 +231,16 @@ function navigationSection() {
 		'a bare /settings goes to the root', parentPageUrl('http://router/settings'));
 	check(parentPageUrl(base + '/settings?x=1#top') === base,
 		'the query and the hash do not follow the user back');
+
+	const menu = JSON.parse(readFileSync(join(ROOT,
+		'packages/luci-app-airconnect-manager/root/usr/share/luci/menu.d/' +
+		'luci-app-airconnect-manager.json'), 'utf8'));
+	check(menu['admin/services/airconnect-manager']?.action?.type === 'alias' &&
+		menu['admin/services/airconnect-manager']?.action?.path === 'admin/services/airbridge',
+		'old workspace URL aliases to the AirBridge workspace');
+	check(menu['admin/services/airconnect-manager/settings']?.action?.type === 'alias' &&
+		menu['admin/services/airconnect-manager/settings']?.action?.path === 'admin/services/airbridge/settings',
+		'old settings URL aliases to the AirBridge settings page');
 }
 
 /**

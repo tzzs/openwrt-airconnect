@@ -4,7 +4,7 @@
 'require ui';
 'require poll';
 
-// Shared loader for the two AirConnect LuCI views.
+// Shared loader for the two AirBridge LuCI views.
 //
 // The page is a React + shadcn/ui bundle (app.js + app.css) built from
 // frontend/ by `npm run build`. Neither file is committed: they are produced
@@ -23,19 +23,19 @@ var appPromise = null;
 function loadApp() {
 	if (appPromise) return appPromise;
 	appPromise = new Promise(function (resolve, reject) {
-		if (window.AirConnectApp && typeof window.AirConnectApp.mount === 'function') {
-			resolve(window.AirConnectApp);
+		if (window.AirBridgeApp && typeof window.AirBridgeApp.mount === 'function') {
+			resolve(window.AirBridgeApp);
 			return;
 		}
-		var url = L.resource('airconnect-manager/app.js');
+		var url = L.resource('airbridge/app.js');
 		var script = document.createElement('script');
 		script.src = url;
 		script.async = true;
 		script.onload = function () {
-			if (window.AirConnectApp && typeof window.AirConnectApp.mount === 'function')
-				resolve(window.AirConnectApp);
+			if (window.AirBridgeApp && typeof window.AirBridgeApp.mount === 'function')
+				resolve(window.AirBridgeApp);
 			else
-				reject(new Error('app.js loaded but did not define AirConnectApp'));
+				reject(new Error('app.js loaded but did not define AirBridgeApp'));
 		};
 		script.onerror = function () {
 			reject(new Error('could not load ' + url));
@@ -48,7 +48,7 @@ function loadApp() {
 function createRoot(mode) {
 	var root = E('div', { 'class': 'ac-root' });
 	root.appendChild(
-		E('link', { rel: 'stylesheet', href: L.resource('airconnect-manager/app.css') })
+		E('link', { rel: 'stylesheet', href: L.resource('airbridge/app.css') })
 	);
 	var mountNode = E('div', { 'class': 'ac-app' });
 	root.appendChild(mountNode);
@@ -67,7 +67,7 @@ function createRoot(mode) {
 		.catch(function (error) {
 			mountNode.appendChild(
 				E('p', { 'class': 'ac-load-error' },
-					'Failed to load the AirConnect UI: ' +
+					'Failed to load the AirBridge UI: ' +
 					(error && error.message ? error.message : String(error)))
 			);
 		});

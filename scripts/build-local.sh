@@ -170,7 +170,7 @@ FRONTEND_DIR="${root}/packages/luci-app-airconnect-manager/frontend"
 	npm ci
 	npm run build
 )
-BUNDLE_DIR="${root}/packages/luci-app-airconnect-manager/htdocs/luci-static/resources/airconnect-manager"
+BUNDLE_DIR="${root}/packages/luci-app-airconnect-manager/htdocs/luci-static/resources/airbridge"
 [ -f "$BUNDLE_DIR/app.js" ]  || die "frontend build did not produce app.js"
 [ -f "$BUNDLE_DIR/app.css" ] || die "frontend build did not produce app.css"
 

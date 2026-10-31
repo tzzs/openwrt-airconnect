@@ -3,7 +3,7 @@
 'require rpc';
 'require ui';
 'require poll';
-'require view.airconnect-manager.common as common';
+'require view.airbridge.common as common';
 
 // The global configuration, as its own page.
 // See common.js for the shared bundle loader and the app's mode switch.

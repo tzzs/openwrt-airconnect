@@ -1,4 +1,4 @@
-# OpenWrt AirConnect
+# OpenWrt AirBridge
 
 <div align="center">
 
@@ -8,9 +8,13 @@ English Version | [中文版本](README.zh-CN.md)
 
 ---
 
-A standalone OpenWrt/iStoreOS adaptation project directly targeting [philippe44/AirConnect](https://github.com/philippe44/AirConnect). The native engine handles audio bridging, while this project maintains packaging, service management, configuration conversion, and the LuCI interface.
+AirBridge is a standalone OpenWrt/iStoreOS adaptation project directly targeting [philippe44/AirConnect](https://github.com/philippe44/AirConnect). The native engine handles audio bridging, while AirBridge maintains packaging, service management, configuration conversion, and the LuCI interface.
 
-This project uses an independent Git history and is not developed as a fork of `sbwml/luci-app-airconnect`. It serves as a reference for OpenWrt packaging approaches. See [Architecture Decisions](docs/ARCHITECTURE.en-US.md).
+AirBridge uses an independent Git history and is not developed as a fork of `sbwml/luci-app-airconnect`. It serves as a reference for OpenWrt packaging approaches. See [Architecture Decisions](docs/ARCHITECTURE.en-US.md).
+
+## Naming
+
+The product is **AirBridge** (隔空音箱 in Chinese). The internal identifiers intentionally keep their historical `airconnect` spelling: the UCI configuration is still named `airconnect-manager` and the rpcd object is still `airconnect.manager`. This lets devices that already have the previous packages installed upgrade in place without losing settings; those names are compatibility identifiers, not a missed rename.
 
 ## Current Status
 

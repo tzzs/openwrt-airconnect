@@ -28,7 +28,7 @@ function message(error) {
 }
 
 /**
- * The AirConnect application.
+ * The AirBridge application.
  *
  * `context.mode` decides which page this is: 'overview' is the device
  * workspace, 'settings' is the global configuration. Both are the same

@@ -42,7 +42,8 @@ const HERE = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(HERE, '..');
 const PKG = join(ROOT, 'packages/luci-app-airconnect-manager');
 const FRONTEND = join(PKG, 'frontend/src');
-const VIEWS = join(PKG, 'htdocs/luci-static/resources/view/airconnect-manager');
+const VIEWS = join(PKG, 'htdocs/luci-static/resources/view/airbridge');
+const MENU = join(PKG, 'root/usr/share/luci/menu.d');
 const POT = join(PKG, 'po/templates/airconnect-manager.pot');
 const PO = join(PKG, 'po/zh_Hans/airconnect-manager.po');
 const TABLE = join(FRONTEND, 'lib/i18n.js');
@@ -123,7 +124,7 @@ function escape(value) {
 
 function renderHeader(extra) {
 	return [
-		'# AirConnect Manager translation template.',
+		'# AirBridge translation template.',
 		'# This file is distributed under the same license as the package.',
 		'#',
 		'msgid ""',
@@ -158,6 +159,19 @@ for (const path of readdirSorted(VIEWS)) {
 		const text = JSON.parse('"' + match[1].replace(/"/g, '\\"') + '"');
 		if (!strings.has(text)) strings.set(text, []);
 		strings.get(text).push(rel);
+	}
+}
+
+// LuCI translates menu titles through the same global catalog as view text.
+// Include this package's titles so the Chinese menu does not lag behind the
+// product name shown inside the React application.
+for (const path of readdirSorted(MENU)) {
+	if (!path.endsWith('.json')) continue;
+	const full = join(MENU, path);
+	const menu = JSON.parse(readFileSync(full, 'utf8'));
+	for (const spec of Object.values(menu)) {
+		if (!spec.title || strings.has(spec.title)) continue;
+		strings.set(spec.title, [relative(PKG, full).split('\\').join('/')]);
 	}
 }
 

@@ -327,7 +327,7 @@ if grep -qx 'PKG_LICENSE:=MIT' "${makefile}"; then
 else
 	no 'recipe declares PKG_LICENSE MIT' 'missing license'
 fi
-if grep -qx 'PKG_MAINTAINER:=AirConnect OpenWrt maintainers' "${makefile}"; then
+if grep -qx 'PKG_MAINTAINER:=AirBridge OpenWrt maintainers' "${makefile}"; then
 	ok 'recipe has a non-personal maintainer line'
 else
 	no 'recipe has a non-personal maintainer line' 'missing or personal maintainer'
@@ -342,7 +342,7 @@ if grep -Eq '^[[:space:]]*SECTION:=utils$' "${makefile}" && grep -Eq '^[[:space:
 else
 	no 'recipe uses SECTION utils and CATEGORY Utilities' 'wrong section or category'
 fi
-if grep -Eq '^[[:space:]]*TITLE:=AirConnect management adapter$' "${makefile}"; then
+if grep -Eq '^[[:space:]]*TITLE:=AirBridge management adapter$' "${makefile}"; then
 	ok 'recipe uses the documented TITLE'
 else
 	no 'recipe uses the documented TITLE' 'wrong title'

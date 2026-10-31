@@ -59,10 +59,10 @@ var ui={addNotification:function(title,node){document.getElementById('notices').
 var L={bind:function(fn,ctx){return fn.bind(ctx);},resource:function(path){return '/packages/luci-app-airconnect-manager/htdocs/luci-static/resources/'+path;}};
 var translate=function(s){return s;};
 function source(path){return fetch(path).then(function(r){return r.text();});}
-// LuCI's loader resolves `'require airconnect-manager.rules as rules'`; here the
+// LuCI's loader resolves `'require airbridge.rules as rules'`; here the
 // same static resource is evaluated in a shim and passed in as an argument.
-var rulesSource=source('/packages/luci-app-airconnect-manager/htdocs/luci-static/resources/airconnect-manager/rules.js');
-var viewSource=source('/packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airconnect-manager/overview.js');
+var rulesSource=source('/packages/luci-app-airconnect-manager/htdocs/luci-static/resources/airbridge/rules.js');
+var viewSource=source('/packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airbridge/overview.js');
 Promise.all([rulesSource,viewSource]).then(function(sources){var rules=new Function('_','module',sources[0]+'\nreturn module.exports;')(translate,{exports:{}});
 var instance=new Function('view','form','uci','rpc','ui','poll','L','E','_','rules',sources[1])({extend:function(o){return o;}},{Map:Map,NamedSection:'named',Flag:'flag',Value:'value',ListValue:'list'},uci,rpc,ui,poll,L,E,translate,rules);window.airconnectDemo={view:instance,uci:uci,status:status,calls:calls,data:data,rules:rules};return instance.load().then(function(r){return instance.render(r);}).then(function(node){document.getElementById('app').replaceChildren(node);['save','apply','reset'].forEach(function(id){document.getElementById(id).onclick=function(){var fn=id==='save'?'handleSave':id==='apply'?'handleSaveApply':'handleReset';Promise.resolve(instance[fn]()).catch(function(){});};});});}).catch(function(error){document.getElementById('app').textContent=error.stack;});
 })();

@@ -1,5 +1,5 @@
 /**
- * Theme state for the AirConnect workspace: light / dark / system.
+ * Theme state for the AirBridge workspace: light / dark / system.
  *
  * Storage mirrors the i18n preference pattern: a single string under
  * `airconnect.theme`. `system` defers to the OS via `prefers-color-scheme`,

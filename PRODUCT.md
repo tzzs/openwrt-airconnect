@@ -1,4 +1,4 @@
-# AirConnect LuCI 增强版
+# 隔空音箱 (AirBridge) LuCI 增强版
 
 ## Register
 
@@ -10,7 +10,7 @@ product
 
 ## Product Purpose
 
-将 AirConnect 原生配置能力转化为可理解、可回退的 LuCI 管理体验。区分服务运行、设备发现、AirPlay 广播和实际播放；设置保存、服务重启和升级保留必须一致。
+将上游 AirConnect 的原生配置能力转化为可理解、可回退的 AirBridge LuCI 管理体验。区分服务运行、设备发现、AirPlay 广播和实际播放；设置保存、服务重启和升级保留必须一致。
 
 ## Brand Personality
 

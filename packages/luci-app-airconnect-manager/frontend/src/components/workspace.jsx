@@ -59,7 +59,7 @@ function HealthStrip({ status, presentation, t }) {
 	];
 
 	return (
-		<div className="ac-strip" aria-label={_('AirConnect health overview')}>
+		<div className="ac-strip" aria-label={_('AirBridge health overview')}>
 			{items.map((item) => {
 				const Icon = item.icon;
 				return (
@@ -245,7 +245,7 @@ export function Workspace({
 						{_('Changes are kept locally until you save.')}
 					</span>
 					<span className="ac-footer-version">
-						{_('AirConnect Manager')}
+						{_('AirBridge')}
 						{status && status.version
 							? ' · ' + status.version
 							: ' · ' + _('Version unknown')}

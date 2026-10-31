@@ -1,4 +1,4 @@
-# AirConnect Manager translation template.
+# AirBridge translation template.
 # This file is distributed under the same license as the package.
 #
 msgid ""
@@ -30,11 +30,11 @@ msgid "Advanced"
 msgstr ""
 
 #: frontend/src/components/workspace.jsx
-msgid "AirConnect Manager"
+msgid "AirBridge"
 msgstr ""
 
 #: frontend/src/components/workspace.jsx
-msgid "AirConnect health overview"
+msgid "AirBridge health overview"
 msgstr ""
 
 #: frontend/src/lib/presentation.js
@@ -480,6 +480,10 @@ msgstr ""
 
 #: frontend/src/components/device.jsx
 msgid "Set up this speaker"
+msgstr ""
+
+#: root/usr/share/luci/menu.d/luci-app-airconnect-manager.json
+msgid "Settings"
 msgstr ""
 
 #: frontend/src/components/service-panel.jsx

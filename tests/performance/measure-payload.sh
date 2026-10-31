@@ -8,7 +8,7 @@
 #
 # What is measured
 # ----------------
-# Everything the browser must fetch before the AirConnect page can render:
+# Everything the browser must fetch before the AirBridge page can render:
 #
 #   packages/luci-app-airconnect-manager/htdocs/luci-static/resources/**
 #       installed as /www/luci-static/resources/** by feeds/luci/luci.mk
@@ -54,9 +54,9 @@
 #
 # Per-file caps, same rule (measured value in the comment):
 #
-#   airconnect-manager/app.js          332,713 B -> 720,896 (704 KiB)
-#   airconnect-manager/app.css          35,374 B ->  40,960 (40 KiB, +16 %)
-#   view/airconnect-manager/overview.js   3,051 B ->   8,192 (8 KiB)
+#   airbridge/app.js                   332,713 B -> 720,896 (704 KiB)
+#   airbridge/app.css                   35,374 B ->  40,960 (40 KiB, +16 %)
+#   view/airbridge/overview.js           3,051 B ->   8,192 (8 KiB)
 #   menu.d / acl.d JSON                    265/358 B -> 2,048 (2 KiB)
 #   any other file                                     32,768 (32 KiB)
 #
@@ -87,9 +87,9 @@ DEFAULT_FILE_CAP=32768
 
 cap_for() {
 	case "$1" in
-		*/airconnect-manager/app.js) printf '720896\n' ;;
-		*/airconnect-manager/app.css) printf '40960\n' ;;
-		*/view/airconnect-manager/overview.js) printf '8192\n' ;;
+		*/airbridge/app.js) printf '720896\n' ;;
+		*/airbridge/app.css) printf '40960\n' ;;
+		*/view/airbridge/overview.js) printf '8192\n' ;;
 		*/luci/menu.d/*.json) printf '2048\n' ;;
 		*/rpcd/acl.d/*.json) printf '2048\n' ;;
 		*) printf '%s\n' "${DEFAULT_FILE_CAP}" ;;

@@ -1,10 +1,10 @@
 /**
- * The two AirConnect pages, and how to move between them.
+ * The two AirBridge pages, and how to move between them.
  *
  * LuCI serves both from the same view path, one level apart:
  *
- *   /…/admin/services/airconnect-manager/           the device workspace
- *   /…/admin/services/airconnect-manager/settings   the global settings
+ *   /…/admin/services/airbridge/           the device workspace
+ *   /…/admin/services/airbridge/settings   the global settings
  *
  * The prefix before that is the dispatcher path (`/cgi-bin/luci` by default,
  * but any string is allowed), so it is never hardcoded: each URL is derived

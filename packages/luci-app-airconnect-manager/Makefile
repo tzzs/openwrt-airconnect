@@ -6,7 +6,7 @@ PKG_NAME:=luci-app-airconnect-manager
 PKG_VERSION:=0.1.0
 PKG_RELEASE:=1
 
-LUCI_TITLE:=LuCI support for AirConnect Manager
+LUCI_TITLE:=LuCI support for AirBridge
 LUCI_DEPENDS:=+airconnect-manager +luci-base
 LUCI_PKGARCH:=all
 PKG_LICENSE:=MIT

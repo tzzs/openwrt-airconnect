@@ -5,7 +5,7 @@ import { LANGUAGES } from '../lib/i18n.js';
 import { THEMES } from '../lib/theme.js';
 
 /**
- * The chrome both AirConnect pages share: the product lockup, the status
+ * The chrome both AirBridge pages share: the product lockup, the status
  * readout, the language and theme switches, and the save actions.
  *
  * It lives here rather than in either page because the two pages are the same
@@ -55,8 +55,8 @@ export function PageChrome({
 						<Activity />
 					</div>
 					<div>
-						<strong>AirConnect</strong>
-						<span>{t('Speaker bridge')}</span>
+						<strong>AirBridge</strong>
+						<span>{t('AirPlay bridge')}</span>
 					</div>
 				</div>
 

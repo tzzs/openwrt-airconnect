@@ -1,4 +1,4 @@
-// Built-in i18n for the AirConnect Manager frontend.
+// Built-in i18n for the AirBridge frontend.
 //
 // The LuCI view (`overview.js`) hands its `_` to the React app via
 // `context.translate`; that is the server-side translation (the compiled
@@ -39,8 +39,8 @@ export const ZH = {
 	'Advanced': '高级',
 	'Advanced audio settings': '高级音频设置',
 	'Advanced settings': '高级设置',
-	'AirConnect Manager': 'AirConnect 管理器',
-	'AirConnect health overview': 'AirConnect 健康概览',
+	'AirBridge': '隔空音箱',
+	'AirBridge health overview': '隔空音箱健康概览',
 	'AirPlay advertised': '已广播 AirPlay',
 	'AirPlay bridge': 'AirPlay 桥接',
 	'AirPlay broadcast': 'AirPlay 广播',
@@ -199,8 +199,8 @@ export const ZH = {
 	'Service stopped': '服务已停止',
 	'Set the AirPlay name and volume for each speaker.': '为每个音箱设置 AirPlay 名称和音量。',
 	'Set up this speaker': '设置此音箱',
+	'Settings': '设置',
 	'Signal report': '信号报告',
-	'Speaker bridge': '音箱桥接',
 	'Speakers': '音箱',
 	'Start': '启动',
 	'Start a discovery scan to see compatible UPnP and Chromecast speakers. They will appear here with a separate profile for each receiver.': '开始发现扫描以查找兼容的 UPnP 和 Chromecast 音箱。每个接收器都会以独立配置显示在这里。',

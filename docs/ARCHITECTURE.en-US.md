@@ -10,7 +10,7 @@
 
 ## Overview
 
-This document describes the architectural decisions for the OpenWrt AirConnect project, focusing on the packaging approach that separates concerns between native binary distribution, service management, and user interface.
+This document describes the architectural decisions for the OpenWrt AirBridge project, focusing on the packaging approach that separates concerns between native binary distribution, service management, and user interface.
 
 ## Core Principles
 
@@ -220,7 +220,7 @@ The system tracks four distinct states independently:
 
 ## 概述
 
-本文档描述 OpenWrt AirConnect 项目的架构决策，重点在于包装方法，在原生二进制分发、服务管理和用户界面之间分离关注点。
+本文档描述 OpenWrt AirBridge 项目的架构决策，重点在于包装方法，在原生二进制分发、服务管理和用户界面之间分离关注点。
 
 ## 核心原则
 

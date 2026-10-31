@@ -9,7 +9,7 @@ PKG_RELEASE:=1
 
 # Adapter only: nothing is downloaded, ./files is the whole payload.
 PKG_LICENSE:=MIT
-PKG_MAINTAINER:=AirConnect OpenWrt maintainers
+PKG_MAINTAINER:=AirBridge OpenWrt maintainers
 
 PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
 
@@ -18,7 +18,7 @@ include $(INCLUDE_DIR)/package.mk
 define Package/airconnect-manager
   SECTION:=utils
   CATEGORY:=Utilities
-  TITLE:=AirConnect management adapter
+  TITLE:=AirBridge management adapter
   URL:=https://github.com/philippe44/AirConnect
   DEPENDS:=@(aarch64||x86_64) +airconnect-engine +ucode +ucode-mod-fs +ucode-mod-socket +ucode-mod-ubus +ucode-mod-uci +rpcd +rpcd-mod-ucode +curl
 endef

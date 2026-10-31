@@ -8,7 +8,7 @@ set -o pipefail
 here=$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd)
 root=$(CDPATH='' cd -- "${here}/../.." && pwd)
 app="${root}/packages/luci-app-airconnect-manager"
-view="${app}/htdocs/luci-static/resources/view/airconnect-manager/overview.js"
+view="${app}/htdocs/luci-static/resources/view/airbridge/overview.js"
 pot="${app}/po/templates/airconnect-manager.pot"
 po="${app}/po/zh_Hans/airconnect-manager.po"
 passed=0

@@ -2,12 +2,12 @@
 
 ## Summary
 
-This directory contains a complete React 18 + shadcn/ui implementation of the AirConnect Manager LuCI page. The app is built with Vite (IIFE bundle) and deployed alongside the existing `overview.js` thin loader. The rewrite keeps every feature from the original hand-written view while moving validation rules, presentation text, field descriptors and poll logic into plain ES modules that host tests can drive without a DOM.
+This directory contains a complete React 18 + shadcn/ui implementation of the AirBridge LuCI page. The app is built with Vite (IIFE bundle) and deployed alongside the existing `overview.js` thin loader. The rewrite keeps every feature from the original hand-written view while moving validation rules, presentation text, field descriptors and poll logic into plain ES modules that host tests can drive without a DOM.
 
 ## Files
 
 - `package.json`: React 18, Vite 5, Tailwind CSS 3, Radix UI components, shadcn utilities
-- `vite.config.mjs`: IIFE library build, global `AirConnectApp` export, renamed `app.css`/`app.js`
+- `vite.config.mjs`: IIFE library build, global `AirBridgeApp` export, renamed `app.css`/`app.js`
 - `tailwind.config.mjs`, `postcss.config.mjs`: scoped tokens on `.ac-root`, no preflight
 - `src/styles.css`: dark/light tokens, `[hidden]` support, base reset
 - `src/lib/*.js`:
@@ -26,7 +26,7 @@ This directory contains a complete React 18 + shadcn/ui implementation of the Ai
 - `src/components/diagnostics.jsx`: DiagnosticsPanel using `lib/presentation`
 - `src/components/speakers.jsx`: DeviceCard + SpeakersPanel, device-level overrides
 - `src/App.jsx`: state orchestration, polling loop via `createPoller`, save/apply hooks handed to the view
-- `src/main.jsx`: mount container, expose `{mount,save,saveApply}`, register `window.AirConnectApp = {mount}`
+- `src/main.jsx`: mount container, expose `{mount,save,saveApply}`, register `window.AirBridgeApp = {mount}`
 
 ## Design Decisions
 
@@ -84,7 +84,7 @@ bash tests/performance/measure-payload.sh # OK 5 files, 201 KiB gzip
 ```bash
 cd packages/luci-app-airconnect-manager/frontend
 npm ci && npm run build
-# → htdocs/luci-static/resources/airconnect-manager/app.js, app.css
+# → htdocs/luci-static/resources/airbridge/app.js, app.css
 ```
 
 In CI, add `npm ci && npm run build` before SDK packaging. In local builds, scripts/build-local.sh should invoke this step.
@@ -95,7 +95,7 @@ In CI, add `npm ci && npm run build` before SDK packaging. In local builds, scri
 2. Regenerate translation catalogs and merge translations.
 3. Wire the build into CI (release.yml, build-local.sh).
 4. Add `.gitignore` for `frontend/node_modules` and generated files.
-5. Remove `manager.css` and `htdocs/luci-static/resources/airconnect-manager/rules.js` (already deleted).
+5. Remove `manager.css` and `htdocs/luci-static/resources/airbridge/rules.js` (already deleted).
 6. Push and PR, then update the iStoreOS device version.
 
 Co-Authored-By: Claude Code <noreply@anthropic.com>

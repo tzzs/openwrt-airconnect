@@ -230,13 +230,13 @@ statically linked, no section header`，即上游静态构建，不依赖路由�
 ```
 /usr/share/luci/menu.d/luci-app-airconnect-manager.json
 /usr/share/rpcd/acl.d/luci-app-airconnect-manager.json
-/www/luci-static/resources/airconnect-manager/manager.css
-/www/luci-static/resources/airconnect-manager/rules.js
-/www/luci-static/resources/view/airconnect-manager/overview.js
+/www/luci-static/resources/airbridge/manager.css
+/www/luci-static/resources/airbridge/rules.js
+/www/luci-static/resources/view/airbridge/overview.js
 ```
 
-`rules.js` 落在 `/www/luci-static/resources/airconnect-manager/rules.js`，正是视图里
-`'require airconnect-manager.rules'` 需要的路径（luci.mk 整体安装 `htdocs/`，未逐文件列举，
+`rules.js` 落在 `/www/luci-static/resources/airbridge/rules.js`，正是视图里
+`'require airbridge.rules'` 需要的路径（luci.mk 整体安装 `htdocs/`，未逐文件列举，
 故没有被漏掉）。
 
 ### 构建过程中修复的两个真实配方缺陷
@@ -461,7 +461,7 @@ _services._dns-sd._udp.local. PTR _raop._tcp.local.
   与 `VERSION`、`usr/share/rpcd/ucode/airconnect-manager`；`conffiles` 正确声明
   `/etc/config/airconnect-manager`。
 - `luci-app-airconnect-manager`：`menu.d` 与 `acl.d` 的 JSON、`manager.css`、`rules.js`、
-  `view/airconnect-manager/overview.js`。
+  `view/airbridge/overview.js`。
 
 ### 构建过程中定位并修掉的两个真实缺陷
 
@@ -504,7 +504,7 @@ overlay 剩余约 1.1 GB。安装前设备上已装并运行着旧包 `airconnec
 - **`action` 的安全闸门生效**：`action {"action":"start"}` 返回
   `ok:false`、`error:"Conflicting AirConnect instance detected"`，且 `pgrep` 确认没有新引擎进程。
 - **`logs`**：返回空 `lines` 与 `truncated:false`。
-- **LuCI 静态资源可访问**：`http://127.0.0.1/luci-static/resources/view/airconnect-manager/overview.js`
+- **LuCI 静态资源可访问**：`http://127.0.0.1/luci-static/resources/view/airbridge/overview.js`
   返回 HTTP 200（24900 字节），`rules.js` 同样 200；`menu.d` 与 `acl.d` 的 JSON 经 `jsonfilter` 解析通过。
 - **安装没有干扰旧服务**：旧 `airconnect` 仍 enabled 且 running（PID 27874），
   新服务 `enabled=0`、未运行，两套没有同时广播。
@@ -614,11 +614,11 @@ overlay 剩余约 1.1 GB。安装前设备上已装并运行着旧包 `airconnec
 ### 真正验证过的
 
 - 四个包（engine、manager、LuCI、中文翻译）用 `apk add --allow-untrusted` 装完后，
-  在登录会话里打开 `/cgi-bin/luci/admin/services/airconnect-manager`，页面正常渲染：
+  在登录会话里打开 `/cgi-bin/luci/admin/services/airbridge`，页面正常渲染：
   三个标签页（音箱 / 设置 / 网络诊断）都能切换，设置页 16 个字段全部出现，诊断页三个服务按钮和
   日志按钮都在；
 - 中文翻译生效：页面文案、标签、空状态提示都是中文，`airconnect-manager.zh-cn.lmo` 被真正加载；
-- 菜单项 `admin/services/airconnect-manager`（标题 `AirConnect`，order 60）出现在“服务”下；
+- 菜单项 `admin/services/airbridge`（标题 `AirBridge`，子项 `Settings`，order 60）出现在“服务”下；
 - 页面里的状态与服务端一致：`UPnP: 运行中`、`Chromecast: 已禁用`、`conflicts` 为空时警告条不显示。
 
 ### 发现并修掉的缺陷：`rules.js` 不是 LuCI 类
@@ -627,7 +627,7 @@ overlay 剩余约 1.1 GB。安装前设备上已装并运行着旧包 `airconnec
 
 ```text
 TypeError
-"airconnect-manager.rules" factory yields invalid constructor
+"airbridge.rules" factory yields invalid constructor
 ```
 
 根因在 LuCI 的 `require`（`/www/luci-static/resources/luci.js`）：它不是通用模块加载器，而是
