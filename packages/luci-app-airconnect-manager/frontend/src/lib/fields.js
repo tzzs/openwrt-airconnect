@@ -26,6 +26,10 @@
 const CODEC_VALUES = ['flac', 'pcm', 'wav', 'mp3', 'aac'];
 const LOG_LEVELS = ['error', 'warn', 'info', 'debug'];
 
+export function fieldValue(field, value) {
+	return value == null && !field.inherit ? field.defaultValue : value;
+}
+
 export function createFields(t) {
 	const _ = typeof t === 'function' ? t : function (s) { return s; };
 
@@ -55,6 +59,7 @@ export function createFields(t) {
 			kind: 'flag',
 			label,
 			description: description || '',
+			defaultValue: fallback,
 			inherit,
 			values,
 			// A per-device flag cannot be a plain on/off switch: empty means
@@ -66,7 +71,7 @@ export function createFields(t) {
 		};
 	}
 
-	function text(name, label, description, rule, placeholder, inherit) {
+	function text(name, label, description, rule, placeholder, inherit, defaultValue) {
 		return {
 			name,
 			kind: 'text',
@@ -74,11 +79,12 @@ export function createFields(t) {
 			description: description || '',
 			rule: rule || null,
 			placeholder: placeholder || '',
+			defaultValue,
 			inherit: inherit === true
 		};
 	}
 
-	function select(name, label, description, options, rule, inherit) {
+	function select(name, label, description, options, rule, inherit, defaultValue) {
 		return {
 			name,
 			kind: 'select',
@@ -86,6 +92,7 @@ export function createFields(t) {
 			description: description || '',
 			options,
 			rule: rule || null,
+			defaultValue,
 			inherit: inherit === true
 		};
 	}
@@ -96,11 +103,12 @@ export function createFields(t) {
 	// panel changing shape with whichever speaker happened to render first.
 	const main = [
 		flag('enabled', _('Enable AirConnect'),
-			_('Changes take effect after Save & Apply. Applying briefly disconnects AirPlay.')),
+			_('Changes take effect after Save & Apply. Applying briefly disconnects AirPlay.'),
+			{ fallback: '0' }),
 		text('interface', _('LAN interface'),
 			_('Bind discovery and AirPlay to your local network interface.'), 'interfaceValue'),
 		flag('airupnp', _('UPnP / DLNA speakers')),
-		flag('aircast', _('Chromecast speakers')),
+		flag('aircast', _('Chromecast speakers'), '', { fallback: '0' }),
 		text('max_volume', _('UPnP volume limit'),
 			_('Default maximum volume, from 1 to 100.'), 'upnpVolume', '100'),
 		text('media_volume', _('Chromecast media volume'),
@@ -113,7 +121,7 @@ export function createFields(t) {
 			_('Sends the title and artist to the speaker. Both engines read this. A speaker may still show nothing.')),
 		text('artwork', _('Cover art URL'),
 			_('Optional http:// or https:// image the speaker fetches itself. Leave empty for none. The router never downloads it.'),
-			'artwork', 'https://…'),
+			'artwork', 'https://…', false, '', ''),
 		flag('flush', _('Handle FLUSH'),
 			_('Compatibility option, both engines. Turning it off can change pause and track-change behaviour, so keep it on unless a speaker misbehaves.')),
 		flag('drift', _('Let the timing reference drift'),
@@ -121,10 +129,10 @@ export function createFields(t) {
 			{ fallback: '0' }),
 		select('http_length', _('HTTP transfer mode (UPnP only)'),
 			_('Compatibility only. Change this when a UPnP speaker cannot play at all; the default works for most devices.'),
-			httpLength, 'httpLength'),
+			httpLength, 'httpLength', false, '-1', '-1'),
 		select('upnp_max', _('UPnP search version (UPnP only)'),
 			_('Highest UPnP MediaRenderer version to search. The Chromecast engine ignores this.'),
-			upnpVersions, 'upnpMax'),
+			upnpVersions, 'upnpMax', false, '1', '1'),
 		flag('stop_receiver', _('Stop the receiver (Chromecast only)'),
 			_('Chromecast compatibility option. The UPnP engine ignores this.'), { fallback: '0' }),
 		select('log_level', _('Log detail'), '', logLevels, 'logLevel')

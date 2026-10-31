@@ -342,7 +342,7 @@ if grep -Eq '^[[:space:]]*SECTION:=utils$' "${makefile}" && grep -Eq '^[[:space:
 else
 	no 'recipe uses SECTION utils and CATEGORY Utilities' 'wrong section or category'
 fi
-if grep -Eq '^[[:space:]]*TITLE:=AirBridge management adapter$' "${makefile}"; then
+if grep -Fqx '  TITLE:=隔空音箱 · AirBridge' "${makefile}"; then
 	ok 'recipe uses the documented TITLE'
 else
 	no 'recipe uses the documented TITLE' 'wrong title'

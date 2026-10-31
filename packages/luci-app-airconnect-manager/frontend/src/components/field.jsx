@@ -1,5 +1,6 @@
 import * as React from 'react';
 
+import { fieldValue } from '../lib/fields.js';
 import { Input } from './ui/input.jsx';
 import { Label } from './ui/label.jsx';
 import { Switch } from './ui/switch.jsx';
@@ -33,11 +34,12 @@ function fromControl(value) {
  */
 export function Field({ field, value, onChange, rules, idPrefix, inheritLabel }) {
 	const id = idPrefix + '-' + field.name;
+	const effectiveValue = fieldValue(field, value);
 	const rule = field.rule && rules ? rules[field.rule] : null;
 	// An inheriting field accepts an empty value by definition; the rule only
 	// applies once the user overrides it.
-	const message = rule && !(field.inherit && (value == null || value === ''))
-		? rule(value)
+	const message = rule && !(field.inherit && (effectiveValue == null || effectiveValue === ''))
+		? rule(effectiveValue)
 		: true;
 	const invalid = typeof message === 'string';
 
@@ -51,25 +53,25 @@ export function Field({ field, value, onChange, rules, idPrefix, inheritLabel })
 
 	if (field.kind === 'flag' && !field.inherit) {
 		return (
-			<div className="flex items-center justify-between gap-4 rounded-lg border border-border p-3">
-				<div className="space-y-0.5">
-					<Label htmlFor={id} className="cursor-pointer">{field.label}</Label>
-					{description}
+			<div className="ac-field-stack">
+				<Label htmlFor={id}>{field.label}</Label>
+				<div className="ac-field-control">
+					<Switch
+						id={id}
+						checked={(effectiveValue ?? field.values[0]) === '1'}
+						onCheckedChange={(checked) => onChange(checked ? '1' : '0')}
+					/>
 				</div>
-				<Switch
-					id={id}
-					checked={value === '1'}
-					onCheckedChange={(checked) => onChange(checked ? '1' : '0')}
-				/>
+				{description}
 			</div>
 		);
 	}
 
 	if (field.kind === 'flag' || field.kind === 'select') {
 		return (
-			<div className="space-y-1.5">
+			<div className="ac-field-stack">
 				<Label htmlFor={id}>{field.label}</Label>
-				<Select value={toControl(value)} onValueChange={(next) => onChange(fromControl(next))}>
+				<Select value={toControl(effectiveValue)} onValueChange={(next) => onChange(fromControl(next))}>
 					<SelectTrigger id={id} aria-invalid={invalid ? 'true' : undefined}>
 						<SelectValue />
 					</SelectTrigger>
@@ -86,11 +88,11 @@ export function Field({ field, value, onChange, rules, idPrefix, inheritLabel })
 	}
 
 	return (
-		<div className="space-y-1.5">
+		<div className="ac-field-stack">
 			<Label htmlFor={id}>{field.label}</Label>
 			<Input
 				id={id}
-				value={value ?? ''}
+				value={effectiveValue ?? ''}
 				placeholder={field.placeholder || ''}
 				aria-invalid={invalid ? 'true' : undefined}
 				onChange={(event) => onChange(event.target.value)}

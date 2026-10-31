@@ -1021,8 +1021,21 @@
 	min-width: 0;
 }
 
-.ac-form-grid > .space-y-1\.5 {
+.ac-form-grid > .ac-field-stack {
 	min-width: 0;
+}
+
+.ac-field-stack {
+	display: flex;
+	flex-direction: column;
+	gap: 0.375rem;
+	min-width: 0;
+}
+
+.ac-field-control {
+	align-items: center;
+	display: flex;
+	height: 34px;
 }
 
 .ac-form-grid label {

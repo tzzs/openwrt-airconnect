@@ -18,7 +18,7 @@ include $(INCLUDE_DIR)/package.mk
 define Package/airconnect-manager
   SECTION:=utils
   CATEGORY:=Utilities
-  TITLE:=AirBridge management adapter
+  TITLE:=隔空音箱 · AirBridge
   URL:=https://github.com/philippe44/AirConnect
   DEPENDS:=@(aarch64||x86_64) +airconnect-engine +ucode +ucode-mod-fs +ucode-mod-socket +ucode-mod-ubus +ucode-mod-uci +rpcd +rpcd-mod-ucode +curl
 endef

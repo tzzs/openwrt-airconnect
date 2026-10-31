@@ -655,3 +655,7 @@ msgstr "已观测"
 #: frontend/src/components/workspace.jsx
 msgid "speakers discovered"
 msgstr "已发现音箱"
+
+#: root/usr/share/luci/menu.d/luci-app-airconnect-manager.json
+msgid "隔空音箱 · AirBridge"
+msgstr ""

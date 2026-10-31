@@ -23,7 +23,7 @@ import { fileURLToPath } from 'node:url';
 const HERE = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(HERE, '..', '..');
 const FRONTEND_SRC = join(ROOT, 'packages/luci-app-airconnect-manager/frontend/src');
-const { createFields } = await import(new URL(
+const { createFields, fieldValue } = await import(new URL(
 	'../../packages/luci-app-airconnect-manager/frontend/src/lib/fields.js', import.meta.url));
 const INTERFACES = await import(new URL(
 	'../../packages/luci-app-airconnect-manager/frontend/src/lib/interfaces.js', import.meta.url));
@@ -158,6 +158,20 @@ function main() {
 		'the metadata flag writes 1 then 0', JSON.stringify(mainPanel.metadata.values));
 	check(JSON.stringify(mainPanel.drift.values) === JSON.stringify(['0', '1']),
 		'the drift flag lists its default (0) first', JSON.stringify(mainPanel.drift.values));
+	check(fieldValue(mainPanel.enabled, undefined) === '0' &&
+		fieldValue(mainPanel.airupnp, undefined) === '1' &&
+		fieldValue(mainPanel.aircast, undefined) === '0' &&
+		fieldValue(mainPanel.metadata, undefined) === '1' &&
+		fieldValue(mainPanel.flush, undefined) === '1' &&
+		fieldValue(mainPanel.drift, undefined) === '0' &&
+		fieldValue(mainPanel.artwork, undefined) === '' &&
+		fieldValue(mainPanel.http_length, undefined) === '-1' &&
+		fieldValue(mainPanel.upnp_max, undefined) === '1' &&
+		fieldValue(mainPanel.stop_receiver, undefined) === '0',
+		'missing global compatibility options display the backend defaults');
+	check(fieldValue(upnp.metadata, undefined) === undefined &&
+		fieldValue(upnp.drift, '') === '',
+		'per-device empty values stay empty so they continue to inherit global settings');
 	// A device-level http_length must offer the inherit entry before the values.
 	check(upnp.http_length.options[0].value === '' &&
 		upnp.http_length.options.length === 4,
@@ -235,6 +249,12 @@ function navigationSection() {
 	const menu = JSON.parse(readFileSync(join(ROOT,
 		'packages/luci-app-airconnect-manager/root/usr/share/luci/menu.d/' +
 		'luci-app-airconnect-manager.json'), 'utf8'));
+	check(menu['admin/services/airbridge']?.title === '隔空音箱 · AirBridge',
+		'the LuCI menu shows the Chinese and English product names');
+	const luciMakefile = readFileSync(join(ROOT,
+		'packages/luci-app-airconnect-manager/Makefile'), 'utf8');
+	check(luciMakefile.split('\n').includes('LUCI_TITLE:=隔空音箱 · AirBridge'),
+		'the LuCI package index shows the Chinese and English product names');
 	check(menu['admin/services/airconnect-manager']?.action?.type === 'alias' &&
 		menu['admin/services/airconnect-manager']?.action?.path === 'admin/services/airbridge',
 		'old workspace URL aliases to the AirBridge workspace');

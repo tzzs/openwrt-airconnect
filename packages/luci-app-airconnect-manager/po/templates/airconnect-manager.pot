@@ -649,3 +649,7 @@ msgstr ""
 #: frontend/src/components/workspace.jsx
 msgid "speakers discovered"
 msgstr ""
+
+#: root/usr/share/luci/menu.d/luci-app-airconnect-manager.json
+msgid "隔空音箱 · AirBridge"
+msgstr ""
