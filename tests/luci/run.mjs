@@ -27,6 +27,8 @@ const { createFields } = await import(new URL(
 	'../../packages/luci-app-airconnect-manager/frontend/src/lib/fields.js', import.meta.url));
 const INTERFACES = await import(new URL(
 	'../../packages/luci-app-airconnect-manager/frontend/src/lib/interfaces.js', import.meta.url));
+const NAVIGATION = await import(new URL(
+	'../../packages/luci-app-airconnect-manager/frontend/src/lib/navigation.js', import.meta.url));
 
 let passed = 0;
 let failed = 0;
@@ -192,10 +194,43 @@ function main() {
 	}
 
 	interfaceSection(fields);
+	navigationSection();
 	portalSection();
 
 	console.log(passed + ' passed; ' + failed + ' failed');
 	process.exitCode = failed === 0 ? 0 : 1;
+}
+
+/**
+ * The settings page is a second LuCI view, so it needs its own way back. Both
+ * URLs are derived from the current one because the dispatcher prefix
+ * (`/cgi-bin/luci` by default) is not something the app may hardcode.
+ */
+function navigationSection() {
+	section('moving between the two pages');
+	const { parentPageUrl, settingsPageUrl } = NAVIGATION;
+	const base = 'http://192.168.100.1/cgi-bin/luci/admin/services/airconnect-manager';
+
+	check(settingsPageUrl(base) === base + '/settings',
+		'global settings is the workspace URL plus one segment', settingsPageUrl(base));
+	check(settingsPageUrl(base + '/') === base + '/settings',
+		'a trailing slash does not produce a double slash');
+	check(settingsPageUrl(base + '/settings') === base + '/settings',
+		'the settings URL is not appended to itself');
+
+	check(parentPageUrl(base + '/settings') === base,
+		'back returns to the device workspace', parentPageUrl(base + '/settings'));
+	check(parentPageUrl(base + '/settings/') === base,
+		'a trailing slash is ignored');
+	const custom = 'http://router/foo/bar/airconnect-manager';
+	check(parentPageUrl(custom + '/settings') === custom,
+		'a custom dispatcher prefix is kept', parentPageUrl(custom + '/settings'));
+	check(parentPageUrl(base) === base,
+		'a URL that is not the settings page is returned unchanged');
+	check(parentPageUrl('http://router/settings') === 'http://router/',
+		'a bare /settings goes to the root', parentPageUrl('http://router/settings'));
+	check(parentPageUrl(base + '/settings?x=1#top') === base,
+		'the query and the hash do not follow the user back');
 }
 
 /**

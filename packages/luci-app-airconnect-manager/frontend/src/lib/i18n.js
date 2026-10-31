@@ -57,6 +57,7 @@ export const ZH = {
 	'Applying…': '正在应用…',
 	'Audio and compatibility': '音频与兼容性',
 	'Audio defaults': '音频默认值',
+	'Back to devices': '返回设备',
 	'Compatibility': '兼容性',
 	'Audio format': '音频格式',
 	'Bind discovery and AirPlay to your local network interface.': '将发现和 AirPlay 绑定到本地网络接口。',

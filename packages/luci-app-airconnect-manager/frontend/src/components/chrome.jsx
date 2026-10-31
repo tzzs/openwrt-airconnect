@@ -1,4 +1,4 @@
-import { Activity, Monitor, Moon, RefreshCw, RotateCcw, Sun } from 'lucide-react';
+import { Activity, ArrowLeft, Monitor, Moon, RefreshCw, RotateCcw, Sun } from 'lucide-react';
 
 import { Button } from './ui/button.jsx';
 import { LANGUAGES } from '../lib/i18n.js';
@@ -37,6 +37,7 @@ export function PageChrome({
 	onSaveApply,
 	onReset,
 	onRefresh,
+	onBack,
 	extraActions,
 	title,
 	subtitle
@@ -89,6 +90,24 @@ export function PageChrome({
 				 * is not an accessible name.
 				 */}
 				<div className="ac-chrome-actions">
+					{/*
+					 * The settings page is a second LuCI view, not a panel over the
+					 * workspace, so it needs its own way back. It mirrors the
+					 * "Global settings" button in the workspace footer: same
+					 * variant, same size, the other direction.
+					 */}
+					{onBack ? (
+						<Button
+							variant="outline"
+							size="sm"
+							type="button"
+							className="ac-back-button"
+							onClick={onBack}
+						>
+							<ArrowLeft />
+							{t('Back to devices')}
+						</Button>
+					) : null}
 					{extraActions}
 					<div className="ac-preferences" role="group" aria-label="Language">
 						{LANGUAGES.map((entry) => (

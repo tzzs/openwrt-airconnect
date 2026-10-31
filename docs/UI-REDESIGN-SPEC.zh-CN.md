@@ -294,3 +294,11 @@ Radix 把抽屉和下拉菜单 portal 到 `<body>`，而 `.ac-root` 既是 token
 
 刷新只对设备工作台有意义，`PageChrome` 在 settings 页收到 `onRefresh={null}` 时不
 渲染刷新按钮；保存、保存并应用、重置两页都保留。
+
+### 7. 两个页面之间的跳转
+
+设置页是独立的 LuCI view，不是工作台上的浮层，所以它需要自己的返回入口。顶栏操作区
+最左侧新增"← 返回设备"（`variant="outline" size="sm"`），与工作台页脚的"全局设置"
+按钮成对。两个 URL 都由当前地址推导（`lib/navigation.js`），不写死 `/cgi-bin/luci`
+前缀：`settingsPageUrl` 追加一段，`parentPageUrl` 去掉末尾的 `settings`，并丢弃查询串
+和锚点。

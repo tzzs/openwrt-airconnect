@@ -20,6 +20,7 @@ import {
 	interfaceValue,
 	withInterfaceSelect
 } from './lib/interfaces.js';
+import { parentPageUrl, settingsPageUrl } from './lib/navigation.js';
 import { duplicateNames, mergeDevices, readState } from './lib/model.js';
 
 function message(error) {
@@ -429,6 +430,13 @@ export function App({ context }) {
 				onSaveApply={() => withBusy(() => handleSaveApply(false))}
 				onReset={() => window.location.reload()}
 				onRefresh={mode === 'overview' ? () => refresh() : null}
+				onBack={
+					mode === 'settings'
+						? () => {
+								window.location.href = parentPageUrl(window.location.href);
+							}
+						: null
+				}
 			>
 				{body}
 			</PageChrome>
@@ -475,9 +483,7 @@ export function App({ context }) {
 				}
 			}}
 			onOpenSettings={() => {
-				const settingsUrl = new URL(window.location.href);
-				settingsUrl.pathname = settingsUrl.pathname.replace(/\/+$/, '') + '/settings';
-				window.location.href = settingsUrl.href;
+				window.location.href = settingsPageUrl(window.location.href);
 			}}
 			t={t}
 			inheritLabel={inheritLabel}
