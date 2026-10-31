@@ -121,6 +121,7 @@ export const ZH = {
 	'HTTP transfer mode (UPnP only)': 'HTTP 传输模式（仅 UPnP）',
 	'Handle FLUSH': '处理 FLUSH',
 	'Highest UPnP MediaRenderer version to search. The Chromecast engine ignores this.': '要搜索的最高 UPnP MediaRenderer 版本。Chromecast 引擎会忽略此项。',
+	'How much detail the service writes to its log.': '服务写入日志的详细程度。',
 	'IP address': 'IP 地址',
 	'Inherit global setting': '继承全局设置',
 	'Interface': '接口',

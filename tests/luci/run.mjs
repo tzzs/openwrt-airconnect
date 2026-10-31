@@ -29,6 +29,8 @@ const INTERFACES = await import(new URL(
 	'../../packages/luci-app-airconnect-manager/frontend/src/lib/interfaces.js', import.meta.url));
 const NAVIGATION = await import(new URL(
 	'../../packages/luci-app-airconnect-manager/frontend/src/lib/navigation.js', import.meta.url));
+const { ZH } = await import(new URL(
+	'../../packages/luci-app-airconnect-manager/frontend/src/lib/i18n.js', import.meta.url));
 
 let passed = 0;
 let failed = 0;
@@ -261,6 +263,20 @@ function navigationSection() {
 	check(menu['admin/services/airconnect-manager/settings']?.action?.type === 'alias' &&
 		menu['admin/services/airconnect-manager/settings']?.action?.path === 'admin/services/airbridge/settings',
 		'old settings URL aliases to the AirBridge settings page');
+
+	// The section headings are plain literals in the component rather than
+	// `_('...')` calls, so scripts/update-i18n.mjs never extracts them and the
+	// built-in table is the only thing that translates them. A missing entry
+	// renders as one English sentence on an otherwise Chinese page.
+	section('settings page headings are translated');
+	const settingsSource = readFileSync(join(FRONTEND_SRC, 'components/settings-page.jsx'), 'utf8');
+	const headings = [...settingsSource.matchAll(/(?:title|description):\s*'((?:\\.|[^'\\])*)'/gs)]
+		.map((match) => JSON.parse('"' + match[1].replace(/"/g, '\\"') + '"'));
+	check(headings.length > 0, 'the settings page declares its section headings');
+	for (const heading of headings) {
+		check(Object.prototype.hasOwnProperty.call(ZH, heading),
+			'the section heading has a Chinese translation', heading);
+	}
 }
 
 /**
