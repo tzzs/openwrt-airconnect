@@ -210,11 +210,21 @@
 	box-shadow: var(--shadow-lift);
 	box-sizing: border-box;
 	container: airconnect / inline-size;
+	display: flex;
+	flex-direction: column;
 	margin: 0 auto;
 	max-width: 1400px;
+	min-height: calc(100dvh - 8rem);
 	min-width: 0;
 	overflow: hidden;
 	width: auto;
+}
+
+.ac-root > .ac-app {
+	display: flex;
+	flex: 1 1 auto;
+	flex-direction: column;
+	min-height: 0;
 }
 
 /* Argon turns a bare `h2` into a white card (background, padding, radius,
@@ -239,7 +249,9 @@
 .ac-chrome {
 	background: hsl(var(--surface));
 	display: flex;
+	flex: 1 1 auto;
 	flex-direction: column;
+	min-height: 0;
 	min-width: 0;
 }
 
@@ -470,12 +482,15 @@
  */
 .ac-workspace {
 	display: flex;
+	flex: 1 1 auto;
 	flex-direction: column;
+	min-height: 0;
 	min-width: 0;
 }
 
 .ac-workspace-body {
 	display: grid;
+	flex: 1 1 auto;
 	grid-template-columns: 272px minmax(0, 1fr);
 	min-height: 0;
 	min-width: 0;
@@ -1536,6 +1551,14 @@
  * narrow screen the speaker's own controls matter more.
  */
 @container airconnect (max-width: 720px) {
+	.ac-root {
+		min-height: 0;
+	}
+
+	.ac-workspace {
+		flex: 0 0 auto;
+	}
+
 	.ac-workspace-body {
 		display: block;
 	}
