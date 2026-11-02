@@ -1,4 +1,4 @@
-# 隔空音箱（AirBridge）LuCI 增强版计划
+# AirBridge · 隔空音箱 LuCI 增强版计划
 
 AirBridge 直接使用 philippe44/AirConnect 原生引擎，建立独立的 OpenWrt/iStoreOS 适配封装；sbwml/luci-app-airconnect 只作为封装方式参考。独立维护引擎包、管理适配层和 LuCI 页面，详见 [架构决策](docs/ARCHITECTURE.zh-CN.md)。
 

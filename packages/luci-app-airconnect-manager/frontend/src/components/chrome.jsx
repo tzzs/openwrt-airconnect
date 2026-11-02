@@ -55,7 +55,7 @@ export function PageChrome({
 						<Activity />
 					</div>
 					<div>
-						<strong>AirBridge</strong>
+						<strong>AirBridge · 隔空音箱</strong>
 						<span>{t('AirPlay bridge')}</span>
 					</div>
 				</div>

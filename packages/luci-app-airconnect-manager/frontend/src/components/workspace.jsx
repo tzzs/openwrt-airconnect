@@ -245,7 +245,7 @@ export function Workspace({
 						{_('Changes are kept locally until you save.')}
 					</span>
 					<span className="ac-footer-version">
-						{_('AirBridge')}
+						{_('AirBridge · 隔空音箱')}
 						{status && status.version
 							? ' · ' + status.version
 							: ' · ' + _('Version unknown')}

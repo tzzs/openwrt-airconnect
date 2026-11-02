@@ -40,6 +40,7 @@ export const ZH = {
 	'Advanced audio settings': '高级音频设置',
 	'Advanced settings': '高级设置',
 	'AirBridge': '隔空音箱',
+	'AirBridge · 隔空音箱': 'AirBridge · 隔空音箱',
 	'AirBridge health overview': '隔空音箱健康概览',
 	'AirPlay advertised': '已广播 AirPlay',
 	'AirPlay bridge': 'AirPlay 桥接',

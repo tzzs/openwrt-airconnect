@@ -43,11 +43,11 @@ for line in open(sys.argv[1], encoding='utf-8'):
     elif not line.startswith('"'):
         field = None
 if msgid is not None: entries.append((msgid, msgstr))
-allowed_empty = {'隔空音箱 · AirBridge'}
+allowed_empty = {'AirBridge · 隔空音箱'}
 untranslated = [item for item, value in entries if item and not value and item not in allowed_empty]
 if untranslated: sys.exit(1)
 menu = json.load(open(sys.argv[2], encoding='utf-8'))
-if not any(spec.get('title') == '隔空音箱 · AirBridge' for spec in menu.values()): sys.exit(1)
+if not any(spec.get('title') == 'AirBridge · 隔空音箱' for spec in menu.values()): sys.exit(1)
 PY
 	then ok 'translation has no untranslated non-header entries except the bilingual menu title'; else no 'translation has no untranslated non-header entries except the bilingual menu title' 'unexpected empty msgstr or bilingual menu title missing'; fi
 fi

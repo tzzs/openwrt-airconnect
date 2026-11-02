@@ -1,4 +1,4 @@
-# 隔空音箱 (AirBridge) LuCI 增强版
+# AirBridge · 隔空音箱 LuCI 增强版
 
 ## Register
 

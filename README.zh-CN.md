@@ -14,7 +14,7 @@ AirBridge 使用独立 Git 历史，不基于 `sbwml/luci-app-airconnect` 的 fo
 
 ## 命名
 
-产品名是 **隔空音箱 / AirBridge**。内部标识符刻意保留历史上的 `airconnect` 拼写：UCI 配置名仍是 `airconnect-manager`，rpcd 对象仍是 `airconnect.manager`。这样已安装旧包的设备可以原地平滑升级、不丢设置；这些是兼容标识符，不是漏改。
+产品名是 **AirBridge · 隔空音箱**。内部标识符刻意保留历史上的 `airconnect` 拼写：UCI 配置名仍是 `airconnect-manager`，rpcd 对象仍是 `airconnect.manager`。这样已安装旧包的设备可以原地平滑升级、不丢设置；这些是兼容标识符，不是漏改。
 
 ## 当前状态
 

@@ -251,12 +251,16 @@ function navigationSection() {
 	const menu = JSON.parse(readFileSync(join(ROOT,
 		'packages/luci-app-airconnect-manager/root/usr/share/luci/menu.d/' +
 		'luci-app-airconnect-manager.json'), 'utf8'));
-	check(menu['admin/services/airbridge']?.title === '隔空音箱 · AirBridge',
-		'the LuCI menu shows the Chinese and English product names');
+	check(menu['admin/services/airbridge']?.title === 'AirBridge · 隔空音箱',
+		'the LuCI menu shows the English and Chinese product names');
 	const luciMakefile = readFileSync(join(ROOT,
 		'packages/luci-app-airconnect-manager/Makefile'), 'utf8');
-	check(luciMakefile.split('\n').includes('LUCI_TITLE:=隔空音箱 · AirBridge'),
-		'the LuCI package index shows the Chinese and English product names');
+	check(luciMakefile.split('\n').includes('LUCI_TITLE:=AirBridge · 隔空音箱'),
+		'the LuCI package index shows the English and Chinese product names');
+	const packageMakefile = readFileSync(join(ROOT,
+		'packages/airconnect-manager/Makefile'), 'utf8');
+	check(packageMakefile.split('\n').includes('  TITLE:=AirBridge · 隔空音箱'),
+		'the backend package index shows the English and Chinese product names');
 	check(menu['admin/services/airconnect-manager']?.action?.type === 'alias' &&
 		menu['admin/services/airconnect-manager']?.action?.path === 'admin/services/airbridge',
 		'old workspace URL aliases to the AirBridge workspace');

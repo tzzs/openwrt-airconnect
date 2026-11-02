@@ -342,10 +342,11 @@ if grep -Eq '^[[:space:]]*SECTION:=utils$' "${makefile}" && grep -Eq '^[[:space:
 else
 	no 'recipe uses SECTION utils and CATEGORY Utilities' 'wrong section or category'
 fi
-if grep -Fqx '  TITLE:=隔空音箱 · AirBridge' "${makefile}"; then
-	ok 'recipe uses the documented TITLE'
+if grep -Fqx '  TITLE:=AirBridge · 隔空音箱' "${makefile}" &&
+	grep -Fqx 'LUCI_TITLE:=AirBridge · 隔空音箱' "${root}/packages/luci-app-airconnect-manager/Makefile"; then
+	ok 'both package indexes use the English-first product title'
 else
-	no 'recipe uses the documented TITLE' 'wrong title'
+	no 'both package indexes use the English-first product title' 'wrong title'
 fi
 if grep -Eq '^[[:space:]]*DEPENDS:=@\(aarch64\|\|x86_64\)' "${makefile}"; then
 	ok 'recipe keeps the engine architecture restriction'
