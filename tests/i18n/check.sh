@@ -23,8 +23,9 @@ if [ -f "${po}" ] && msgfmt --check --check-header -o /dev/null "${po}" 2>/dev/n
 
 if [ -f "${po}" ]; then
 	if grep -q 'Language: zh_Hans' "${po}"; then ok 'translation declares zh_Hans'; else no 'translation declares zh_Hans' 'missing Language header'; fi
-	if python3 - "${po}" <<'PY'
+	if python3 - "${po}" "${app}/root/usr/share/luci/menu.d/luci-app-airconnect-manager.json" <<'PY'
 import ast
+import json
 import sys
 entries = []
 msgid = msgstr = None
@@ -42,9 +43,13 @@ for line in open(sys.argv[1], encoding='utf-8'):
     elif not line.startswith('"'):
         field = None
 if msgid is not None: entries.append((msgid, msgstr))
-if any(item and not value for item, value in entries): sys.exit(1)
+allowed_empty = {'隔空音箱 · AirBridge'}
+untranslated = [item for item, value in entries if item and not value and item not in allowed_empty]
+if untranslated: sys.exit(1)
+menu = json.load(open(sys.argv[2], encoding='utf-8'))
+if not any(spec.get('title') == '隔空音箱 · AirBridge' for spec in menu.values()): sys.exit(1)
 PY
-	then ok 'translation has no untranslated non-header entries'; else no 'translation has no untranslated non-header entries' 'an entry has empty msgstr'; fi
+	then ok 'translation has no untranslated non-header entries except the bilingual menu title'; else no 'translation has no untranslated non-header entries except the bilingual menu title' 'unexpected empty msgstr or bilingual menu title missing'; fi
 fi
 
 frontend="${app}/frontend/src"
