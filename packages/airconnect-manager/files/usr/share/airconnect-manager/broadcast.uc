@@ -58,7 +58,7 @@ const ARP_INTERFACE = 'eth0';
 
 function now() {
 	let t = clock(true);
-	return t[0] + t[1] / 1000000;
+	return t[0] + t[1] / 1000000000;
 }
 
 function u16(data, pos) {

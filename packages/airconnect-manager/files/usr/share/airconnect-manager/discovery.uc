@@ -31,7 +31,14 @@ function hasControl(value) {
 
 function now() {
 	let t = clock(true);
-	return t[0] + t[1] / 1000000;
+	return t[0] + t[1] / 1000000000;
+}
+
+// Older ucode on iStoreOS ignores index()'s optional start offset. Search a
+// sliced string instead so the XML tokenizer always advances on every runtime.
+function indexFrom(value, needle, start) {
+	let relative = index(substr(value, start), needle);
+	return relative < 0 ? -1 : start + relative;
 }
 
 // Canonical dotted IPv4 only. Refuse DNS, alternate numeric encodings and
@@ -130,19 +137,19 @@ const parseDescription = function(xml, candidate, seen) {
 	if (substr(xml, 0, 3) == chr(239, 187, 191)) xml = substr(xml, 3);
 	let stack = [], devices = [], root = false, roots = 0, tags = 0, pos = 0;
 	while (pos < length(xml)) {
-		let start = index(xml, '<', pos);
+		let start = indexFrom(xml, '<', pos);
 		let text = substr(xml, pos, (start < 0 ? length(xml) : start) - pos);
 		if (!length(stack) && length(trim(text))) return null;
 		if (length(stack)) stack[length(stack) - 1].text += text;
 		if (start < 0) { pos = length(xml); break; }
 		if (substr(xml, start, 4) == '<!--') {
-			let end = index(xml, '-->', start + 4);
+			let end = indexFrom(xml, '-->', start + 4);
 			if (end < 0 || index(substr(xml, start + 4, end - start - 4), '--') >= 0) return null;
 			pos = end + 3;
 			continue;
 		}
 		if (match(substr(xml, start, 6), /^<\?xml[ \t\r\n]$/) && !root && !length(stack) && roots == 0 && !length(trim(substr(xml, 0, start)))) {
-			let end = index(xml, '?>', start + 5);
+			let end = indexFrom(xml, '?>', start + 5);
 			if (end < 0) return null;
 			pos = end + 2;
 			continue;
@@ -272,6 +279,10 @@ const discover = function(address, interfaceName) {
 		let events = socket.poll(max(1, int((searchDeadline - now()) * 1000)), sock);
 		if (events == null) { sock.close(); die('Unable to poll SSDP socket'); }
 		if (!length(events)) break;
+		let readable = false;
+		for (let event in events)
+			if (event[1] & socket.POLLIN) readable = true;
+		if (!readable) break;
 		let peer = {};
 		let response = sock.recv(8193, socket.MSG_DONTWAIT, peer);
 		if (response == null) continue;
