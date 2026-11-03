@@ -38,15 +38,19 @@ msgid "AirBridge · 隔空音箱"
 msgstr ""
 
 #: frontend/src/lib/presentation.js
-msgid "AirPlay advertised"
+msgid "AirPlay"
 msgstr ""
 
-#: frontend/src/components/service-panel.jsx
+#: frontend/src/components/workspace.jsx
 msgid "AirPlay broadcast"
 msgstr ""
 
-#: frontend/src/lib/presentation.js
-msgid "AirPlay broadcast unknown"
+#: frontend/src/components/service-panel.jsx
+msgid "AirPlay broadcast (Chromecast)"
+msgstr ""
+
+#: frontend/src/components/service-panel.jsx
+msgid "AirPlay broadcast (UPnP)"
 msgstr ""
 
 #: frontend/src/lib/fields.js
@@ -76,6 +80,10 @@ msgstr ""
 
 #: frontend/src/lib/fields.js
 msgid "Both engines. Off adjusts timing by adding or dropping a frame, which can be audible as a click; on avoids the click but risks underruns."
+msgstr ""
+
+#: frontend/src/lib/presentation.js
+msgid "Broadcasting"
 msgstr ""
 
 #: frontend/src/lib/fields.js
@@ -268,7 +276,11 @@ msgid "LAN interface"
 msgstr ""
 
 #: frontend/src/lib/presentation.js
-msgid "Last attempt:"
+msgid "Last broadcast check"
+msgstr ""
+
+#: frontend/src/lib/presentation.js
+msgid "Last check error"
 msgstr ""
 
 #: frontend/src/components/device.jsx
@@ -327,14 +339,6 @@ msgstr ""
 msgid "Model"
 msgstr ""
 
-#: frontend/src/lib/presentation.js
-msgid "No"
-msgstr ""
-
-#: frontend/src/lib/presentation.js
-msgid "No AirPlay advertisement"
-msgstr ""
-
 #: frontend/src/components/workspace.jsx
 msgid "No engine"
 msgstr ""
@@ -360,15 +364,11 @@ msgid "No speakers discovered yet."
 msgstr ""
 
 #: frontend/src/lib/presentation.js
-msgid "No — the scan found no advertisement"
+msgid "Not broadcasting"
 msgstr ""
 
 #: frontend/src/lib/presentation.js
 msgid "Not currently discovered"
-msgstr ""
-
-#: frontend/src/components/workspace.jsx
-msgid "Not measured"
 msgstr ""
 
 #: frontend/src/lib/presentation.js
@@ -380,10 +380,6 @@ msgstr ""
 #: frontend/src/lib/presentation.js
 #: frontend/src/lib/presentation.js
 msgid "Not provided"
-msgstr ""
-
-#: frontend/src/components/service-panel.jsx
-msgid "Observed"
 msgstr ""
 
 #: frontend/src/lib/fields.js
@@ -558,15 +554,8 @@ msgid "UPnP volume limit"
 msgstr ""
 
 #: frontend/src/lib/presentation.js
+#: frontend/src/lib/presentation.js
 msgid "Unknown"
-msgstr ""
-
-#: frontend/src/lib/presentation.js
-msgid "Unknown — no completed mDNS observation. This needs the engine running and its receiver advertised on this LAN."
-msgstr ""
-
-#: frontend/src/lib/presentation.js
-msgid "Unknown — not measured"
 msgstr ""
 
 #: frontend/src/lib/presentation.js
@@ -622,24 +611,8 @@ msgstr ""
 msgid "Volume limit"
 msgstr ""
 
-#: frontend/src/lib/presentation.js
-msgid "Yes"
-msgstr ""
-
-#: frontend/src/lib/presentation.js
-msgid "Yes — an AirPlay receiver is advertised"
-msgstr ""
-
 #: frontend/src/components/workspace.jsx
 msgid "discovery engine"
-msgstr ""
-
-#: frontend/src/components/workspace.jsx
-msgid "last AirPlay observation"
-msgstr ""
-
-#: frontend/src/lib/presentation.js
-msgid "observed"
 msgstr ""
 
 #: frontend/src/components/workspace.jsx

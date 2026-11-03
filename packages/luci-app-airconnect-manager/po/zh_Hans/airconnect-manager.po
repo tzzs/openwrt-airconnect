@@ -44,16 +44,20 @@ msgid "AirBridge · 隔空音箱"
 msgstr "AirBridge · 隔空音箱"
 
 #: frontend/src/lib/presentation.js
-msgid "AirPlay advertised"
-msgstr "已广播 AirPlay"
+msgid "AirPlay"
+msgstr "AirPlay"
 
-#: frontend/src/components/service-panel.jsx
+#: frontend/src/components/workspace.jsx
 msgid "AirPlay broadcast"
 msgstr "AirPlay 广播"
 
-#: frontend/src/lib/presentation.js
-msgid "AirPlay broadcast unknown"
-msgstr "AirPlay 广播未知"
+#: frontend/src/components/service-panel.jsx
+msgid "AirPlay broadcast (Chromecast)"
+msgstr "AirPlay 广播（Chromecast）"
+
+#: frontend/src/components/service-panel.jsx
+msgid "AirPlay broadcast (UPnP)"
+msgstr "AirPlay 广播（UPnP）"
 
 #: frontend/src/lib/fields.js
 msgid "AirPlay name"
@@ -83,6 +87,10 @@ msgstr "将发现和 AirPlay 绑定到本地网络接口。"
 #: frontend/src/lib/fields.js
 msgid "Both engines. Off adjusts timing by adding or dropping a frame, which can be audible as a click; on avoids the click but risks underruns."
 msgstr "两个引擎都适用。关闭时通过增加或丢弃帧来调整时序，可能听到咔嗒声；开启可避免咔嗒声，但可能发生欠载。"
+
+#: frontend/src/lib/presentation.js
+msgid "Broadcasting"
+msgstr "正在广播"
 
 #: frontend/src/lib/fields.js
 #: frontend/src/lib/fields.js
@@ -274,8 +282,12 @@ msgid "LAN interface"
 msgstr "局域网接口"
 
 #: frontend/src/lib/presentation.js
-msgid "Last attempt:"
-msgstr "上次尝试："
+msgid "Last broadcast check"
+msgstr "上次广播检测"
+
+#: frontend/src/lib/presentation.js
+msgid "Last check error"
+msgstr "上次检测错误"
 
 #: frontend/src/components/device.jsx
 msgid "Last discovered"
@@ -333,14 +345,6 @@ msgstr "媒体音量"
 msgid "Model"
 msgstr "型号"
 
-#: frontend/src/lib/presentation.js
-msgid "No"
-msgstr "否"
-
-#: frontend/src/lib/presentation.js
-msgid "No AirPlay advertisement"
-msgstr "没有 AirPlay 广播"
-
 #: frontend/src/components/workspace.jsx
 msgid "No engine"
 msgstr "无引擎"
@@ -366,16 +370,12 @@ msgid "No speakers discovered yet."
 msgstr "尚未发现音箱。"
 
 #: frontend/src/lib/presentation.js
-msgid "No — the scan found no advertisement"
-msgstr "否 — 扫描未发现广播"
+msgid "Not broadcasting"
+msgstr "未广播"
 
 #: frontend/src/lib/presentation.js
 msgid "Not currently discovered"
 msgstr "当前未发现"
-
-#: frontend/src/components/workspace.jsx
-msgid "Not measured"
-msgstr "未测量"
 
 #: frontend/src/lib/presentation.js
 msgid "Not playing"
@@ -387,10 +387,6 @@ msgstr "未播放"
 #: frontend/src/lib/presentation.js
 msgid "Not provided"
 msgstr "未提供"
-
-#: frontend/src/components/service-panel.jsx
-msgid "Observed"
-msgstr "观测时间"
 
 #: frontend/src/lib/fields.js
 msgid "Off (0)"
@@ -564,16 +560,9 @@ msgid "UPnP volume limit"
 msgstr "UPnP 音量上限"
 
 #: frontend/src/lib/presentation.js
+#: frontend/src/lib/presentation.js
 msgid "Unknown"
 msgstr "未知"
-
-#: frontend/src/lib/presentation.js
-msgid "Unknown — no completed mDNS observation. This needs the engine running and its receiver advertised on this LAN."
-msgstr "未知 — 没有完成的 mDNS 观测。这需要引擎运行，并在此局域网中广播接收器。"
-
-#: frontend/src/lib/presentation.js
-msgid "Unknown — not measured"
-msgstr "未知 — 尚未测量"
 
 #: frontend/src/lib/presentation.js
 msgid "Unknown — the engines expose no documented playback status, so this is never inferred from the broadcast state."
@@ -628,25 +617,9 @@ msgstr "版本未知"
 msgid "Volume limit"
 msgstr "音量上限"
 
-#: frontend/src/lib/presentation.js
-msgid "Yes"
-msgstr "是"
-
-#: frontend/src/lib/presentation.js
-msgid "Yes — an AirPlay receiver is advertised"
-msgstr "是 — 已广播 AirPlay 接收器"
-
 #: frontend/src/components/workspace.jsx
 msgid "discovery engine"
 msgstr "发现引擎"
-
-#: frontend/src/components/workspace.jsx
-msgid "last AirPlay observation"
-msgstr "上次 AirPlay 观测"
-
-#: frontend/src/lib/presentation.js
-msgid "observed"
-msgstr "已观测"
 
 #: frontend/src/components/workspace.jsx
 msgid "speakers discovered"
