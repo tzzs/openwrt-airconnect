@@ -727,7 +727,7 @@ write_target_config() {
 	{
 		printf '%s\n' '# SPDX-License-Identifier: MIT'
 		printf '%s\n' '#'
-		printf '%s\n' '# AirConnect manager configuration.'
+		printf '%s\n' '# AirBridge configuration.'
 		printf '%s\n' '#'
 		printf '%s\n' '# Written by scripts/migrate-legacy.sh from the legacy configuration.'
 		printf '# Backup: %s\n' "${BK_DIR}"

@@ -1,8 +1,23 @@
 {
-  "admin/services/airconnect-manager": {
-    "title": "AirConnect",
+  "admin/services/airbridge": {
+    "title": "AirBridge · 隔空音箱",
     "order": 60,
-    "action": { "type": "view", "path": "airconnect-manager/overview" },
+    "action": { "type": "view", "path": "airbridge/overview" },
+    "depends": { "acl": [ "luci-app-airconnect-manager" ], "uci": { "airconnect-manager": true } }
+  },
+  "admin/services/airbridge/settings": {
+    "title": "Settings",
+    "order": 61,
+    "parent": "admin/services/airbridge",
+    "action": { "type": "view", "path": "airbridge/settings" },
+    "depends": { "acl": [ "luci-app-airconnect-manager" ], "uci": { "airconnect-manager": true } }
+  },
+  "admin/services/airconnect-manager": {
+    "action": { "type": "alias", "path": "admin/services/airbridge" },
+    "depends": { "acl": [ "luci-app-airconnect-manager" ], "uci": { "airconnect-manager": true } }
+  },
+  "admin/services/airconnect-manager/settings": {
+    "action": { "type": "alias", "path": "admin/services/airbridge/settings" },
     "depends": { "acl": [ "luci-app-airconnect-manager" ], "uci": { "airconnect-manager": true } }
   }
 }

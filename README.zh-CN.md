@@ -1,4 +1,4 @@
-# OpenWrt AirConnect
+# OpenWrt AirBridge
 
 <div align="center">
 
@@ -8,9 +8,13 @@
 
 ---
 
-直接面向 [philippe44/AirConnect](https://github.com/philippe44/AirConnect) 的独立 OpenWrt/iStoreOS 适配项目。原生引擎负责音频桥接，本项目维护软件包、服务管理、配置转换和 LuCI 界面。
+AirBridge 是直接面向 [philippe44/AirConnect](https://github.com/philippe44/AirConnect) 的独立 OpenWrt/iStoreOS 适配项目。原生引擎负责音频桥接，AirBridge 维护软件包、服务管理、配置转换和 LuCI 界面。
 
-本项目使用独立 Git 历史，不基于 `sbwml/luci-app-airconnect` 的 fork 继续开发。该项目仅作为 OpenWrt 封装方式的参考，见 [架构决策](docs/ARCHITECTURE.zh-CN.md)。
+AirBridge 使用独立 Git 历史，不基于 `sbwml/luci-app-airconnect` 的 fork 继续开发。该项目仅作为 OpenWrt 封装方式的参考，见 [架构决策](docs/ARCHITECTURE.zh-CN.md)。
+
+## 命名
+
+产品名是 **AirBridge · 隔空音箱**。内部标识符刻意保留历史上的 `airconnect` 拼写：UCI 配置名仍是 `airconnect-manager`，rpcd 对象仍是 `airconnect.manager`。这样已安装旧包的设备可以原地平滑升级、不丢设置；这些是兼容标识符，不是漏改。
 
 ## 当前状态
 

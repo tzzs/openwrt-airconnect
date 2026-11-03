@@ -4,10 +4,10 @@
 //
 //   node tests/parity/check-frontend.mjs
 //
-// Loads the LuCI static resource airconnect-manager/rules.js by evaluating it
-// in a tiny module shim (no LuCI, no bundler, no npm), runs every case from
-// cases.json through the exported rule functions, and compares the result with
-// the verdicts the real backend produced in tests/parity/run.uc.
+// Imports the frontend rule module (frontend/src/lib/rules.js, the module the
+// React app validates with) and runs every case from cases.json through it,
+// comparing the result with the verdicts the real backend produced in
+// tests/parity/run.uc.
 //
 // The backend verdicts are not re-implemented here on purpose: this file shells
 // out to `ucode tests/parity/run.uc --verdicts`, so there is exactly one
@@ -22,8 +22,9 @@ import { fileURLToPath } from 'node:url';
 const HERE = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(HERE, '..', '..');
 const CASES_PATH = join(HERE, 'cases.json');
-const RULES_PATH = join(ROOT,
-	'packages/luci-app-airconnect-manager/htdocs/luci-static/resources/airconnect-manager/rules.js');
+const RULES_URL = new URL(
+	'../../packages/luci-app-airconnect-manager/frontend/src/lib/rules.js',
+	import.meta.url);
 
 // `field` in cases.json -> exported rule in rules.js.
 const RULES = {
@@ -58,16 +59,13 @@ function check(ok, label, detail) {
 	return false;
 }
 
-// Evaluate rules.js as if it were a LuCI module: `_` is provided (or not, to
-// prove the identity fallback), and the module's return value is the exports.
+// The rule module is a plain ES module, so it is imported rather than evaluated:
+// `createRules(t)` returns the same ten functions for any translation helper, and
+// calling it with none leaves the messages in English.
+const { createRules } = await import(RULES_URL);
+
 function loadRules(translate) {
-	const source = readFileSync(RULES_PATH, 'utf8');
-	const factory = new Function('_', 'module', source + '\nreturn module.exports;\n');
-	const module = { exports: {} };
-	const exports = factory(translate ? function(s) { return s; } : undefined, module);
-	if (exports == null || typeof exports !== 'object')
-		throw new Error('rules.js did not return an exports object');
-	return exports;
+	return createRules(translate ? function (s) { return s; } : undefined);
 }
 
 function backendVerdicts() {
@@ -115,12 +113,13 @@ function main() {
 	// --- module shape ------------------------------------------------------
 	// Several fields share one rule (the four 0/1 flags), so the export count is
 	// the number of distinct rule names, not the number of mapped fields.
+	const exported = Object.keys(rules);
 	const ruleNames = new Set(Object.values(RULES));
 	for (const name of ruleNames)
 		check(typeof rules[name] === 'function', 'rules.js exports ' + name);
-	check(Object.keys(rules).length === ruleNames.size,
+	check(exported.length === ruleNames.size,
 		'rules.js exports exactly the documented rules',
-		Object.keys(rules).join(', '));
+		exported.join(', '));
 
 	// A message must be a non-empty string, not `false`, so LuCI shows text.
 	for (const field of Object.keys(RULES)) {

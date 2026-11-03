@@ -2,7 +2,7 @@
 
 ## 决策
 
-协议与音频实现直接依赖 [philippe44/AirConnect](https://github.com/philippe44/AirConnect)。本项目建立独立 Git 历史，不继承 sbwml fork 的提交或发布流水线。现有 fork 和现场服务保留，避免把项目方向调整变成线上服务切换。
+协议与音频实现直接依赖 [philippe44/AirConnect](https://github.com/philippe44/AirConnect)。AirBridge 建立独立 Git 历史，不继承 sbwml fork 的提交或发布流水线。现有 fork 和现场服务保留，避免把项目方向调整变成线上服务切换。
 
 ## 现有封装如何工作
 

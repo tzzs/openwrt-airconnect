@@ -8,7 +8,7 @@ set -o pipefail
 here=$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd)
 root=$(CDPATH='' cd -- "${here}/../.." && pwd)
 app="${root}/packages/luci-app-airconnect-manager"
-view="${app}/htdocs/luci-static/resources/view/airconnect-manager/overview.js"
+view="${app}/htdocs/luci-static/resources/view/airbridge/overview.js"
 pot="${app}/po/templates/airconnect-manager.pot"
 po="${app}/po/zh_Hans/airconnect-manager.po"
 passed=0
@@ -23,8 +23,9 @@ if [ -f "${po}" ] && msgfmt --check --check-header -o /dev/null "${po}" 2>/dev/n
 
 if [ -f "${po}" ]; then
 	if grep -q 'Language: zh_Hans' "${po}"; then ok 'translation declares zh_Hans'; else no 'translation declares zh_Hans' 'missing Language header'; fi
-	if python3 - "${po}" <<'PY'
+	if python3 - "${po}" "${app}/root/usr/share/luci/menu.d/luci-app-airconnect-manager.json" <<'PY'
 import ast
+import json
 import sys
 entries = []
 msgid = msgstr = None
@@ -42,19 +43,35 @@ for line in open(sys.argv[1], encoding='utf-8'):
     elif not line.startswith('"'):
         field = None
 if msgid is not None: entries.append((msgid, msgstr))
-if any(item and not value for item, value in entries): sys.exit(1)
+allowed_empty = {'AirBridge · 隔空音箱'}
+untranslated = [item for item, value in entries if item and not value and item not in allowed_empty]
+if untranslated: sys.exit(1)
+menu = json.load(open(sys.argv[2], encoding='utf-8'))
+if not any(spec.get('title') == 'AirBridge · 隔空音箱' for spec in menu.values()): sys.exit(1)
 PY
-	then ok 'translation has no untranslated non-header entries'; else no 'translation has no untranslated non-header entries' 'an entry has empty msgstr'; fi
+	then ok 'translation has no untranslated non-header entries except the bilingual menu title'; else no 'translation has no untranslated non-header entries except the bilingual menu title' 'unexpected empty msgstr or bilingual menu title missing'; fi
 fi
 
-if [ -f "${view}" ] && [ -f "${pot}" ]; then
-	if python3 - "${view}" "${pot}" <<'PY'
+frontend="${app}/frontend/src"
+if [ -d "${frontend}" ] && [ -f "${pot}" ]; then
+	# The page text now lives in the React sources (lib/*.js, components/*.jsx)
+	# and the thin LuCI loader. Together they must be covered by the POT.
+	if python3 - "${frontend}" "${view}" "${pot}" <<'PY'
 import ast
+import os
 import re
 import sys
-view, pot = sys.argv[1:]
-source = open(view, encoding='utf-8').read()
-strings = {ast.literal_eval("'" + value + "'") for value in re.findall(r"_\('((?:\\\\.|[^'\\\\])*)'\)", source)}
+frontend, view, pot = sys.argv[1:]
+pattern = re.compile(r"_\(\s*'((?:\\.|[^'\\])*)'\s*\)")
+strings = set()
+for base, dirs, files in os.walk(frontend):
+    for name in files:
+        if not name.endswith(('.js', '.jsx')):
+            continue
+        path = os.path.join(base, name)
+        for value in pattern.findall(open(path, encoding='utf-8').read()):
+            strings.add(ast.literal_eval("'" + value + "'"))
+strings |= {ast.literal_eval("'" + value + "'") for value in pattern.findall(open(view, encoding='utf-8').read())}
 ids = set()
 current = None
 field = None
@@ -70,9 +87,9 @@ for line in open(pot, encoding='utf-8'):
 missing = sorted(strings - ids)
 if missing:
     print('missing from POT:', ', '.join(missing[:5]), file=sys.stderr); sys.exit(1)
-print('all %d _() strings are present in the POT' % len(strings))
+print('all %d _() strings across the frontend are present in the POT' % len(strings))
 PY
-	then ok 'POT covers every _() string in the LuCI view'; else no 'POT covers every _() string in the LuCI view' 'source strings missing'; fi
+	then ok 'POT covers every _() string in the frontend'; else no 'POT covers every _() string in the frontend' 'source strings missing'; fi
 fi
 
 printf '\ni18n: %d passed, %d failed\n' "${passed}" "${failed}"
