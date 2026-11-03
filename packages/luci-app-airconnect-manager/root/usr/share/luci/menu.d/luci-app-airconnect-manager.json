@@ -3,18 +3,18 @@
     "title": "AirBridge · 隔空音箱",
     "order": 60,
     "action": { "type": "view", "path": "airbridge/overview" },
-    "depends": { "acl": [ "luci-app-airconnect-manager" ], "uci": { "airconnect-manager": true } }
+    "depends": { "acl": ["luci-app-airconnect-manager"], "uci": { "airconnect-manager": true } }
   },
   "admin/services/airconnect-manager": {
     "action": { "type": "alias", "path": "admin/services/airbridge" },
-    "depends": { "acl": [ "luci-app-airconnect-manager" ], "uci": { "airconnect-manager": true } }
+    "depends": { "acl": ["luci-app-airconnect-manager"], "uci": { "airconnect-manager": true } }
   },
   "admin/services/airbridge/settings": {
     "action": { "type": "alias", "path": "admin/services/airbridge" },
-    "depends": { "acl": [ "luci-app-airconnect-manager" ], "uci": { "airconnect-manager": true } }
+    "depends": { "acl": ["luci-app-airconnect-manager"], "uci": { "airconnect-manager": true } }
   },
   "admin/services/airconnect-manager/settings": {
     "action": { "type": "alias", "path": "admin/services/airbridge" },
-    "depends": { "acl": [ "luci-app-airconnect-manager" ], "uci": { "airconnect-manager": true } }
+    "depends": { "acl": ["luci-app-airconnect-manager"], "uci": { "airconnect-manager": true } }
   }
 }

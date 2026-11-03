@@ -108,11 +108,11 @@ relative() {
 # content always yields the same size. Compressing the file by name would embed
 # both and make the number depend on checkout time.
 gzip_size() {
-	gzip -9 -c < "$1" | wc -c | tr -d ' '
+	gzip -9 -c <"$1" | wc -c | tr -d ' '
 }
 
 file_size() {
-	wc -c < "$1" | tr -d ' '
+	wc -c <"$1" | tr -d ' '
 }
 
 # --- discovery --------------------------------------------------------------
@@ -133,7 +133,7 @@ trap 'rm -rf "${workdir}"' EXIT INT TERM
 	printf '%s\n' \
 		"${pkg}/root/usr/share/luci/menu.d/luci-app-airconnect-manager.json" \
 		"${pkg}/root/usr/share/rpcd/acl.d/luci-app-airconnect-manager.json"
-} | LC_ALL=C sort > "${workdir}/files"
+} | LC_ALL=C sort >"${workdir}/files"
 
 # --- measure ----------------------------------------------------------------
 
@@ -167,7 +167,7 @@ while IFS= read -r file; do
 		violations=$((violations + 1))
 	fi
 	printf "%-${label_width}s %9d %9d %9d%s\n" "$(relative "${file}")" "${bytes}" "${gz}" "${cap}" "${mark}"
-done < "${workdir}/files"
+done <"${workdir}/files"
 
 printf "%-${label_width}s %9s %9s %9s\n" "${rule}--------" '---------' '---------' '---------'
 printf "%-${label_width}s %9d %9d %9d\n" "total (${count} files)" "${total}" "${total_gzip}" "${TOTAL_CAP}"

@@ -101,7 +101,7 @@ fi
 
 # --- 2. the signature object ------------------------------------------------
 section 'rpcd signature'
-cat > "${sandbox}/signature.uc" <<'UC'
+cat >"${sandbox}/signature.uc" <<'UC'
 // Prints a machine-readable description of the signature object so the shell
 // assertions below do not have to parse ucode values by hand.
 let signature = loadfile(ARGV[0])();
@@ -202,7 +202,7 @@ done
 # sees NO_DATA. A host without uci/ubus is the worst case, and the page must
 # still render.
 section 'methods return objects without uci and ubus'
-cat > "${sandbox}/call.uc" <<'UC'
+cat >"${sandbox}/call.uc" <<'UC'
 let signature = loadfile(ARGV[0])();
 let object = signature['airconnect.manager'];
 let calls = [
@@ -275,7 +275,7 @@ fi
 
 # --- 4. validate() reuses config.uc, including render-time rejection --------
 section 'validate reuses config.uc'
-cat > "${sandbox}/validate.uc" <<'UC'
+cat >"${sandbox}/validate.uc" <<'UC'
 let signature = loadfile(ARGV[0])();
 let validate = signature['airconnect.manager'].validate.call;
 function check(label, config, wantOk, wantText) {
@@ -458,10 +458,10 @@ rootdir="${sandbox}/root"
 mkdir -p "${stubdir}" "${rootdir}"
 plugin_out=$(
 	UCODE="${UCODE}" \
-	UCODE_LIB="${UCODE_LIB}" \
-	AIRCONNECT_MANAGER_ROOT="${rootdir}" \
-	AIRCONNECT_MANAGER_STUBS="${stubdir}" \
-	"${UCODE}" -L "${stubdir}" -L "${UCODE_LIB}" "${here}/plugin.uc" 2>&1
+		UCODE_LIB="${UCODE_LIB}" \
+		AIRCONNECT_MANAGER_ROOT="${rootdir}" \
+		AIRCONNECT_MANAGER_STUBS="${stubdir}" \
+		"${UCODE}" -L "${stubdir}" -L "${UCODE_LIB}" "${here}/plugin.uc" 2>&1
 )
 plugin_rc=$?
 if [ "${plugin_rc}" -eq 0 ]; then

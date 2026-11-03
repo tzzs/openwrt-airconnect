@@ -139,7 +139,7 @@ while [ "$#" -gt 0 ]; do
 			jobs="${1#--jobs=}"
 			shift
 			;;
-		--help|-h)
+		--help | -h)
 			usage
 			exit 0
 			;;
@@ -157,7 +157,7 @@ done
 
 if [ -n "$jobs" ]; then
 	case "$jobs" in
-		*[!0-9]*|'') usage_fail "--jobs must be a positive integer, got: $jobs" ;;
+		*[!0-9]* | '') usage_fail "--jobs must be a positive integer, got: $jobs" ;;
 	esac
 fi
 
@@ -207,7 +207,7 @@ if [ -n "$missing_feeds" ]; then
 		fi
 	done
 	say "installing feeds into package/feeds/:${missing_feeds}"
-	if ! ( cd "$sdk" && ./scripts/feeds install -a ) >/dev/null 2>&1; then
+	if ! (cd "$sdk" && ./scripts/feeds install -a) >/dev/null 2>&1; then
 		fail "failed to install the feeds into ${sdk}/package/feeds" 2
 	fi
 	for feed in $missing_feeds; do
@@ -285,12 +285,12 @@ set_config() {
 	value="$2"
 	tmp="${sdk}/.config.build-sdk.$$"
 	if grep -q "^${symbol}=" "${sdk}/.config"; then
-		sed "s|^${symbol}=.*|${symbol}=${value}|" "${sdk}/.config" > "$tmp"
+		sed "s|^${symbol}=.*|${symbol}=${value}|" "${sdk}/.config" >"$tmp"
 	elif grep -q "^# ${symbol} is not set$" "${sdk}/.config"; then
-		sed "s|^# ${symbol} is not set$|${symbol}=${value}|" "${sdk}/.config" > "$tmp"
+		sed "s|^# ${symbol} is not set$|${symbol}=${value}|" "${sdk}/.config" >"$tmp"
 	else
-		cat "${sdk}/.config" > "$tmp"
-		printf '%s=%s\n' "$symbol" "$value" >> "$tmp"
+		cat "${sdk}/.config" >"$tmp"
+		printf '%s=%s\n' "$symbol" "$value" >>"$tmp"
 	fi
 	mv "$tmp" "${sdk}/.config" || fail "cannot update ${sdk}/.config" 2
 }
@@ -301,10 +301,10 @@ unset_config() {
 	symbol="$1"
 	tmp="${sdk}/.config.build-sdk.$$"
 	if grep -q "^${symbol}=" "${sdk}/.config"; then
-		sed "s|^${symbol}=.*|# ${symbol} is not set|" "${sdk}/.config" > "$tmp"
+		sed "s|^${symbol}=.*|# ${symbol} is not set|" "${sdk}/.config" >"$tmp"
 	else
-		cat "${sdk}/.config" > "$tmp"
-		printf '# %s is not set\n' "$symbol" >> "$tmp"
+		cat "${sdk}/.config" >"$tmp"
+		printf '# %s is not set\n' "$symbol" >>"$tmp"
 	fi
 	mv "$tmp" "${sdk}/.config" || fail "cannot update ${sdk}/.config" 2
 }
@@ -341,7 +341,7 @@ if [ "$changed" -gt 0 ]; then
 fi
 
 say 'running make defconfig'
-if ! ( cd "$sdk" && make defconfig ) >"${TMPDIR:-/tmp}/build-sdk-defconfig.$$.log" 2>&1; then
+if ! (cd "$sdk" && make defconfig) >"${TMPDIR:-/tmp}/build-sdk-defconfig.$$.log" 2>&1; then
 	tail -n 20 "${TMPDIR:-/tmp}/build-sdk-defconfig.$$.log" >&2
 	fail 'make defconfig failed' 2
 fi
@@ -382,7 +382,7 @@ fi
 
 curl_packages=''
 case " ${packages} " in
-	*" airconnect-manager "*|*" luci-app-airconnect-manager "*)
+	*" airconnect-manager "* | *" luci-app-airconnect-manager "*)
 		curl_packages=1
 		;;
 esac
@@ -398,7 +398,7 @@ build_one() {
 			"$PROGRAM" "$name" >&2
 	fi
 	# shellcheck disable=SC2086  # job_args is intentionally word split
-	if ( cd "$sdk" && make ${job_args} "package/${name}/compile" V=s ) >"$log" 2>&1; then
+	if (cd "$sdk" && make ${job_args} "package/${name}/compile" V=s) >"$log" 2>&1; then
 		return 0
 	fi
 	# The real error is usually far above the tail: OpenWrt prints the failing
@@ -452,7 +452,7 @@ for name in $packages; do
 "
 		continue
 	fi
-	size=$(wc -c < "$apk" | tr -d ' ')
+	size=$(wc -c <"$apk" | tr -d ' ')
 	report="${report}${name}|${apk}|${size}
 "
 done

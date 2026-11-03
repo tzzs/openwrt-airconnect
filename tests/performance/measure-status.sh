@@ -46,8 +46,8 @@ printf 'ucode: %s\n' "$("${UCODE}" -e 'print("host ucode\n")' >/dev/null 2>&1 &&
 printf 'uname: %s\n\n' "$(uname -srm)"
 
 AIRCONNECT_MANAGER_ROOT="${rootdir}" \
-AIRCONNECT_MANAGER_STUBS="${stubdir}" \
-"${UCODE}" -L "${stubdir}" -L "${UCODE_LIB}" "${here}/measure-status.uc"
+	AIRCONNECT_MANAGER_STUBS="${stubdir}" \
+	"${UCODE}" -L "${stubdir}" -L "${UCODE_LIB}" "${here}/measure-status.uc"
 status=$?
 
 if [ "${status}" -ne 0 ]; then

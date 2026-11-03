@@ -21,24 +21,24 @@ import './styles.css';
  * reach it with a ref.
  */
 export function mount(container, context) {
-	const services = createServices(context);
-	const themeHost =
-		typeof container.closest === 'function'
-			? container.closest('.ac-root') || container
-			: container;
-	const root = createRoot(container);
-	root.render(
-		<App
-			context={{
-				services,
-				themeHost,
-				mode: context.mode || 'overview'
-			}}
-		/>
-	);
-	return {
-		unmount: () => root.unmount()
-	};
+  const services = createServices(context);
+  const themeHost =
+    typeof container.closest === 'function'
+      ? container.closest('.ac-root') || container
+      : container;
+  const root = createRoot(container);
+  root.render(
+    <App
+      context={{
+        services,
+        themeHost,
+        mode: context.mode || 'overview',
+      }}
+    />,
+  );
+  return {
+    unmount: () => root.unmount(),
+  };
 }
 
 // The IIFE build exposes this global for the LuCI view to call.

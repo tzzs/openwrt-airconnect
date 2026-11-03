@@ -8,9 +8,21 @@
     "type": "git",
     "url": "git+https://github.com/tzzs/openwrt-airconnect.git"
   },
+  "type": "module",
   "scripts": {
     "test": "bash scripts/run-tests.sh",
-    "coverage": "bash scripts/run-coverage.sh"
+    "coverage": "bash scripts/run-coverage.sh",
+    "lint:js": "eslint .",
+    "lint:shell": "node scripts/check-shell.mjs lint",
+    "lint": "npm run lint:js && npm run lint:shell",
+    "format": "prettier --write . --ignore-unknown && node scripts/check-shell.mjs format",
+    "format:check": "prettier --check . --ignore-unknown && node scripts/check-shell.mjs format:check"
   },
-  "//": "This file exists for release-please and CI only. The project has no npm dependencies and no Node build step: node runs the plain .mjs test suite on a host, never on the router."
+  "//": "Root npm dependencies provide development-only lint and formatting tools. The router runtime has no npm dependencies or Node build step.",
+  "devDependencies": {
+    "@eslint/js": "10.0.1",
+    "eslint": "10.14.0",
+    "globals": "17.14.0",
+    "prettier": "3.9.10"
+  }
 }

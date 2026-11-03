@@ -45,10 +45,10 @@ EOF
 verbose=0
 while [ $# -gt 0 ]; do
 	case "$1" in
-		--verbose|-v)
+		--verbose | -v)
 			verbose=1
 			;;
-		--help|-h)
+		--help | -h)
 			usage
 			exit 0
 			;;
@@ -160,12 +160,12 @@ trap 'rm -rf "${workdir}"' EXIT INT TERM
 	find "${tests_dir}" -mindepth 2 -maxdepth 2 -type f -name 'run.uc' -print
 	find "${tests_dir}" -mindepth 2 -maxdepth 2 -type f -name '*.mjs' -print
 	find "${tests_dir}" -mindepth 2 -type f -name '*.sh' -print
-} | LC_ALL=C sort > "${workdir}/suites"
+} | LC_ALL=C sort >"${workdir}/suites"
 
 suites=()
 while IFS= read -r suite; do
 	suites+=("${suite}")
-done < "${workdir}/suites"
+done <"${workdir}/suites"
 
 if [ "${#suites[@]}" -eq 0 ]; then
 	printf 'run-tests: found no suites under %s.\n' "${tests_dir}" >&2
@@ -181,17 +181,17 @@ now_ms() {
 	local stamp
 	stamp=$(date +%s%N 2>/dev/null)
 	case "${stamp}" in
-		''|*[!0-9]*)
+		'' | *[!0-9]*)
 			printf '%s000\n' "$(date +%s)"
 			;;
 		*)
-			printf '%s\n' "$(( stamp / 1000000 ))"
+			printf '%s\n' "$((stamp / 1000000))"
 			;;
 	esac
 }
 
 format_duration() {
-	printf '%d.%02ds' "$(( $1 / 1000 ))" "$(( ($1 % 1000) / 10 ))"
+	printf '%d.%02ds' "$(($1 / 1000))" "$((($1 % 1000) / 10))"
 }
 
 # --- run --------------------------------------------------------------------
@@ -243,10 +243,10 @@ for suite in "${suites[@]}"; do
 		"${cmd[@]}" 2>&1 | tee "${log}"
 		status=${PIPESTATUS[0]}
 	else
-		"${cmd[@]}" > "${log}" 2>&1
+		"${cmd[@]}" >"${log}" 2>&1
 		status=$?
 	fi
-	elapsed=$(( $(now_ms) - started ))
+	elapsed=$(($(now_ms) - started))
 
 	if [ "${status}" -eq 0 ]; then
 		passed=$((passed + 1))

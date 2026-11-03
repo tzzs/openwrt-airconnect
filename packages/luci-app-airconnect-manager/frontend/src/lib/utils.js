@@ -8,5 +8,5 @@ import { twMerge } from 'tailwind-merge';
  * override any built-in utility.
  */
 export function cn(...inputs) {
-	return twMerge(clsx(inputs));
+  return twMerge(clsx(inputs));
 }

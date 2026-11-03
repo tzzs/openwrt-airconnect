@@ -88,7 +88,7 @@ usage_error() {
 
 while [ "$#" -gt 0 ]; do
 	case "$1" in
-		--dry-run|--apply|--rollback)
+		--dry-run | --apply | --rollback)
 			[ -z "${MODE_SET}" ] || usage_error 'choose exactly one of --dry-run, --apply and --rollback'
 			MODE_SET="$1"
 			MODE="${1#--}"
@@ -96,7 +96,7 @@ while [ "$#" -gt 0 ]; do
 		--force-stop-new)
 			FORCE_STOP_NEW='1'
 			;;
-		--help|-h)
+		--help | -h)
 			usage
 			exit 0
 			;;
@@ -163,8 +163,8 @@ file_mode() {
 
 normalize_bool() {
 	case "$1" in
-		1|on|true|enabled|yes) printf '1' ;;
-		0|off|false|disabled|no) printf '0' ;;
+		1 | on | true | enabled | yes) printf '1' ;;
+		0 | off | false | disabled | no) printf '0' ;;
 		*) return 1 ;;
 	esac
 }
@@ -173,7 +173,7 @@ normalize_bool() {
 # starting with a letter, digit or underscore, then letters, digits, _ . -
 valid_interface() {
 	case "$1" in
-		''|.|..) return 1 ;;
+		'' | . | ..) return 1 ;;
 		[A-Za-z0-9_]*) ;;
 		*) return 1 ;;
 	esac
@@ -200,7 +200,7 @@ valid_udn() {
 # config.uc accepts 1..100, canonical decimal (no leading zero).
 valid_volume() {
 	case "$1" in
-		0|[1-9]|[1-9][0-9]|[1-9][0-9][0-9]) ;;
+		0 | [1-9] | [1-9][0-9] | [1-9][0-9][0-9]) ;;
 		*) return 1 ;;
 	esac
 	[ "$1" -ge 1 ] && [ "$1" -le 100 ]
@@ -308,7 +308,7 @@ detect() {
 					continue
 				fi
 				case "${dd_image}" in
-					''|*[!A-Za-z0-9._/:@-]*)
+					'' | *[!A-Za-z0-9._/:@-]*)
 						warn "ignoring an unexpected docker image for ${dd_name}"
 						continue
 						;;
@@ -705,7 +705,7 @@ EOF
 		if [ -n "${BK_TARGET}" ]; then
 			printf 'file=%s mode=%s\n' 'etc/config/airconnect-manager' "${TARGET_CONFIG_MODE}"
 		fi
-	} > "${WM_TMP}" || {
+	} >"${WM_TMP}" || {
 		rm -f "${WM_TMP}"
 		fail "cannot write ${WM_TMP}"
 	}
@@ -723,44 +723,44 @@ write_target_config() {
 	# the final mode, so there is no window in which the configuration is more
 	# readable than the file it replaces.
 	(
-	umask 077
-	{
-		printf '%s\n' '# SPDX-License-Identifier: MIT'
-		printf '%s\n' '#'
-		printf '%s\n' '# AirBridge configuration.'
-		printf '%s\n' '#'
-		printf '%s\n' '# Written by scripts/migrate-legacy.sh from the legacy configuration.'
-		printf '# Backup: %s\n' "${BK_DIR}"
-		printf '%s\n' '#'
-		printf '%s\n' '# This file is the single persistent source of truth. The manager reads and'
-		printf '%s\n' '# validates it, then regenerates the engine XML under'
-		printf '%s\n' '# /var/etc/airconnect-manager/ on every start or reload. Runtime files are'
-		printf '%s\n' '# disposable output: never edit them, and never move device configuration'
-		printf '%s\n' '# into them. A rejected write keeps the previous valid XML.'
-		printf '%s\n' '#'
-		printf '# enabled=%s came from: %s.\n' "${MAPPED_ENABLED}" "${MAPPED_ENABLED_SOURCE}"
-		printf '%s\n' '# Installing or migrating never starts broadcasting: the operator starts'
-		printf '%s\n' '# airconnect-manager after verifying discovery.'
-		printf '\n'
-		printf "config main 'main'\n"
-		printf "\toption enabled '%s'\n" "${MAPPED_ENABLED}"
-		printf "\toption interface '%s'\n" "${MAPPED_INTERFACE}"
-		printf "\toption airupnp '%s'\n" "${MAPPED_AIRUPNP}"
-		printf "\toption aircast '%s'\n" "${MAPPED_AIRCAST}"
-		printf "\toption codec '%s'\n" "${DEFAULT_CODEC}"
-		printf "\toption latency '%s'\n" "${DEFAULT_LATENCY}"
-		printf "\toption max_volume '%s'\n" "${MAPPED_MAX_VOLUME}"
-		printf "\toption media_volume '%s'\n" "${DEFAULT_MEDIA_VOLUME}"
-		printf "\toption log_level '%s'\n" "${DEFAULT_LOG_LEVEL}"
-		if [ "${MAPPED_DEVICE}" = '1' ]; then
+		umask 077
+		{
+			printf '%s\n' '# SPDX-License-Identifier: MIT'
+			printf '%s\n' '#'
+			printf '%s\n' '# AirBridge configuration.'
+			printf '%s\n' '#'
+			printf '%s\n' '# Written by scripts/migrate-legacy.sh from the legacy configuration.'
+			printf '# Backup: %s\n' "${BK_DIR}"
+			printf '%s\n' '#'
+			printf '%s\n' '# This file is the single persistent source of truth. The manager reads and'
+			printf '%s\n' '# validates it, then regenerates the engine XML under'
+			printf '%s\n' '# /var/etc/airconnect-manager/ on every start or reload. Runtime files are'
+			printf '%s\n' '# disposable output: never edit them, and never move device configuration'
+			printf '%s\n' '# into them. A rejected write keeps the previous valid XML.'
+			printf '%s\n' '#'
+			printf '# enabled=%s came from: %s.\n' "${MAPPED_ENABLED}" "${MAPPED_ENABLED_SOURCE}"
+			printf '%s\n' '# Installing or migrating never starts broadcasting: the operator starts'
+			printf '%s\n' '# airconnect-manager after verifying discovery.'
 			printf '\n'
-			printf "config device 'device_legacy'\n"
-			printf "\toption engine 'upnp'\n"
-			printf "\toption udn '%s'\n" "${MAPPED_UDN}"
-			printf "\toption enabled '1'\n"
-			printf "\toption max_volume '%s'\n" "${MAPPED_DEVICE_VOLUME}"
-		fi
-	} > "${WT_TMP}"
+			printf "config main 'main'\n"
+			printf "\toption enabled '%s'\n" "${MAPPED_ENABLED}"
+			printf "\toption interface '%s'\n" "${MAPPED_INTERFACE}"
+			printf "\toption airupnp '%s'\n" "${MAPPED_AIRUPNP}"
+			printf "\toption aircast '%s'\n" "${MAPPED_AIRCAST}"
+			printf "\toption codec '%s'\n" "${DEFAULT_CODEC}"
+			printf "\toption latency '%s'\n" "${DEFAULT_LATENCY}"
+			printf "\toption max_volume '%s'\n" "${MAPPED_MAX_VOLUME}"
+			printf "\toption media_volume '%s'\n" "${DEFAULT_MEDIA_VOLUME}"
+			printf "\toption log_level '%s'\n" "${DEFAULT_LOG_LEVEL}"
+			if [ "${MAPPED_DEVICE}" = '1' ]; then
+				printf '\n'
+				printf "config device 'device_legacy'\n"
+				printf "\toption engine 'upnp'\n"
+				printf "\toption udn '%s'\n" "${MAPPED_UDN}"
+				printf "\toption enabled '1'\n"
+				printf "\toption max_volume '%s'\n" "${MAPPED_DEVICE_VOLUME}"
+			fi
+		} >"${WT_TMP}"
 	) || {
 		rm -f "${WT_TMP}"
 		fail "cannot write ${WT_TMP}; nothing outside ${BK_DIR} was changed, so a later --apply is still allowed"
@@ -922,7 +922,7 @@ apply_migration() {
 		write_target_config
 		# The marker is written before the rename: a failure after this point
 		# still leaves a rollback path, and a failure before it changes nothing.
-		: > "${BK_DIR}/applied" || {
+		: >"${BK_DIR}/applied" || {
 			rm -f "${WT_TMP}"
 			fail "cannot write ${BK_DIR}/applied"
 		}
@@ -933,7 +933,7 @@ apply_migration() {
 		say "wrote: ${TARGET_CONFIG} (mode ${TARGET_MODE})"
 	else
 		say 'no legacy UCI configuration was found; the airconnect-manager configuration is left unchanged'
-		: > "${BK_DIR}/applied" || fail "cannot write ${BK_DIR}/applied"
+		: >"${BK_DIR}/applied" || fail "cannot write ${BK_DIR}/applied"
 	fi
 
 	APPLY_FAILED='0'
@@ -1051,7 +1051,7 @@ rollback() {
 				fi
 				RB_MODE=${RB_MODE#mode=}
 				case "${RB_REL}" in
-					etc/config/airconnect|etc/config/airconnect-manager) ;;
+					etc/config/airconnect | etc/config/airconnect-manager) ;;
 					*)
 						say "failed: the manifest lists an unexpected path: ${RB_REL}"
 						RB_FAILED='1'
@@ -1059,7 +1059,7 @@ rollback() {
 						;;
 				esac
 				case "${RB_MODE}" in
-					''|[0-7][0-7][0-7]|[0-7][0-7][0-7][0-7]) ;;
+					'' | [0-7][0-7][0-7] | [0-7][0-7][0-7][0-7]) ;;
 					*)
 						say "failed: the manifest has an invalid mode for ${RB_REL}: ${RB_MODE}"
 						RB_FAILED='1'
@@ -1076,7 +1076,7 @@ rollback() {
 			legacy_enabled=*) RB_LEGACY_ENABLED=${RB_LINE#legacy_enabled=} ;;
 			legacy_running=*) RB_LEGACY_RUNNING=${RB_LINE#legacy_running=} ;;
 		esac
-	done < "${BK_DIR}/manifest.txt"
+	done <"${BK_DIR}/manifest.txt"
 
 	if [ "${RB_LEGACY_ENABLED}" = 'yes' ]; then
 		if [ -x "${LEGACY_INIT}" ]; then
@@ -1132,11 +1132,11 @@ rollback() {
 				fi
 				;;
 		esac
-	done < "${BK_DIR}/manifest.txt"
+	done <"${BK_DIR}/manifest.txt"
 
 	say ''
 	if [ "${RB_FAILED}" = '0' ]; then
-		: > "${BK_DIR}/rolled-back" || fail "cannot write ${BK_DIR}/rolled-back"
+		: >"${BK_DIR}/rolled-back" || fail "cannot write ${BK_DIR}/rolled-back"
 		say "rollback: completed; ${BK_DIR} is kept for audit"
 		exit 0
 	fi

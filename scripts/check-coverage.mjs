@@ -81,7 +81,9 @@ for (const entry of readdirSync(coverageDir)) {
   }
 }
 
-const files = readdirSync(SOURCE_DIR).filter((name) => name.endsWith('.js')).sort();
+const files = readdirSync(SOURCE_DIR)
+  .filter((name) => name.endsWith('.js'))
+  .sort();
 let totalLines = 0;
 let coveredLines = 0;
 let failed = false;
@@ -99,5 +101,7 @@ for (const name of files) {
   coveredLines += covered;
 }
 const overall = totalLines ? (coveredLines / totalLines) * 100 : 100;
-console.log(`${failed ? 'FAIL' : 'PASS'} total ${coveredLines}/${totalLines} ${overall.toFixed(1)}% (per-file minimum ${threshold}%)`);
+console.log(
+  `${failed ? 'FAIL' : 'PASS'} total ${coveredLines}/${totalLines} ${overall.toFixed(1)}% (per-file minimum ${threshold}%)`,
+);
 assert(!failed, `frontend core line coverage must be at least ${threshold}% in every module`);

@@ -39,34 +39,38 @@ const NOT_A_LAN = 'loopback';
  * cannot get out of.
  */
 export function interfaceOptionsFrom(data, configured) {
-	const list = (data && (data.interface || data.interfaces)) || {};
-	const entries = Array.isArray(list)
-		? list.flatMap((item) => {
-				if (!item || item.interface === NOT_A_LAN) return [];
-				const device = item.l3_device || item.device;
-				if (!device) return [];
-				const name = item.interface || item.name;
-				return [{
-					value: device,
-					label: name && name !== device ? `${name} (${device})` : device
-				}];
-			})
-		: Object.keys(list).flatMap((name) => {
-				if (name === NOT_A_LAN) return [];
-				const item = list[name] || {};
-				const device = item.l3_device || item.device || name;
-				return device
-					? [{
-							value: device,
-							label: name !== device ? `${name} (${device})` : device
-						}]
-					: [];
-			});
-	const unique = [...new Map(entries.map((entry) => [entry.value, entry])).values()];
-	if (unique.length === 0) return null;
-	if (configured && !unique.some((entry) => entry.value === configured))
-		unique.unshift({ value: configured, label: configured });
-	return unique;
+  const list = (data && (data.interface || data.interfaces)) || {};
+  const entries = Array.isArray(list)
+    ? list.flatMap((item) => {
+        if (!item || item.interface === NOT_A_LAN) return [];
+        const device = item.l3_device || item.device;
+        if (!device) return [];
+        const name = item.interface || item.name;
+        return [
+          {
+            value: device,
+            label: name && name !== device ? `${name} (${device})` : device,
+          },
+        ];
+      })
+    : Object.keys(list).flatMap((name) => {
+        if (name === NOT_A_LAN) return [];
+        const item = list[name] || {};
+        const device = item.l3_device || item.device || name;
+        return device
+          ? [
+              {
+                value: device,
+                label: name !== device ? `${name} (${device})` : device,
+              },
+            ]
+          : [];
+      });
+  const unique = [...new Map(entries.map((entry) => [entry.value, entry])).values()];
+  if (unique.length === 0) return null;
+  if (configured && !unique.some((entry) => entry.value === configured))
+    unique.unshift({ value: configured, label: configured });
+  return unique;
 }
 
 /**
@@ -77,12 +81,10 @@ export function interfaceOptionsFrom(data, configured) {
  * still type a device name, and nothing silently disappears.
  */
 export function withInterfaceSelect(fields, options) {
-	if (!options) return fields;
-	return fields.map((field) =>
-		field.name === 'interface'
-			? Object.assign({}, field, { kind: 'select', options })
-			: field
-	);
+  if (!options) return fields;
+  return fields.map((field) =>
+    field.name === 'interface' ? Object.assign({}, field, { kind: 'select', options }) : field,
+  );
 }
 
 /**
@@ -90,5 +92,5 @@ export function withInterfaceSelect(fields, options) {
  * the backend default when the option was never written.
  */
 export function interfaceValue(configured) {
-	return configured == null || configured === '' ? DEFAULT_INTERFACE : configured;
+  return configured == null || configured === '' ? DEFAULT_INTERFACE : configured;
 }

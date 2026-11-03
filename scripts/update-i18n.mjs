@@ -52,8 +52,8 @@ const CHECK = process.argv.includes('--check');
 const STAMP = '2026-10-31 00:00+0800';
 
 function fail(message) {
-	console.error('update-i18n: ' + message);
-	process.exit(1);
+  console.error('update-i18n: ' + message);
+  process.exit(1);
 }
 
 /**
@@ -67,38 +67,38 @@ function fail(message) {
 const CALL = /_\(\s*'((?:\\.|[^'\\])*)'\s*\)/g;
 
 function collect(directory, out) {
-	for (const path of listSources(directory)) {
-		const source = readFileSync(path, 'utf8');
-		const rel = relative(PKG, path).split('\\').join('/');
-		for (const match of source.matchAll(CALL)) {
-			const text = JSON.parse('"' + match[1].replace(/"/g, '\\"') + '"');
-			if (!out.has(text)) out.set(text, []);
-			out.get(text).push(rel);
-		}
-	}
-	return out;
+  for (const path of listSources(directory)) {
+    const source = readFileSync(path, 'utf8');
+    const rel = relative(PKG, path).split('\\').join('/');
+    for (const match of source.matchAll(CALL)) {
+      const text = JSON.parse('"' + match[1].replace(/"/g, '\\"') + '"');
+      if (!out.has(text)) out.set(text, []);
+      out.get(text).push(rel);
+    }
+  }
+  return out;
 }
 
 /** Every .js/.jsx file under a directory, recursively, in a stable order. */
 function listSources(directory) {
-	const files = [];
-	for (const entry of readdirSorted(directory)) {
-		const path = join(directory, entry);
-		if (statIsDirectory(path)) files.push(...listSources(path));
-		else if (/\.(js|jsx)$/.test(entry)) files.push(path);
-	}
-	return files;
+  const files = [];
+  for (const entry of readdirSorted(directory)) {
+    const path = join(directory, entry);
+    if (statIsDirectory(path)) files.push(...listSources(path));
+    else if (/\.(js|jsx)$/.test(entry)) files.push(path);
+  }
+  return files;
 }
 // Small helpers so the script does not need node:fs's sync stat dance in a
 // recursive walk; `import { readdirSync, statSync }` is enough.
 const { readdirSync, statSync } = await import('node:fs');
 
 function readdirSorted(directory) {
-	return readdirSync(directory).sort();
+  return readdirSync(directory).sort();
 }
 
 function statIsDirectory(path) {
-	return statSync(path).isDirectory();
+  return statSync(path).isDirectory();
 }
 
 /**
@@ -109,130 +109,130 @@ function statIsDirectory(path) {
  * side effects beyond defining the table. It is imported as a module so the
  * exports stay the single source of truth.
  */
-const { ZH } = await import(new URL(
-	'../packages/luci-app-airconnect-manager/frontend/src/lib/i18n.js',
-	import.meta.url
-));
+const { ZH } = await import(
+  new URL('../packages/luci-app-airconnect-manager/frontend/src/lib/i18n.js', import.meta.url)
+);
 
 function escape(value) {
-	return value
-		.replace(/\\/g, '\\\\')
-		.replace(/"/g, '\\"')
-		.replace(/\n/g, '\\n')
-		.replace(/\t/g, '\\t');
+  return value
+    .replace(/\\/g, '\\\\')
+    .replace(/"/g, '\\"')
+    .replace(/\n/g, '\\n')
+    .replace(/\t/g, '\\t');
 }
 
 function renderHeader(extra) {
-	return [
-		'# AirBridge translation template.',
-		'# This file is distributed under the same license as the package.',
-		'#',
-		'msgid ""',
-		'msgstr ""',
-		'"Project-Id-Version: luci-app-airconnect-manager 0.1.0\\n"',
-		`"POT-Creation-Date: ${STAMP}\\n"`,
-		'"MIME-Version: 1.0\\n"',
-		'"Content-Type: text/plain; charset=UTF-8\\n"',
-		'"Content-Transfer-Encoding: 8bit\\n"',
-		...extra
-	].join('\n');
+  return [
+    '# AirBridge translation template.',
+    '# This file is distributed under the same license as the package.',
+    '#',
+    'msgid ""',
+    'msgstr ""',
+    '"Project-Id-Version: luci-app-airconnect-manager 0.1.0\\n"',
+    `"POT-Creation-Date: ${STAMP}\\n"`,
+    '"MIME-Version: 1.0\\n"',
+    '"Content-Type: text/plain; charset=UTF-8\\n"',
+    '"Content-Transfer-Encoding: 8bit\\n"',
+    ...extra,
+  ].join('\n');
 }
 
 function renderEntries(strings) {
-	const out = [];
-	for (const [text, locations] of strings) {
-		out.push('');
-		for (const location of locations) out.push('#: ' + location);
-		out.push('msgid "' + escape(text) + '"');
-		out.push('msgstr ""');
-	}
-	return out.join('\n') + '\n';
+  const out = [];
+  for (const [text, locations] of strings) {
+    out.push('');
+    for (const location of locations) out.push('#: ' + location);
+    out.push('msgid "' + escape(text) + '"');
+    out.push('msgstr ""');
+  }
+  return out.join('\n') + '\n';
 }
 
 const strings = collect(FRONTEND, new Map());
 for (const path of readdirSorted(VIEWS)) {
-	if (!path.endsWith('.js')) continue;
-	const full = join(VIEWS, path);
-	const source = readFileSync(full, 'utf8');
-	const rel = relative(PKG, full).split('\\').join('/');
-	for (const match of source.matchAll(CALL)) {
-		const text = JSON.parse('"' + match[1].replace(/"/g, '\\"') + '"');
-		if (!strings.has(text)) strings.set(text, []);
-		strings.get(text).push(rel);
-	}
+  if (!path.endsWith('.js')) continue;
+  const full = join(VIEWS, path);
+  const source = readFileSync(full, 'utf8');
+  const rel = relative(PKG, full).split('\\').join('/');
+  for (const match of source.matchAll(CALL)) {
+    const text = JSON.parse('"' + match[1].replace(/"/g, '\\"') + '"');
+    if (!strings.has(text)) strings.set(text, []);
+    strings.get(text).push(rel);
+  }
 }
 
 // LuCI translates menu titles through the same global catalog as view text.
 // Include this package's titles so the Chinese menu does not lag behind the
 // product name shown inside the React application.
 for (const path of readdirSorted(MENU)) {
-	if (!path.endsWith('.json')) continue;
-	const full = join(MENU, path);
-	const menu = JSON.parse(readFileSync(full, 'utf8'));
-	for (const spec of Object.values(menu)) {
-		if (!spec.title || strings.has(spec.title)) continue;
-		strings.set(spec.title, [relative(PKG, full).split('\\').join('/')]);
-	}
+  if (!path.endsWith('.json')) continue;
+  const full = join(MENU, path);
+  const menu = JSON.parse(readFileSync(full, 'utf8'));
+  for (const spec of Object.values(menu)) {
+    if (!spec.title || strings.has(spec.title)) continue;
+    strings.set(spec.title, [relative(PKG, full).split('\\').join('/')]);
+  }
 }
 
 // Sort by msgid, which is what gettext does and what makes the diff stable.
 const sorted = new Map(
-	[...strings.entries()].sort((a, b) => (a[0] < b[0] ? -1 : a[0] > b[0] ? 1 : 0))
+  [...strings.entries()].sort((a, b) => (a[0] < b[0] ? -1 : a[0] > b[0] ? 1 : 0)),
 );
 
-const pot = [
-	renderHeader([]),
-	renderEntries(sorted)
-].join('\n');
+const pot = [renderHeader([]), renderEntries(sorted)].join('\n');
 
 let po = [
-	'# Chinese translations for luci-app-airconnect-manager package.',
-	'# Copyright (C) 2026 THE luci-app-airconnect-manager\'S COPYRIGHT HOLDER',
-	'# This file is distributed under the same license as the luci-app-airconnect-manager package.',
-	'# Automatically generated, 2026.',
-	'#',
-	'msgid ""',
-	'msgstr ""',
-	'"Project-Id-Version: luci-app-airconnect-manager 0.1.0\\n"',
-	`"POT-Creation-Date: ${STAMP}\\n"`,
-	`"PO-Revision-Date: ${STAMP}\\n"`,
-	'"Last-Translator: Automatically generated\\n"',
-	'"Language-Team: none\\n"',
-	'"Language: zh_Hans\\n"',
-	'"MIME-Version: 1.0\\n"',
-	'"Content-Type: text/plain; charset=UTF-8\\n"',
-	'"Content-Transfer-Encoding: 8bit\\n"',
-	renderEntries(sorted)
+  '# Chinese translations for luci-app-airconnect-manager package.',
+  "# Copyright (C) 2026 THE luci-app-airconnect-manager'S COPYRIGHT HOLDER",
+  '# This file is distributed under the same license as the luci-app-airconnect-manager package.',
+  '# Automatically generated, 2026.',
+  '#',
+  'msgid ""',
+  'msgstr ""',
+  '"Project-Id-Version: luci-app-airconnect-manager 0.1.0\\n"',
+  `"POT-Creation-Date: ${STAMP}\\n"`,
+  `"PO-Revision-Date: ${STAMP}\\n"`,
+  '"Last-Translator: Automatically generated\\n"',
+  '"Language-Team: none\\n"',
+  '"Language: zh_Hans\\n"',
+  '"MIME-Version: 1.0\\n"',
+  '"Content-Type: text/plain; charset=UTF-8\\n"',
+  '"Content-Transfer-Encoding: 8bit\\n"',
+  renderEntries(sorted),
 ].join('\n');
 
 // The Chinese text comes from the built-in table, so the catalogue and the
 // bundle cannot disagree about a translation.
 let poLines = po.split('\n');
 for (let i = 0; i < poLines.length - 1; i++) {
-	const match = /^msgid "(.*)"$/.exec(poLines[i]);
-	if (!match) continue;
-	const id = JSON.parse('"' + match[1] + '"');
-	const translated = ZH[id];
-	if (translated === undefined) continue;
-	poLines[i + 1] = 'msgstr "' + escape(translated) + '"';
+  const match = /^msgid "(.*)"$/.exec(poLines[i]);
+  if (!match) continue;
+  const id = JSON.parse('"' + match[1] + '"');
+  const translated = ZH[id];
+  if (translated === undefined) continue;
+  poLines[i + 1] = 'msgstr "' + escape(translated) + '"';
 }
 po = poLines.join('\n');
 
 if (CHECK) {
-	const stale = [];
-	for (const [path, expected] of [[POT, pot], [PO, po]]) {
-		const actual = readFileSync(path, 'utf8');
-		if (actual !== expected) stale.push(relative(ROOT, path));
-	}
-	if (stale.length) {
-		console.error(
-			'update-i18n: the translation catalogues are stale: ' + stale.join(', ') +
-			'\nrun: node scripts/update-i18n.mjs'
-		);
-		process.exit(1);
-	}
-	console.log('update-i18n: ' + sorted.size + ' strings, catalogues are current');
-	process.exit(0);
+  const stale = [];
+  for (const [path, expected] of [
+    [POT, pot],
+    [PO, po],
+  ]) {
+    const actual = readFileSync(path, 'utf8');
+    if (actual !== expected) stale.push(relative(ROOT, path));
+  }
+  if (stale.length) {
+    console.error(
+      'update-i18n: the translation catalogues are stale: ' +
+        stale.join(', ') +
+        '\nrun: node scripts/update-i18n.mjs',
+    );
+    process.exit(1);
+  }
+  console.log('update-i18n: ' + sorted.size + ' strings, catalogues are current');
+  process.exit(0);
 }
 
 writeFileSync(POT, pot);

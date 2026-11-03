@@ -11,14 +11,39 @@
  * suites can drive it with a fake `uci` and the app uses the real one.
  */
 export const MAIN_KEYS = [
-	'enabled', 'interface', 'airupnp', 'aircast', 'codec', 'latency',
-	'max_volume', 'media_volume', 'log_level', 'metadata', 'flush', 'drift',
-	'artwork', 'http_length', 'upnp_max', 'stop_receiver'
+  'enabled',
+  'interface',
+  'airupnp',
+  'aircast',
+  'codec',
+  'latency',
+  'max_volume',
+  'media_volume',
+  'log_level',
+  'metadata',
+  'flush',
+  'drift',
+  'artwork',
+  'http_length',
+  'upnp_max',
+  'stop_receiver',
 ];
 
 export const DEVICE_KEYS = [
-	'engine', 'udn', 'enabled', 'name', 'max_volume', 'media_volume', 'codec',
-	'latency', 'metadata', 'flush', 'drift', 'artwork', 'http_length', 'stop_receiver'
+  'engine',
+  'udn',
+  'enabled',
+  'name',
+  'max_volume',
+  'media_volume',
+  'codec',
+  'latency',
+  'metadata',
+  'flush',
+  'drift',
+  'artwork',
+  'http_length',
+  'stop_receiver',
 ];
 
 export const ENGINE_VALUES = ['upnp', 'cast'];
@@ -31,23 +56,23 @@ export const ENGINE_VALUES = ['upnp', 'cast'];
  *   `.name`. A real `window.uci` satisfies this; the test shims do too.
  */
 export function buildCanonicalConfig(uci) {
-	const main = {};
-	for (const field of MAIN_KEYS) {
-		const v = uci.get('airconnect-manager', 'main', field);
-		if (v != null) main[field] = v;
-	}
-	const devices = [];
-	const removed = [];
-	uci.sections('airconnect-manager', 'device', (s) => {
-		if (s['.removed']) {
-			removed.push(s['.name']);
-			return;
-		}
-		const item = { section: s['.name'] };
-		for (const field of DEVICE_KEYS) {
-			if (s[field] != null) item[field] = s[field];
-		}
-		devices.push(item);
-	});
-	return { main, devices, removed };
+  const main = {};
+  for (const field of MAIN_KEYS) {
+    const v = uci.get('airconnect-manager', 'main', field);
+    if (v != null) main[field] = v;
+  }
+  const devices = [];
+  const removed = [];
+  uci.sections('airconnect-manager', 'device', (s) => {
+    if (s['.removed']) {
+      removed.push(s['.name']);
+      return;
+    }
+    const item = { section: s['.name'] };
+    for (const field of DEVICE_KEYS) {
+      if (s[field] != null) item[field] = s[field];
+    }
+    devices.push(item);
+  });
+  return { main, devices, removed };
 }

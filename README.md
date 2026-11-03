@@ -59,13 +59,18 @@ bash scripts/build-local.sh
 
 The output is written to `packages/output/`. The release workflow performs the same SDK build automatically only after a release-please PR is merged and its tag is created.
 
-### Run Tests Locally
+### Local Quality Checks and Tests
+
+Root `npm` development dependencies are used only for code checks and are not installed on the router. Install them and run the checks with:
 
 ```bash
-bash scripts/run-tests.sh
+npm ci
+npm run lint
+npm run format:check
+npm test
 ```
 
-All host test suites should pass.
+`npm run format` applies the configured formatting. Shell checks require `shellcheck` and `shfmt` locally; CI installs these tools automatically.
 
 ## Documentation
 

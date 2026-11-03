@@ -2,7 +2,10 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { runInNewContext } from 'node:vm';
 
-const bundle = readFileSync(new URL('../htdocs/luci-static/resources/airbridge/app.js', import.meta.url), 'utf8');
+const bundle = readFileSync(
+  new URL('../htdocs/luci-static/resources/airbridge/app.js', import.meta.url),
+  'utf8',
+);
 const browser = { window: {}, console, setTimeout, clearTimeout };
 
 runInNewContext(bundle, browser, { filename: 'app.js', timeout: 5000 });

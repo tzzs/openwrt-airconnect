@@ -258,8 +258,7 @@ EOF
 		files/usr/share/airconnect-manager/files.uc \
 		files/usr/share/airconnect-manager/VERSION \
 		files/usr/share/airconnect-manager/runtime.uc \
-		files/usr/share/rpcd/ucode/airconnect-manager
-	do
+		files/usr/share/rpcd/ucode/airconnect-manager; do
 		if printf '%s\n' "${install_block}" | grep -q "${payload}"; then
 			ok "payload is installed: ${payload#files/}"
 		else
@@ -293,7 +292,7 @@ fi
 plugin_mode=$(stat -c '%a' "${pkg}/files/usr/share/rpcd/ucode/airconnect-manager" 2>/dev/null ||
 	stat -f '%Lp' "${pkg}/files/usr/share/rpcd/ucode/airconnect-manager" 2>/dev/null)
 case "${plugin_mode}" in
-	755|0755) ok 'the rpcd plugin is mode 0755 in the tree' ;;
+	755 | 0755) ok 'the rpcd plugin is mode 0755 in the tree' ;;
 	*) no 'the rpcd plugin is mode 0755 in the tree' "mode is ${plugin_mode:-unknown}" ;;
 esac
 if grep -qF '$(INSTALL_DIR) $(1)/usr/share/rpcd/ucode' "${makefile}"; then

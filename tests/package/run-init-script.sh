@@ -117,7 +117,10 @@ run_action() {
 		procd_add_reload_trigger() { record "trigger $*"; }
 		# rc.common's rc_procd wraps the callback in procd_open_service and
 		# procd_close_service, so the callback must really run here.
-		rc_procd() { record "rc_procd $*"; "$@"; }
+		rc_procd() {
+			record "rc_procd $*"
+			"$@"
+		}
 
 		# --- the subject under test ------------------------------------------
 		. "${initscript}"

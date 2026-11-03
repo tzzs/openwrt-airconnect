@@ -17,8 +17,8 @@ import { createContext, useContext } from 'react';
 export const ThemeContext = createContext('system');
 
 export function useThemeClass() {
-	const theme = useContext(ThemeContext);
-	if (theme === 'dark') return 'ac-theme-dark';
-	if (theme === 'light') return 'ac-theme-light';
-	return '';
+  const theme = useContext(ThemeContext);
+  if (theme === 'dark') return 'ac-theme-dark';
+  if (theme === 'light') return 'ac-theme-light';
+  return '';
 }
