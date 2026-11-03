@@ -59,12 +59,13 @@ function fail(message) {
 /**
  * Walk a directory and collect the translatable strings.
  *
- * The pattern only matches single-quoted arguments with no interpolation:
- * `_('Save')` yes, `_(\`Save ${x}\`)` no. A string that interpolates cannot be
+ * The pattern only matches single-quoted arguments (including Prettier's optional
+ * trailing comma) with no interpolation: `_('Save')` and `_(\n  'Save',\n)` yes,
+ * `_(\`Save ${x}\`)` no. A string that interpolates cannot be
  * translated anyway, because the translator would have to guess where the
  * variable goes, so the pattern deliberately excludes it.
  */
-const CALL = /_\(\s*'((?:\\.|[^'\\])*)'\s*\)/g;
+const CALL = /_\(\s*'((?:\\.|[^'\\])*)'\s*,?\s*\)/g;
 
 function collect(directory, out) {
   for (const path of listSources(directory)) {
