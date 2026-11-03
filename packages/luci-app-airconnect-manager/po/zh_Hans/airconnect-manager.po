@@ -488,10 +488,6 @@ msgstr "服务状态"
 msgid "Set up this speaker"
 msgstr "设置此音箱"
 
-#: root/usr/share/luci/menu.d/luci-app-airconnect-manager.json
-msgid "Settings"
-msgstr "设置"
-
 #: frontend/src/components/service-panel.jsx
 msgid "Signal report"
 msgstr "信号报告"

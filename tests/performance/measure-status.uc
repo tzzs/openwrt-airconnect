@@ -11,7 +11,7 @@
 //
 // The measured quantity is the size of the JSON rpcd would put on the wire for
 // one reply: `length(sprintf('%J', reply))`. That is the byte count the poll
-// described in docs/PERFORMANCE.zh-CN.md pays every 10 seconds, so it is the
+// described by the page's 10-second polling interval pays every 10 seconds, so it is the
 // number the budget is about. It is not the HTTP payload (rpcd/LuCI add
 // envelope and headers around it), and it is not the string length in
 // characters: ucode's length() counts bytes.

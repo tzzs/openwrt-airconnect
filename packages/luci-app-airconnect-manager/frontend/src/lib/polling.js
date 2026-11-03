@@ -2,12 +2,10 @@
  * The status poller, extracted from the React tree so its contract can be
  * executed without a browser.
  *
- * docs/PERFORMANCE.zh-CN.md and docs/ARCHITECTURE.zh-CN.md promise four things
- * about the page: it polls every 10 seconds, pauses while the tab is hidden,
- * never has two requests in flight, and backs off to 60 seconds after repeated
- * failures. Those four claims decide whether opening a second tab doubles the
- * router's RPC load, so they live here as a plain object the test suite drives
- * with a fake clock instead of as effects inside a component.
+ * The polling contract is asserted in tests/performance/poll-contract.mjs:
+ * poll every 10 seconds, pause while hidden, allow one request in flight, and
+ * back off to 60 seconds after repeated failures. Keeping these rules here as a
+ * plain object lets the host suite drive them with a fake clock.
  */
 
 import { nextRetryDelayMs } from './backoff.js';

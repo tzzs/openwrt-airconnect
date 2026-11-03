@@ -93,7 +93,7 @@ CI 能保证"包能编译、内容完整"，不能保证"包在设备上是对�
 - [ ] `ubus call airconnect.manager.status` 返回预期结构
 - [ ] 升级一个已安装的旧版本后，`/etc/config/airconnect-manager` 保留
 - [ ] `scripts/migrate-legacy.sh --apply` 在真实旧配置上演练过，且回滚可用
-- [ ] `docs/VERIFICATION.zh-CN.md` 的"仍未验证"一节与当前认知一致
+- [ ] 核对 README 的当前状态与本次设备验收记录一致
 
 ---
 
@@ -132,7 +132,7 @@ ssh router 'ubus call airconnect.manager.status "{}"'
 ssh router 'logread -f'
 ```
 
-这一步已经做过**部分**验证：把 `packages/airconnect-manager/files/` 按安装后的目录布局放到路由器上，`ubus call airconnect.manager.status` 返回了正确结构，五个 rpcd 方法全部注册成功。证据见 `docs/VERIFICATION.zh-CN.md` 的"真实设备验证"一节。**尚未做**的是通过 `apk add` 完整安装，因此 conffiles 处理、升级保留、`apk del` 卸载都还没验证。
+以下项目已在 2026-10-26 的真实设备上验证：三个功能 APK 经 `apk add --allow-untrusted` 安装，安装清单、引擎执行、rpcd 五个方法及 RPC 调用正常；随后四个 APK（含中文翻译包）安装完成，登录态 LuCI 页面渲染和翻译正常，旧服务迁移与切换完成。**仍未验证**：升级时 conffiles 保留、`apk del` 卸载行为、LuCI 保存/应用/重置、真实音箱播放和设备性能。该设备网段未发现 UPnP/DLNA 渲染器。
 
 ### 先在 x86_64 主机上本地编译
 

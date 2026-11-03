@@ -4,12 +4,9 @@
 //
 //   node tests/performance/poll-contract.mjs
 //
-// docs/PERFORMANCE.zh-CN.md and docs/ARCHITECTURE.zh-CN.md both promise, in
-// prose, that the page polls every 10 seconds, pauses while the tab is hidden,
-// never has two requests in flight, backs off to 60 seconds after repeated
-// failures, and does not repaint the form when a status reply arrives. Those are
-// the four claims that decide whether opening a second tab doubles the router's
-// RPC load, and nothing else executes them.
+// Assert the page's polling contract: poll every 10 seconds, pause while the
+// tab is hidden, allow one request in flight, back off to 60 seconds after
+// repeated failures, and do not repaint the form when a status reply arrives.
 //
 // The polling loop lives in frontend/src/lib/polling.js - a plain object the
 // React tree drives - so this file exercises it directly with a fake clock and a

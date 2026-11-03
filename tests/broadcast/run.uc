@@ -12,7 +12,7 @@
 //
 // The packet fixtures are real: the "matching" fixture is the byte sequence the
 // shipped airupnp-linux-x86_64-static 1.12.4 emitted on the wire, captured with
-// tcpdump during this task (see docs/VERIFICATION.zh-CN.md). Its UDN is
+// tcpdump during device verification. Its UDN is
 // uuid:demo-synthetic-renderer, its instance name is
 // BBBBA7A5DB92@Demo Speaker+ and its TXT model is airupnp.
 
