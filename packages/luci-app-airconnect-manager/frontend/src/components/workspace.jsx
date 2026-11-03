@@ -28,6 +28,8 @@ function HealthStrip({ status, presentation, t }) {
   const total = list.filter((device) => device && device.udn).length;
   const broadcast = (status && status.broadcast) || {};
   const activeEngine = upnp.running ? _('UPnP') : cast.running ? _('Chromecast') : _('No engine');
+  const activeService = upnp.running ? upnp : cast.running ? cast : upnp;
+  const broadcasting = activeService ? activeService.broadcasting : null;
 
   const items = [
     {
@@ -47,9 +49,15 @@ function HealthStrip({ status, presentation, t }) {
     {
       key: 'broadcast',
       icon: Signal,
-      value: broadcast.observed_at ? presentation.time(broadcast.observed_at) : _('Not measured'),
-      label: _('last AirPlay observation'),
-      tone: broadcast.error ? 'warning' : broadcast.observed_at ? 'positive' : 'unknown',
+      value: presentation.broadcastStatus(broadcasting),
+      label: _('AirPlay broadcast'),
+      tone: broadcast.error
+        ? 'warning'
+        : broadcasting === true
+          ? 'positive'
+          : broadcasting === false
+            ? 'neutral'
+            : 'unknown',
     },
   ];
 

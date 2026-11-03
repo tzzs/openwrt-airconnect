@@ -76,14 +76,10 @@ function status(overrides) {
 function main() {
   section('an unmeasured broadcast renders as unknown, never as a positive');
   {
-    const text = p.broadcastText(null, null, null);
-    check(/Unknown/.test(text), 'the row says Unknown', text);
-    check(!/^Yes/.test(text), 'the row does not start with a positive', text);
-    // It must also explain what would make the state knowable.
-    check(/mDNS/.test(text), 'the row names the measurement that is missing', text);
+    check(p.broadcastStatus(null) === 'Unknown', 'the row says Unknown', p.broadcastStatus(null));
     check(
-      p.deviceBroadcastBadge(null).label === 'AirPlay broadcast unknown',
-      'the device badge is unknown',
+      p.deviceBroadcastBadge(null).label === 'AirPlay: Unknown',
+      'the device badge uses the same label set',
       p.deviceBroadcastBadge(null).label,
     );
     check(
@@ -91,49 +87,63 @@ function main() {
       'the unknown badge is not painted as a positive',
       p.deviceBroadcastBadge(null).tone,
     );
-    check(
-      p.deviceBroadcastFact(null, null) === 'Unknown — not measured',
-      'the device fact is unknown',
-      p.deviceBroadcastFact(null, null),
-    );
+    // A scan that never ran has no observation time and no failure reason.
+    check(p.broadcastCheckedAt(null) === null, 'an unmeasured state has no check time');
+    check(p.broadcastError(null) === null, 'an unmeasured state has no error row');
   }
 
-  section('a measured positive shows the value and the observation time');
+  section('a measured positive uses the same label as the badge');
   {
-    const text = p.broadcastText(true, OBSERVED_AT, null);
-    check(/^Yes/.test(text), 'the UPnP row is a positive', text);
-    check(/observed/.test(text), 'the row carries an observation time', text);
-    // A measured negative is NOT unknown and must not read as a positive.
-    const negative = p.broadcastText(false, OBSERVED_AT, null);
-    check(/^No/.test(negative), 'the Chromecast row is a measured negative', negative);
-    check(!/Unknown/.test(negative), 'a measured negative is not Unknown', negative);
     check(
-      p.deviceBroadcastBadge(true).label === 'AirPlay advertised',
-      'the device badge is positive',
+      p.broadcastStatus(true) === 'Broadcasting',
+      'the UPnP row is a positive',
+      p.broadcastStatus(true),
+    );
+    check(
+      p.deviceBroadcastBadge(true).label === 'AirPlay: Broadcasting',
+      'the device badge is the same three-state label',
       p.deviceBroadcastBadge(true).label,
     );
-    const fact = p.deviceBroadcastFact(true, OBSERVED_AT);
-    check(/^Yes/.test(fact), 'the device fact is a positive', fact);
-    check(/observed/.test(fact), 'the device fact carries the observation time', fact);
+    check(
+      p.deviceBroadcastBadge(true).tone === 'positive',
+      'the positive badge is painted as a positive',
+    );
+    // The observation time is a separate row shared by both engines.
+    const checkedAt = p.broadcastCheckedAt(OBSERVED_AT);
+    check(/^Last broadcast check: /.test(checkedAt), 'the check time is its own row', checkedAt);
+    // A measured negative is NOT unknown and must not read as a positive.
+    const negative = p.broadcastStatus(false);
+    check(negative === 'Not broadcasting', 'the Chromecast row is a measured negative', negative);
+    check(!/Unknown/.test(negative), 'a measured negative is not Unknown', negative);
   }
 
   section('a measured negative is a value, not Unknown');
   {
-    const text = p.broadcastText(false, OBSERVED_AT, null);
-    check(/^No/.test(text), 'the row is a negative', text);
-    check(/scan found no advertisement/.test(text), 'the row says the scan ran', text);
     check(
-      p.deviceBroadcastBadge(false).label === 'No AirPlay advertisement',
+      p.broadcastStatus(false) === 'Not broadcasting',
+      'the row is a negative',
+      p.broadcastStatus(false),
+    );
+    check(
+      p.deviceBroadcastBadge(false).label === 'AirPlay: Not broadcasting',
       'the device badge is a negative',
       p.deviceBroadcastBadge(false).label,
     );
   }
 
-  section('a failed observation is unknown and shows why');
+  section('a failed observation is unknown and shows why once');
   {
-    const text = p.broadcastText(null, OBSERVED_AT, 'no reply');
-    check(/Unknown/.test(text), 'a failed observation is Unknown', text);
-    check(/no reply/.test(text), 'the failure reason is shown', text);
+    check(
+      p.broadcastStatus(null) === 'Unknown',
+      'a failed observation is Unknown',
+      p.broadcastStatus(null),
+    );
+    check(
+      p.broadcastError('no reply') === 'Last check error: no reply',
+      'the failure reason is one shared row',
+      p.broadcastError('no reply'),
+    );
+    check(p.broadcastError(null) === null, 'a completed scan has no error row');
   }
 
   section('playback is never implied by a broadcast positive');
@@ -154,10 +164,7 @@ function main() {
       playback,
     );
     // The two rows must be distinguishable text, not the same string.
-    check(
-      playback !== p.broadcastText(true, OBSERVED_AT, null),
-      'playback and broadcast are not the same string',
-    );
+    check(playback !== p.broadcastStatus(true), 'playback and broadcast are not the same string');
   }
 
   section('playback is the same constant whatever the broadcast state');
@@ -192,7 +199,7 @@ function main() {
       p.serviceLabel(service),
     );
     check(
-      /Unknown/.test(p.broadcastText(service.broadcasting, null, null)),
+      p.broadcastStatus(service.broadcasting) === 'Unknown',
       'a running service does not make the broadcast row positive',
     );
   }
@@ -201,7 +208,7 @@ function main() {
   {
     check(p.onlineLabel(true) === 'Discovered', 'the device is discovered', p.onlineLabel(true));
     check(
-      p.deviceBroadcastBadge(null).label === 'AirPlay broadcast unknown',
+      p.deviceBroadcastBadge(null).label === 'AirPlay: Unknown',
       'being discovered does not make it broadcast',
     );
   }

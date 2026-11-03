@@ -1,9 +1,16 @@
 import { useState } from 'react';
-import { Activity, Clock3, Play, RefreshCw, Signal } from 'lucide-react';
+import { Activity, AlertCircle, Clock3, Play, RefreshCw, Signal } from 'lucide-react';
 
 import { Button } from './ui/button.jsx';
 import { Alert } from './feedback.jsx';
 import { Drawer, DrawerContent, DrawerHeader, DrawerTrigger } from './ui/drawer.jsx';
+
+/** The dot colour for a three-state broadcast measurement. */
+function broadcastTone(broadcasting) {
+  if (broadcasting === true) return 'ac-dot-positive';
+  if (broadcasting === false) return 'ac-dot-neutral';
+  return 'ac-dot-unknown';
+}
 
 /**
  * The service panel: what the bridge engines are doing, and the logs.
@@ -33,6 +40,8 @@ export function ServiceDrawer({
   const services = (status && status.services) || {};
   const broadcast = (status && status.broadcast) || {};
   const playback = (status && status.playback) || {};
+  const checkedAt = presentation.broadcastCheckedAt(broadcast.observed_at);
+  const checkError = presentation.broadcastError(broadcast.error);
 
   return (
     <Drawer open={open} onOpenChange={setOpen}>
@@ -129,24 +138,24 @@ export function ServiceDrawer({
             </div>
             <div className="ac-signal-card">
               <div>
-                <span>{_('AirPlay broadcast')}</span>
+                <span>{_('AirPlay broadcast (UPnP)')}</span>
                 <strong>
-                  {presentation.broadcastText(
-                    services.upnp && services.upnp.broadcasting,
-                    broadcast.observed_at,
-                    broadcast.error,
-                  )}
+                  {presentation.broadcastStatus(services.upnp && services.upnp.broadcasting)}
                 </strong>
               </div>
               <span
-                className={
-                  'ac-dot ' +
-                  (services.upnp && services.upnp.broadcasting === true
-                    ? 'ac-dot-positive'
-                    : services.upnp && services.upnp.broadcasting === false
-                      ? 'ac-dot-neutral'
-                      : 'ac-dot-unknown')
-                }
+                className={'ac-dot ' + broadcastTone(services.upnp && services.upnp.broadcasting)}
+              />
+            </div>
+            <div className="ac-signal-card">
+              <div>
+                <span>{_('AirPlay broadcast (Chromecast)')}</span>
+                <strong>
+                  {presentation.broadcastStatus(services.cast && services.cast.broadcasting)}
+                </strong>
+              </div>
+              <span
+                className={'ac-dot ' + broadcastTone(services.cast && services.cast.broadcasting)}
               />
             </div>
             <div className="ac-signal-card">
@@ -156,10 +165,16 @@ export function ServiceDrawer({
               </div>
               <span className="ac-dot ac-dot-unknown" />
             </div>
-            {broadcast.observed_at ? (
+            {checkedAt ? (
               <small className="ac-observed-time">
                 <Clock3 />
-                {_('Observed')} {presentation.time(broadcast.observed_at)}
+                {checkedAt}
+              </small>
+            ) : null}
+            {checkError ? (
+              <small className="ac-observed-time is-warning">
+                <AlertCircle />
+                {checkError}
               </small>
             ) : null}
           </section>

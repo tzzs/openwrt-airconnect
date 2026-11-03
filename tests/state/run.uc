@@ -65,7 +65,8 @@ function discovered(engine, udn, extra) {
 	let device = {
 		engine: engine, udn: udn, original_name: 'Demo Speaker',
 		model: 'Demo Model', manufacturer: 'Demo Manufacturer',
-		address: '192.0.2.10', last_seen: 1700000000, online: true
+		address: '192.0.2.10', last_seen: 1700000000, online: true,
+		control_url: null, playback_state: null, playback_observed_at: null
 	};
 	for (let key in extra ?? {})
 		device[key] = extra[key];
@@ -94,7 +95,7 @@ test('a discovered device is kept with its facts and marked configured when UCI 
 	deepEqual(merged[0], {
 		engine: 'upnp', udn: 'uuid:demo-upnp', original_name: 'Demo Speaker',
 		name: 'Living Room', model: 'Demo Model', manufacturer: 'Demo Manufacturer',
-		address: '192.0.2.10', last_seen: 1700000000, online: true, configured: true
+		address: '192.0.2.10', last_seen: 1700000000, online: true, configured: true, control_url: null, playback_state: null, playback_observed_at: null
 	});
 });
 
@@ -119,7 +120,7 @@ test('a configured device that was not discovered stays visible and offline', ()
 	deepEqual(merged, [{
 		engine: 'upnp', udn: 'uuid:demo-offline', original_name: null, name: 'Kitchen',
 		model: null, manufacturer: null, address: null, last_seen: null,
-		online: false, configured: true
+		online: false, configured: true, control_url: null, playback_state: null, playback_observed_at: null
 	}]);
 });
 
@@ -285,6 +286,20 @@ test('disabled is false, and enabled only accepts the spellings config.uc accept
 	let odd = buildStatus({ uciMain: { enabled: 'yes', airupnp: 'on', aircast: 2 } });
 	assert(odd.enabled === false && odd.services.upnp.enabled === false && odd.services.cast.enabled === false,
 		'values the validator rejects must not be read as enabled');
+});
+
+test('online UPnP devices preserve measured playback and endpoint while offline devices stay unknown', () => {
+	let status = buildStatus({
+		cached: { scanned_at: 1700000000, devices: [
+			{ ...discovered('upnp', 'uuid:playing'), control_url: 'http://192.168.20.10:1400/control', playback_state: true, playback_observed_at: 1700000000 },
+			{ ...discovered('upnp', 'uuid:unknown'), playback_state: null, playback_observed_at: null }
+		] },
+		devices: [configured('upnp', 'uuid:offline')], now: 1700000000
+	});
+	assert(status.devices[0].playback_state === true && status.devices[0].playback_observed_at === 1700000000, 'measured playback is preserved');
+	assert(status.devices[0].control_url == 'http://192.168.20.10:1400/control', 'UPnP control URL is preserved');
+	assert(status.devices[1].playback_state === null && status.devices[1].playback_observed_at === null, 'failed query stays unknown');
+	assert(status.devices[2].playback_state === null && status.devices[2].playback_observed_at === null, 'configured offline device stays unknown');
 });
 
 test('devices merge the cache with configured UCI speakers', () => {

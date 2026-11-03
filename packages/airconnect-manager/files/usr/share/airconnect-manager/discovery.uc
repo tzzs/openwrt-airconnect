@@ -31,7 +31,14 @@ function hasControl(value) {
 
 function now() {
 	let t = clock(true);
-	return t[0] + t[1] / 1000000;
+	return t[0] + t[1] / 1000000000;
+}
+
+// Older ucode on iStoreOS ignores index()'s optional start offset. Search a
+// sliced string instead so the XML tokenizer always advances on every runtime.
+function indexFrom(value, needle, start) {
+	let relative = index(substr(value, start), needle);
+	return relative < 0 ? -1 : start + relative;
 }
 
 // Canonical dotted IPv4 only. Refuse DNS, alternate numeric encodings and
@@ -49,7 +56,7 @@ const privateAddress = function(address) {
 		(int(parts[0], 10) == 192 && int(parts[1], 10) == 168);
 };
 
-const validateLocation = function(location, peer) {
+function validateLocation(location, peer) {
 	if (type(location) != 'string' || length(location) > 1024 || !privateAddress(peer))
 		return null;
 	// The path whitelist also forbids whitespace, backslashes and fragments.
@@ -61,6 +68,25 @@ const validateLocation = function(location, peer) {
 	if (port < 1 || port > 65535 || (m[2] && length(m[2]) > 6))
 		return null;
 	return { location, address: peer, port };
+};
+
+const resolveControlUrl = function(value, location, urlBase) {
+	if (type(value) != 'string' || !length(value) || length(value) > 1024 ||
+		(!match(value, /^http:\/\//) && !match(value, /^[A-Za-z0-9\/._~-]+$/)))
+		return null;
+	let base = match(urlBase || location, /^http:\/\/([0-9.]+)(:[0-9]+)?(\/[^?#]*)?$/);
+	if (!base) return null;
+	let path = base[3] || '/';
+	let slash = rindex(path, '/');
+	let directory = slash < 0 ? '/' : substr(path, 0, slash + 1);
+	let urlBaseDirectory = substr(path, -1) == '/' ? path : directory;
+	let absolute = match(value, /^http:\/\/([0-9.]+)(:[0-9]+)?\//);
+	let url = absolute ? value : 'http://' + base[1] + (base[2] ?? '') +
+		(substr(value, 0, 1) == '/' ? value : (urlBase ? urlBaseDirectory : directory) + value);
+	let m = match(url, /^http:\/\/([0-9.]+)(:[0-9]+)?(\/([A-Za-z0-9._~!$&'()*+,;=:@%\/?-]*))?$/);
+	if (!m || m[1] != base[1]) return null;
+	let port = m[2] ? int(substr(m[2], 1), 10) : 80;
+	return privateAddress(m[1]) && port > 0 && port <= 65535 && (!m[2] || length(m[2]) <= 6) ? url : null;
 };
 
 const parseSsdp = function(response, peer) {
@@ -128,21 +154,21 @@ const parseDescription = function(xml, candidate, seen) {
 		type(candidate) != 'object' || !privateAddress(candidate.address))
 		return null;
 	if (substr(xml, 0, 3) == chr(239, 187, 191)) xml = substr(xml, 3);
-	let stack = [], devices = [], root = false, roots = 0, tags = 0, pos = 0;
+	let stack = [], devices = [], services = [], urlBase = null, root = false, roots = 0, tags = 0, pos = 0;
 	while (pos < length(xml)) {
-		let start = index(xml, '<', pos);
+		let start = indexFrom(xml, '<', pos);
 		let text = substr(xml, pos, (start < 0 ? length(xml) : start) - pos);
 		if (!length(stack) && length(trim(text))) return null;
 		if (length(stack)) stack[length(stack) - 1].text += text;
 		if (start < 0) { pos = length(xml); break; }
 		if (substr(xml, start, 4) == '<!--') {
-			let end = index(xml, '-->', start + 4);
+			let end = indexFrom(xml, '-->', start + 4);
 			if (end < 0 || index(substr(xml, start + 4, end - start - 4), '--') >= 0) return null;
 			pos = end + 3;
 			continue;
 		}
 		if (match(substr(xml, start, 6), /^<\?xml[ \t\r\n]$/) && !root && !length(stack) && roots == 0 && !length(trim(substr(xml, 0, start)))) {
-			let end = index(xml, '?>', start + 5);
+			let end = indexFrom(xml, '?>', start + 5);
 			if (end < 0) return null;
 			pos = end + 2;
 			continue;
@@ -176,6 +202,19 @@ const parseDescription = function(xml, candidate, seen) {
 		if (close) {
 			if (!length(stack) || stack[length(stack) - 1].name != name) return null;
 			let node = pop(stack);
+			if (length(stack) && stack[length(stack) - 1].name == 'service' &&
+				match(name, /^(serviceType|controlURL)$/)) {
+				let parent = stack[length(stack) - 1];
+				let value = decodeText(node.text);
+				if (node.children || value == null || exists(parent.fields, name)) return null;
+				parent.fields[name] = value;
+			}
+			if (name == 'URLBase' && length(stack) == 1 && stack[0].name == 'root') {
+				let value = decodeText(node.text);
+				let base = value == null ? null : validateLocation(value, candidate.address);
+				if (node.children || value == null || !base || urlBase != null) return null;
+				urlBase = base.location;
+			}
 			if (length(stack) && stack[length(stack) - 1].name == 'device' &&
 				match(name, /^(deviceType|UDN|friendlyName|modelName|manufacturer)$/)) {
 				let parent = stack[length(stack) - 1];
@@ -183,6 +222,7 @@ const parseDescription = function(xml, candidate, seen) {
 				if (node.children || value == null || exists(parent.fields, name)) return null;
 				parent.fields[name] = value;
 			}
+			if (name == 'service') push(services, node.fields);
 			if (name == 'device') push(devices, node.fields);
 			continue;
 		}
@@ -202,7 +242,8 @@ const parseDescription = function(xml, candidate, seen) {
 		return {
 			engine: 'upnp', udn: d.UDN, original_name: d.friendlyName || null,
 			model: d.modelName || null, manufacturer: d.manufacturer || null,
-			address: candidate.address, last_seen: seen ?? time(), online: true
+			address: candidate.address, last_seen: seen ?? time(), online: true,
+			control_url: (() => { for (let service in services) if (service.serviceType == 'urn:schemas-upnp-org:service:AVTransport:1' && service.controlURL) { let url = resolveControlUrl(service.controlURL, candidate.location, urlBase); if (url) return url; } return null; })()
 		};
 	}
 	return null;
@@ -272,6 +313,10 @@ const discover = function(address, interfaceName) {
 		let events = socket.poll(max(1, int((searchDeadline - now()) * 1000)), sock);
 		if (events == null) { sock.close(); die('Unable to poll SSDP socket'); }
 		if (!length(events)) break;
+		let readable = false;
+		for (let event in events)
+			if (event[1] & socket.POLLIN) readable = true;
+		if (!readable) break;
 		let peer = {};
 		let response = sock.recv(8193, socket.MSG_DONTWAIT, peer);
 		if (response == null) continue;

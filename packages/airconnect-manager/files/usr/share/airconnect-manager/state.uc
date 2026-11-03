@@ -114,7 +114,12 @@ function normalizeDevice(source) {
 		address: stringOrNull(source.address, 45),
 		last_seen: integerOrNull(source.last_seen),
 		online: source.online === true,
-		configured: source.configured === true
+		configured: source.configured === true,
+		control_url: engine == 'upnp' ? stringOrNull(source.control_url, 1024) : null,
+		playback_state: engine == 'upnp' && source.online === true ? triState(source.playback_state) : null,
+		playback_observed_at: engine == 'upnp' && source.online === true &&
+			(source.playback_state === true || source.playback_state === false)
+			? integerOrNull(source.playback_observed_at) : null
 	};
 }
 
@@ -179,7 +184,10 @@ const mergeConfigured = function(discovered, uciDevices) {
 			address: null,
 			last_seen: null,
 			online: false,
-			configured: true
+			configured: true,
+			control_url: null,
+			playback_state: null,
+			playback_observed_at: null
 		});
 	}
 	return result;

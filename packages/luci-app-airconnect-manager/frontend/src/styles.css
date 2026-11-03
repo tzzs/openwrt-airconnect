@@ -1504,6 +1504,10 @@
   width: 12px;
 }
 
+.ac-observed-time.is-warning {
+  color: hsl(var(--warning));
+}
+
 .ac-log-output {
   background: hsl(var(--surface-subtle));
   border-radius: 8px;

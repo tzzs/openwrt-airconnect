@@ -67,39 +67,35 @@ export function createPresentation(t) {
   // A measurement with three states: true (advertised), false (measured, not
   // advertised) and null (not measured). The null state must say so.
 
+  /**
+   * The one three-state label for a broadcast measurement. Device badges and
+   * the diagnostics rows both use it, so the same fact never appears under
+   * three different names ("advertised", "unknown", "not measured").
+   */
+  function broadcastStatus(broadcasting) {
+    if (broadcasting === true) return _('Broadcasting');
+    if (broadcasting === false) return _('Not broadcasting');
+    return _('Unknown');
+  }
+
   function deviceBroadcastBadge(broadcasting) {
-    if (broadcasting === true) return { label: _('AirPlay advertised'), tone: 'positive' };
-    if (broadcasting === false) return { label: _('No AirPlay advertisement'), tone: 'neutral' };
-    return { label: _('AirPlay broadcast unknown'), tone: 'neutral' };
-  }
-
-  /** The per-device facts row. The observation time is the mDNS scan. */
-  function deviceBroadcastFact(broadcasting, observedAt) {
-    if (broadcasting === true || broadcasting === false)
-      return (broadcasting === true ? _('Yes') : _('No')) + observedSuffix(observedAt);
-    return _('Unknown — not measured');
-  }
-
-  function observedSuffix(observedAt) {
-    return observedAt ? ' (' + _('observed') + ' ' + time(observedAt) + ')' : '';
+    return {
+      label: _('AirPlay') + ': ' + broadcastStatus(broadcasting),
+      tone: broadcasting === true ? 'positive' : 'neutral',
+    };
   }
 
   /**
-   * The diagnostics row for one engine's broadcast state. Never a positive when
-   * unmeasured: it states what would have to be true for the answer to be known,
-   * and why it is not.
+   * The observation time is one mDNS scan shared by both engines, so it is one
+   * row, not a suffix repeated on every engine's status.
    */
-  function broadcastText(broadcasting, observedAt, reason) {
-    if (broadcasting === true)
-      return _('Yes — an AirPlay receiver is advertised') + observedSuffix(observedAt);
-    if (broadcasting === false)
-      return _('No — the scan found no advertisement') + observedSuffix(observedAt);
-    const why = reason ? ' ' + _('Last attempt:') + ' ' + reason + '.' : '';
-    return (
-      _(
-        'Unknown — no completed mDNS observation. This needs the engine running and its receiver advertised on this LAN.',
-      ) + why
-    );
+  function broadcastCheckedAt(observedAt) {
+    return observedAt ? _('Last broadcast check') + ': ' + time(observedAt) : null;
+  }
+
+  /** The failure reason of that shared scan, or null when it completed. */
+  function broadcastError(error) {
+    return error ? _('Last check error') + ': ' + error : null;
   }
 
   // --- playback -----------------------------------------------------------
@@ -144,8 +140,9 @@ export function createPresentation(t) {
     onlineLabel,
     onlineTone,
     deviceBroadcastBadge,
-    deviceBroadcastFact,
-    broadcastText,
+    broadcastStatus,
+    broadcastCheckedAt,
+    broadcastError,
     playbackText,
     scanStatus,
     scanDisabled,
