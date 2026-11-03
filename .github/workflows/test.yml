@@ -48,7 +48,9 @@ jobs:
       - name: Install shell check tools
         run: |
           sudo apt-get update
-          sudo apt-get install --no-install-recommends --yes shellcheck shfmt
+          sudo apt-get install --no-install-recommends --yes shellcheck
+          go install mvdan.cc/sh/v3/cmd/shfmt@v3.14.1
+          echo "$(go env GOPATH)/bin" >> "$GITHUB_PATH"
 
       - name: Check lint and formatting
         run: |
