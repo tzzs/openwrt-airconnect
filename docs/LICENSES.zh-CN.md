@@ -98,7 +98,7 @@
 
 ---
 
-## 4. 未解决的许可阻塞（ROADMAP 保持 `[ ]`）
+## 4. 未解决的许可事项
 
 1. **上游 AirConnect 自身 MIT/GPLv3 声明冲突**:
    - 仓库根 LICENSE 说 MIT；二进制内嵌 `-t` 说 GPLv3；mdnssd-min 也说 GPLv3。
@@ -134,8 +134,8 @@
 ### 5.3 `tests/engine/check-recipe.sh`
 - 原断言 `PKG_LICENSE:=MIT` 改为断言新的 SPDX 表达式；新增对 `THIRD-PARTY-NOTICES` 存在性和 `PKG_LICENSE_FILES` 字段的检查。
 
-### 5.4 `README.md` & `ROADMAP.zh-CN.md`
-- README “来源与许可”明确标注混合许可状态；ROADMAP 许可证核对项保持 **[ ]（未关闭）**，并注释剩余阻塞。
+### 5.4 当前用户说明
+- README 的“来源与许可”说明上游及依赖许可仍须在正式发布前核实。本审计列出的上游声明冲突和源码要约事项仍未全部解决。
 
 ---
 
@@ -173,4 +173,4 @@ bash scripts/run-tests.sh
 - **实证的许可集合**: MIT, Apache-2.0, BSD-3-Clause, LGPL-2.0 (FAAC, SHINE), GPL-3.0 (upstream -t + mdnssd-min), 以及保守列入的 LGPL-2.1 (SoXR)。
 - **未链接的 GPL 解码器**（libmad, libfaad2）已通过字节段匹配证伪。
 - **原单一 MIT 声明已纠正**为完整的 SPDX 表达式；新增随附的 `THIRD-PARTY-NOTICES` 文件包含必要文本。
-- **ROADMAP 该项保持未关闭**，因仍需解决上游 MIT/GPLv3 不一致、LGPL-2.1 的最终排除、以及 GPL/LGPL 源码要约的正式落地。
+- 正式分发前仍需解决上游 MIT/GPLv3 声明不一致、LGPL-2.1 的最终排除，以及 GPL/LGPL 源码要约的正式落地。
