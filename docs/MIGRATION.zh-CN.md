@@ -11,8 +11,8 @@ aarch64_generic、APK）：`--dry-run` 与 `--apply` 跑通，旧包及其依赖
 - 用 Docker 跑 AirConnect 镜像的现场；
 - 仍保留旧 `/usr/bin/airupnp`、`/usr/bin/aircast` 布局的现场。
 
-目标：把旧配置映射成 `/etc/config/airconnect-manager`，停用旧实例，**在验证通过之后**才启动新
-实例；任何一步失败都能回到旧实例。
+目标：把旧配置映射成 `/etc/config/airconnect-manager`，停用旧实例后启动新实例并验证；若发现
+问题，按回退步骤恢复旧实例。回退流程尚未在真实设备上演练。
 
 工具：`scripts/migrate-legacy.sh`（随仓库提供，POSIX sh，BusyBox ash 可运行）。
 
@@ -369,6 +369,6 @@ mode=600`、`legacy_enabled=yes`、`legacy_running=yes`，与旧文件一致（�
    `/etc/rc.d` 里没有旧链接，所以不会开机自启，`status.conflicts` 也不再报它；留着反而方便回退。
 5. **`stream_type` 静默丢失**。迁移脚本此前对不认识的键完全沉默，报告读起来像无损迁移。
    现已改为把这类键命名为 `skipped`；本设备的 `broadcast` 因此才第一次可见。该键未接入属于
-   [能力审计](AIRCONNECT-CAPABILITIES.zh-CN.md) 记录的既定范围，不是本次新发现的功能缺失。
+   上游不提供该能力，因此迁移后仍由原生 AirConnect 行为决定。
 6. **旧 APK 只存在于 `/tmp`**（重启即失），而 `--rollback` 无法重装已卸载的包。执行前已把三个
    旧 APK 复制到持久位置 `/root/legacy-airconnect-apk/`。本文件第 4 步已补上这一步。

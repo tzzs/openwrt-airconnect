@@ -9,7 +9,8 @@
     "url": "git+https://github.com/tzzs/openwrt-airconnect.git"
   },
   "scripts": {
-    "test": "bash scripts/run-tests.sh"
+    "test": "bash scripts/run-tests.sh",
+    "coverage": "bash scripts/run-coverage.sh"
   },
   "//": "This file exists for release-please and CI only. The project has no npm dependencies and no Node build step: node runs the plain .mjs test suite on a host, never on the router."
 }

@@ -482,10 +482,6 @@ msgstr ""
 msgid "Set up this speaker"
 msgstr ""
 
-#: root/usr/share/luci/menu.d/luci-app-airconnect-manager.json
-msgid "Settings"
-msgstr ""
-
 #: frontend/src/components/service-panel.jsx
 msgid "Signal report"
 msgstr ""

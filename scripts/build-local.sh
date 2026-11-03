@@ -233,8 +233,8 @@ EOF
 
 # libopenssl's optional afalg and devcrypto engines each make libopenssl depend
 # on kernel/linux/compile, which with the SDK's CONFIG_ALL_KMODS=y cross-builds
-# the target's entire kernel module set -- the OOM recorded in
-# docs/VERIFICATION.zh-CN.md. Nothing here uses either engine, so turn them off
+# the target's entire kernel module set, which can exhaust memory. Nothing here
+# uses either engine, so turn them off
 # in the form Kconfig writes them, so `make defconfig` keeps them off instead of
 # re-enabling a default.
 for symbol in CONFIG_PACKAGE_libopenssl-afalg CONFIG_PACKAGE_libopenssl-devcrypto; do

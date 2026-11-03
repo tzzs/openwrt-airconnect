@@ -7,7 +7,7 @@
 // upstream surface actually exposes.
 //
 // What the evidence supports (all verified against the 1.12.4 sources and the
-// shipped static binaries, see docs/VERIFICATION.zh-CN.md):
+// shipped static binaries):
 //
 //   - raop_server.c:raopsr_create() registers exactly one service type,
 //     "_raop._tcp.local", with an instance name of

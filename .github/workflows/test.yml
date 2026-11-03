@@ -126,3 +126,10 @@ jobs:
         # One command, and it fails the job when any suite fails. Suites are
         # discovered by convention inside the script.
         run: bash scripts/run-tests.sh
+
+      - name: Enforce frontend core line coverage
+        env:
+          UCODE: ${{ env.UCODE_PREFIX }}/bin/ucode
+          UCODE_LIB: ${{ env.UCODE_PREFIX }}/lib/ucode
+          LD_LIBRARY_PATH: ${{ env.UCODE_PREFIX }}/lib
+        run: npm run coverage

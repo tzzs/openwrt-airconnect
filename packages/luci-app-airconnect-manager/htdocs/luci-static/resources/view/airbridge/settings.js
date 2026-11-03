@@ -5,8 +5,8 @@
 'require poll';
 'require view.airbridge.common as common';
 
-// The global configuration, as its own page.
-// See common.js for the shared bundle loader and the app's mode switch.
+// Compatibility view for clients that still request the old settings view.
+// New menu and in-app navigation stay on airbridge/overview.
 
 var configName = 'airconnect-manager';
 
@@ -20,6 +20,6 @@ return view.extend({
 	handleReset: null,
 
 	render: function () {
-		return common.createRoot('settings');
+		return common.createRoot('overview');
 	}
 });

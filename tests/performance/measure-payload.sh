@@ -27,8 +27,7 @@
 #
 # Budgets
 # -------
-# Every cap is derived from a measurement taken on 2026-10-29 in this repository
-# (see docs/PERFORMANCE-RESULTS.zh-CN.md for the table and the command). The
+# Every cap is derived from a measurement taken in this repository. The
 # headroom is deliberate: a cap that trips on an ordinary edit teaches everyone
 # to raise the cap instead of reading the number, so each cap allows real room
 # while still catching an accidental dependency, a base64-encoded font, a

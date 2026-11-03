@@ -10,7 +10,7 @@ English Version | [中文版本](README.zh-CN.md)
 
 AirBridge is a standalone OpenWrt/iStoreOS adaptation project directly targeting [philippe44/AirConnect](https://github.com/philippe44/AirConnect). The native engine handles audio bridging, while AirBridge maintains packaging, service management, configuration conversion, and the LuCI interface.
 
-AirBridge uses an independent Git history and is not developed as a fork of `sbwml/luci-app-airconnect`. It serves as a reference for OpenWrt packaging approaches. See [Architecture Decisions](docs/ARCHITECTURE.en-US.md).
+AirBridge uses an independent Git history and is not developed as a fork of `sbwml/luci-app-airconnect`. The upstream project is used as a packaging reference.
 
 ## Naming
 
@@ -18,47 +18,15 @@ The product is **AirBridge** (隔空音箱 in Chinese). The internal identifiers
 
 ## Current Status
 
-- ✅ Migrated UI, device management, native capability auditing, and performance requirements.
-- ✅ The three functional packages are implemented in the repository:
-  - `airconnect-engine`: Engine package recipe (fixed official release 1.12.4 with SHA256, installed to independent libexec path, no service registration)
-  - `airconnect-manager`: Contains UCI validation, atomic XML generation, procd startup scripts, and `airconnect.manager` rpcd backend
-  - `luci-app-airconnect-manager`: Static LuCI pages with three tabs: speakers, settings, and diagnostics
-- ✅ Host verification: all 20 test suites pass via `bash scripts/run-tests.sh`. Command and results are recorded in [Verification Record](docs/VERIFICATION.zh-CN.md), with details in [Testing & CI](docs/TESTING.zh-CN.md).
-- ✅ SDK release path: the three functional packages plus the generated `luci-i18n-airconnect-manager-zh-cn` translation package are configured to build with OpenWrt SDK 25.12.6 (`armsr-armv8` / `aarch64_generic`). The upstream archive's SHA256 is verified against the recipe's `PKG_HASH` before the build, and the release workflow generates the OpenWrt 25.12 `packages.adb` index for all four APKs on GitHub Pages. The Pages repository is currently unsigned and intended for testing; a successful remote release run still needs to be recorded.
-- ✅ Device install: the three functional APKs were installed on a real iStoreOS 25.12.5 / aarch64 router with `apk add --allow-untrusted`. The `airconnect.manager` object registers on the real rpcd with all five methods, and `status`, `validate`, `logs` and `action` were exercised on the device. The engine binaries run there and report `v1.12.4`. The new Chinese translation package has not yet been installed on the device.
-- ⚙️ CI workflows: `test.yml` runs host tests on every push and pull request. `release.yml` uses release-please on `main`; after its release PR is merged, it builds the four APKs, uploads them to GitHub Release, and publishes the Pages APK repository. The current local workflow changes still need a successful remote run; Pages Source must be set to GitHub Actions once in repository settings.
-- ✅ Service switchover done (2026-10-26, first real device): the legacy `airconnect`,
-  `luci-app-airconnect` and `luci-i18n-airconnect-zh-cn` packages were removed together with their
-  dependency chain, the configuration was mapped into UCI, and `airconnect-manager` runs and is set
-  to start at boot. `status.conflicts` is empty and the RPC start/restart actions work again.
-- ❌ Not yet completed:
-  - Not connected to actual speakers: a scan completes and the mDNS observation records a timestamp,
-    but the segment has no UPnP/DLNA renderer AirConnect can discover, so AirPlay volume mapping and
-    playback remain unverified
-  - The LuCI page itself was not opened in a logged-in browser session; only its static assets were fetched over HTTP
-  - Device-side performance (CPU, RSS, network, playback interruption) not measured
-  - `--rollback` has never been rehearsed on a router, and upgrade-preserves-settings is unverified
-- Local development does not replace existing router services. The first switchover has now been
-  done end to end: backup, disable the old instance, migrate the configuration, remove the old
-  packages, start the new service, verify. **Measured corrections:** the conflict check only guards
-  the RPC path (the init script does not check it), and removing the old packages also stops the new
-  service, which then has to be started again.
-- See [Old Instance Migration Guide (Chinese)](docs/MIGRATION.zh-CN.md) for detection,
-  configuration mapping, disabling, removal and rollback. The full record of the first on-device run,
-  including four places where the documentation did not match reality, is in its "首次执行记录" section.
+The first supported target is OpenWrt/iStoreOS 25.12 on `aarch64_generic`.
 
-## Three-Layer Architecture
+- The engine, manager, and LuCI packages are implemented; local SDK builds and installation of all four APKs (including Chinese translation) have been verified on iStoreOS 25.12.5 / aarch64.
+- The legacy service was migrated and replaced on the reference router. The new service starts at boot; rpcd methods, scanning, and logged-in LuCI page rendering were verified. S4 also confirmed Chinese translations and the three LuCI tabs.
+- Host tests and PR CI have passed. The release workflow is configured, but a successful remote Release/Pages publication and signed repository have not been verified.
+- Still pending: real speaker discovery/playback and volume behavior, router performance measurements, upgrade configuration retention, migration rollback rehearsal, and save/apply/reset behavior in LuCI. The tested network had no discoverable UPnP/DLNA renderer.
+- Only `aarch64_generic` has been built and device-tested. `x86_64` and OpenWrt 24.10/IPK remain out of scope for the current build.
 
-| Layer | Responsibility | Status | Pending |
-|-------|----------------|--------|---------|
-| `airconnect-engine` | Official airupnp/aircast binaries, version & source tracking | Implemented, SDK-built and installed on a device | Only `aarch64` is built; `x86_64` not built or run |
-| `airconnect-manager` | UCI validation, atomic XML generation, procd, restricted diagnostic RPC | Implemented, SDK-built, installed on a device, switchover complete | The procd instance shape, the init script's start path and the RPC recovery after removing the old packages are all verified on real hardware; a scan completes but the segment holds no discoverable speaker, so real speaker discovery and playback are not |
-| `luci-app-airconnect-manager` | shadcn-style static LuCI pages, devices & common settings priority | Implemented, SDK-built and installed on a device | Static assets are served and the menu/ACL JSON is valid; the page has not been opened in a logged-in browser session |
-| `tests/` | Host tests & static checks | Implemented with host tests | Never run on CI: workflow written but never triggered |
-
-Status determined by files in repository: layers without corresponding code or tests marked as not implemented. Build and device acceptance results in [Verification Record (Chinese)](docs/VERIFICATION.zh-CN.md).
-
-**Initial verification targets:** OpenWrt/iStoreOS 25.12, aarch64_generic; followed by x86_64. 24.10/IPK builds separately. SNAPSHOT installability cannot substitute stable SDK build and device acceptance.
+See the [Migration Guide](docs/MIGRATION.zh-CN.md) before replacing a legacy installation. Release steps and remaining checks are in the [Release and Installation Guide](docs/RELEASE.zh-CN.md).
 
 ## Installation
 
@@ -97,21 +65,12 @@ The output is written to `packages/output/`. The release workflow performs the s
 bash scripts/run-tests.sh
 ```
 
-All 20 test suites should pass.
+All host test suites should pass.
 
 ## Documentation
 
-| Document | Description |
-|----------|-------------|
-| [Product Positioning](PRODUCT.md) | Core product goals and positioning |
-| [Implementation Plan](ROADMAP.en-US.md) | Development roadmap and milestones |
-| [Architecture Decisions](docs/ARCHITECTURE.en-US.md) | Independent architecture reference |
-| [UI & Device Requirements (Chinese)](docs/UI-REQUIREMENTS.zh-CN.md) | User interface and device information needs |
-| [Native Capabilities Mapping (Chinese)](docs/AIRCONNECT-CAPABILITIES.zh-CN.md) | Upstream native feature mapping |
-| [Performance Constraints (Chinese)](docs/PERFORMANCE.zh-CN.md) | Performance requirements and constraints |
-| [Verification Record (Chinese)](docs/VERIFICATION.zh-CN.md) | Test verification results |
-| [Testing & CI (Chinese)](docs/TESTING.zh-CN.md) | Test execution and CI setup |
-| [Old Instance Migration (Chinese)](docs/MIGRATION.zh-CN.md) | Migration guide from previous versions |
+- [Migration Guide (Chinese)](docs/MIGRATION.zh-CN.md): migrate, verify, or roll back a legacy installation.
+- [Release and Installation Guide (Chinese)](docs/RELEASE.zh-CN.md): supported targets, release flow, and pre-release checks.
 
 ## License
 
