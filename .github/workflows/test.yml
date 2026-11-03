@@ -128,4 +128,8 @@ jobs:
         run: bash scripts/run-tests.sh
 
       - name: Enforce frontend core line coverage
+        env:
+          UCODE: ${{ env.UCODE_PREFIX }}/bin/ucode
+          UCODE_LIB: ${{ env.UCODE_PREFIX }}/lib/ucode
+          LD_LIBRARY_PATH: ${{ env.UCODE_PREFIX }}/lib
         run: npm run coverage
