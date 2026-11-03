@@ -224,29 +224,16 @@ function main() {
  */
 function navigationSection() {
 	section('moving between the two pages');
-	const { parentPageUrl, settingsPageUrl } = NAVIGATION;
-	const base = 'http://192.168.100.1/cgi-bin/luci/admin/services/admin/services/airbridge';
+	const { modeFromLocation } = NAVIGATION;
 
-	check(settingsPageUrl(base) === base + '/settings',
-		'global settings is the workspace URL plus one segment', settingsPageUrl(base));
-	check(settingsPageUrl(base + '/') === base + '/settings',
-		'a trailing slash does not produce a double slash');
-	check(settingsPageUrl(base + '/settings') === base + '/settings',
-		'the settings URL is not appended to itself');
-
-	check(parentPageUrl(base + '/settings') === base,
-		'back returns to the device workspace', parentPageUrl(base + '/settings'));
-	check(parentPageUrl(base + '/settings/') === base,
-		'a trailing slash is ignored');
-	const custom = 'http://router/foo/bar/admin/services/airbridge';
-	check(parentPageUrl(custom + '/settings') === custom,
-		'a custom dispatcher prefix is kept', parentPageUrl(custom + '/settings'));
-	check(parentPageUrl(base) === base,
-		'a URL that is not the settings page is returned unchanged');
-	check(parentPageUrl('http://router/settings') === 'http://router/',
-		'a bare /settings goes to the root', parentPageUrl('http://router/settings'));
-	check(parentPageUrl(base + '/settings?x=1#top') === base,
-		'the query and the hash do not follow the user back');
+	check(modeFromLocation({ pathname: '/admin/services/airbridge', hash: '' }) === 'overview',
+		'a route without a settings hash opens the workspace');
+	check(modeFromLocation({ pathname: '/admin/services/airbridge', hash: '#settings' }) === 'settings',
+		'the settings hash opens global settings');
+	check(modeFromLocation({ pathname: '/admin/services/airbridge/settings', hash: '' }) === 'settings',
+		'the legacy settings route remains a deep link');
+	check(modeFromLocation({ pathname: '/admin/services/airbridge/settings/', hash: '#other' }) === 'settings',
+		'a trailing slash on the legacy settings route is accepted');
 
 	const menu = JSON.parse(readFileSync(join(ROOT,
 		'packages/luci-app-airconnect-manager/root/usr/share/luci/menu.d/' +
