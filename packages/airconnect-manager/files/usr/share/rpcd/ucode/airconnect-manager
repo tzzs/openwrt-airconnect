@@ -38,6 +38,7 @@ import {
 } from '../../airconnect-manager/state.uc';
 import * as discovery from '../../airconnect-manager/discovery.uc';
 import * as broadcast from '../../airconnect-manager/broadcast.uc';
+import * as playback from '../../airconnect-manager/playback.uc';
 import {
 	ensureDir, writeAtomic, readTail, commandTail, readJson, readText, pathExists
 } from '../../airconnect-manager/files.uc';
@@ -479,6 +480,17 @@ function runScanWorker() {
 			die('no discovery engine is enabled');
 		let address = interfaceAddress(ubusConnect(), normalized.main.interface);
 		let devices = discovery.discover(address, normalized.main.interface);
+		let playbackBudget = 4, playbackChecks = 0;
+		for (let device in devices) {
+			device.playback_state = null;
+			device.playback_observed_at = null;
+			if (playbackChecks >= playbackBudget) continue;
+			if (device.engine == 'upnp' && device.control_url) {
+				playbackChecks++;
+				device.playback_state = playback.stateOf(playback.query(device.control_url, device.address, address));
+				device.playback_observed_at = device.playback_state === true || device.playback_state === false ? time() : null;
+			}
+		}
 		writeCache({ scanned_at: time(), devices: devices, error: null });
 	}
 	catch (error) {

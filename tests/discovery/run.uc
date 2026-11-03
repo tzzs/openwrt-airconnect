@@ -15,6 +15,11 @@ function description(fields) {
 	return '<?xml version="1.0"?><root xmlns="urn:schemas-upnp-org:device-1-0"><device><deviceType>' + target +
 		'</deviceType><UDN>' + udn + '</UDN>' + (fields ?? '<friendlyName>Living &amp; Dining</friendlyName><modelName>Speaker 2</modelName><manufacturer>Example</manufacturer>') + '</device></root>';
 }
+function descriptionWithTransport(control, urlBase) {
+	return '<?xml version="1.0"?><root xmlns="urn:schemas-upnp-org:device-1-0">' + (urlBase ? '<URLBase>' + urlBase + '</URLBase>' : '') +
+		'<device><deviceType>' + target + '</deviceType><UDN>' + udn + '</UDN><serviceList><service><serviceType>urn:schemas-upnp-org:service:AVTransport:1</serviceType><controlURL>' + control +
+		'</controlURL></service></serviceList></device></root>';
+}
 let candidate = parseSsdp(response(url), peer);
 check(candidate != null && candidate.udn == udn && candidate.address == peer, 'normal SSDP response');
 check(parseSsdp(response(url), { address: peer }) != null, 'socket peer object');
@@ -49,6 +54,13 @@ for (let bad in ['172.15.0.1', '172.32.0.1', '127.0.0.1', '169.254.1.1', '224.0.
 let normal = parseDescription(description(), candidate, 1234);
 check(normal != null && normal.original_name == 'Living & Dining' && normal.last_seen == 1234, 'XML fields decoded');
 check(normal.engine == 'upnp' && normal.online && normal.model == 'Speaker 2' && normal.manufacturer == 'Example', 'truthful device output');
+let transport = parseDescription(descriptionWithTransport('AVTransport/control'), candidate, 1);
+check(transport != null && transport.control_url == 'http://192.168.20.10:1400/xml/AVTransport/control', 'relative AVTransport endpoint resolves from LOCATION directory');
+let absoluteTransport = parseDescription(descriptionWithTransport('/upnp/control/AVTransport'), candidate, 1);
+check(absoluteTransport != null && absoluteTransport.control_url == 'http://192.168.20.10:1400/upnp/control/AVTransport', 'absolute-path AVTransport endpoint resolves on device');
+let basedTransport = parseDescription(descriptionWithTransport('AVTransport/control', 'http://192.168.20.10:1400/services/'), candidate, 1);
+check(basedTransport != null && basedTransport.control_url == 'http://192.168.20.10:1400/services/AVTransport/control', 'UPnP URLBase is honored');
+check(parseDescription(descriptionWithTransport('http://192.168.20.11/steal'), candidate, 1).control_url == null, 'foreign AVTransport endpoint rejected');
 check(parseDescription(chr(239, 187, 191) + description(), candidate, 1) != null, 'UTF8 BOM accepted');
 check(parseDescription(replace(description(), target, 'urn:schemas-upnp-org:device:MediaRenderer:2'), candidate, 1) != null, 'newer MediaRenderer device version');
 let missing = parseDescription(description(''), candidate, 1);
