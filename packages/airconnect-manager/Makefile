@@ -60,7 +60,6 @@ define Package/airconnect-manager/install
 	$(INSTALL_DATA) ./files/usr/share/airconnect-manager/discovery.uc $(1)/usr/share/airconnect-manager/discovery.uc
 	$(INSTALL_DATA) ./files/usr/share/airconnect-manager/broadcast.uc $(1)/usr/share/airconnect-manager/broadcast.uc
 	$(INSTALL_DATA) ./files/usr/share/airconnect-manager/playback.uc $(1)/usr/share/airconnect-manager/playback.uc
-	$(INSTALL_DATA) ./files/usr/share/airconnect-manager/playback.uc $(1)/usr/share/airconnect-manager/playback.uc
 	$(INSTALL_DATA) ./files/usr/share/airconnect-manager/state.uc $(1)/usr/share/airconnect-manager/state.uc
 	$(INSTALL_DATA) ./files/usr/share/airconnect-manager/files.uc $(1)/usr/share/airconnect-manager/files.uc
 	$(INSTALL_DATA) ./files/usr/share/airconnect-manager/VERSION $(1)/usr/share/airconnect-manager/VERSION
