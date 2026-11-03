@@ -5,9 +5,9 @@
 'require poll';
 'require view.airbridge.common as common';
 
-// The device workspace. The global configuration lives in its own view
-// (settings.js) and its own menu entry, so neither page has to fit both
-// purposes into one layout.
+// The device workspace and global settings share this LuCI view. The React app
+// selects the visible page from the URL hash, keeping LuCI's navigation shell
+// mounted while moving between them.
 
 var configName = 'airconnect-manager';
 

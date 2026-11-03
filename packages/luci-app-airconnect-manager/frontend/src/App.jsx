@@ -14,13 +14,13 @@ import {
 } from './lib/i18n.js';
 import { applyTheme, detectTheme, writeTheme } from './lib/theme.js';
 import { applySnapshot, createPoller, POLL_SECONDS } from './lib/polling.js';
+import { modeFromLocation } from './lib/navigation.js';
 import { buildCanonicalConfig } from './lib/config.js';
 import {
 	interfaceOptionsFrom,
 	interfaceValue,
 	withInterfaceSelect
 } from './lib/interfaces.js';
-import { parentPageUrl, settingsPageUrl } from './lib/navigation.js';
 import { duplicateNames, mergeDevices, readState } from './lib/model.js';
 
 function message(error) {
@@ -30,16 +30,42 @@ function message(error) {
 /**
  * The AirBridge application.
  *
- * `context.mode` decides which page this is: 'overview' is the device
- * workspace, 'settings' is the global configuration. Both are the same
- * application with a different body, so they share the chrome, the polling,
- * the save logic and the preference state - only the body differs. The LuCI
- * views pass the mode in, which is what lets the two pages be separate menu
- * entries with separate URLs.
+ * The URL hash selects the page: the empty hash is the device workspace and
+ * `#settings` is the global configuration. Both pages stay inside this one
+ * LuCI view, sharing its chrome, polling, save logic and preference state.
  */
 export function App({ context }) {
 	const services = context.services;
-	const mode = context.mode === 'settings' ? 'settings' : 'overview';
+	const [mode, setMode] = useState(() => modeFromLocation(window.location));
+
+	useEffect(() => {
+		const syncMode = () =>
+			setMode(window.location.hash === '#settings' ? 'settings' : 'overview');
+		window.addEventListener('hashchange', syncMode);
+		window.addEventListener('popstate', syncMode);
+		return () => {
+			window.removeEventListener('hashchange', syncMode);
+			window.removeEventListener('popstate', syncMode);
+		};
+	}, []);
+
+	const navigate = useCallback((nextMode) => {
+		const hash = nextMode === 'settings' ? '#settings' : '';
+		if (window.location.hash === hash) return;
+		window.history.replaceState(
+			null,
+			'',
+			window.location.pathname + window.location.search + hash
+		);
+		setMode(nextMode);
+	}, []);
+
+	const openSettings = useCallback(() => {
+		const hash = '#settings';
+		if (window.location.hash === hash) return;
+		window.history.pushState(null, '', window.location.pathname + window.location.search + hash);
+		setMode('settings');
+	}, []);
 
 	// `luciTranslate` is LuCI's server-side `_` (compiled .lmo). It may be
 	// undefined in a test harness; createTranslator tolerates that.
@@ -430,13 +456,7 @@ export function App({ context }) {
 				onSaveApply={() => withBusy(() => handleSaveApply(false))}
 				onReset={() => window.location.reload()}
 				onRefresh={mode === 'overview' ? () => refresh() : null}
-				onBack={
-					mode === 'settings'
-						? () => {
-								window.location.href = parentPageUrl(window.location.href);
-							}
-						: null
-				}
+				onBack={mode === 'settings' ? () => navigate('overview') : null}
 			>
 				{body}
 			</PageChrome>
@@ -482,9 +502,7 @@ export function App({ context }) {
 					services.notify(message(error), 'danger');
 				}
 			}}
-			onOpenSettings={() => {
-				window.location.href = settingsPageUrl(window.location.href);
-			}}
+			onOpenSettings={openSettings}
 			t={t}
 			inheritLabel={inheritLabel}
 		/>
