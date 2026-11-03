@@ -17,8 +17,14 @@ workflow="${root}/.github/workflows/release.yml"
 passed=0
 failed=0
 
-ok() { passed=$((passed + 1)); printf 'ok   - %s\n' "$1"; }
-no() { failed=$((failed + 1)); printf 'FAIL - %s\n       %s\n' "$1" "${2:-}"; }
+ok() {
+	passed=$((passed + 1))
+	printf 'ok   - %s\n' "$1"
+}
+no() {
+	failed=$((failed + 1))
+	printf 'FAIL - %s\n       %s\n' "$1" "${2:-}"
+}
 
 for package in airconnect-engine airconnect-manager luci-app-airconnect-manager; do
 	if grep -q "${package}" "${workflow}"; then

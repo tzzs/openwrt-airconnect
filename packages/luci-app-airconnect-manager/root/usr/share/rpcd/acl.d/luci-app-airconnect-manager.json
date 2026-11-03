@@ -3,14 +3,14 @@
     "description": "Manage AirConnect devices and settings",
     "read": {
       "ubus": {
-        "airconnect.manager": [ "status", "logs" ],
-        "network.interface": [ "dump" ]
+        "airconnect.manager": ["status", "logs"],
+        "network.interface": ["dump"]
       },
-      "uci": [ "airconnect-manager" ]
+      "uci": ["airconnect-manager"]
     },
     "write": {
-      "ubus": { "airconnect.manager": [ "scan", "validate", "action" ] },
-      "uci": [ "airconnect-manager" ]
+      "ubus": { "airconnect.manager": ["scan", "validate", "action"] },
+      "uci": ["airconnect-manager"]
     }
   }
 }

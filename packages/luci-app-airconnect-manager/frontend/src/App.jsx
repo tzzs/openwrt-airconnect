@@ -7,24 +7,16 @@ import { SettingsPage } from './components/settings-page.jsx';
 import { createRules } from './lib/rules.js';
 import { createFields } from './lib/fields.js';
 import { createPresentation } from './lib/presentation.js';
-import {
-	createTranslator,
-	readLanguage,
-	writeLanguage
-} from './lib/i18n.js';
+import { createTranslator, readLanguage, writeLanguage } from './lib/i18n.js';
 import { applyTheme, detectTheme, writeTheme } from './lib/theme.js';
 import { applySnapshot, createPoller, POLL_SECONDS } from './lib/polling.js';
 import { modeFromLocation } from './lib/navigation.js';
 import { buildCanonicalConfig } from './lib/config.js';
-import {
-	interfaceOptionsFrom,
-	interfaceValue,
-	withInterfaceSelect
-} from './lib/interfaces.js';
+import { interfaceOptionsFrom, interfaceValue, withInterfaceSelect } from './lib/interfaces.js';
 import { duplicateNames, mergeDevices, readState } from './lib/model.js';
 
 function message(error) {
-	return error && error.message ? error.message : String(error);
+  return error && error.message ? error.message : String(error);
 }
 
 /**
@@ -35,476 +27,445 @@ function message(error) {
  * LuCI view, sharing its chrome, polling, save logic and preference state.
  */
 export function App({ context }) {
-	const services = context.services;
-	const [mode, setMode] = useState(() => modeFromLocation(window.location));
+  const services = context.services;
+  const [mode, setMode] = useState(() => modeFromLocation(window.location));
 
-	useEffect(() => {
-		const syncMode = () =>
-			setMode(window.location.hash === '#settings' ? 'settings' : 'overview');
-		window.addEventListener('hashchange', syncMode);
-		window.addEventListener('popstate', syncMode);
-		return () => {
-			window.removeEventListener('hashchange', syncMode);
-			window.removeEventListener('popstate', syncMode);
-		};
-	}, []);
+  useEffect(() => {
+    const syncMode = () => setMode(window.location.hash === '#settings' ? 'settings' : 'overview');
+    window.addEventListener('hashchange', syncMode);
+    window.addEventListener('popstate', syncMode);
+    return () => {
+      window.removeEventListener('hashchange', syncMode);
+      window.removeEventListener('popstate', syncMode);
+    };
+  }, []);
 
-	const navigate = useCallback((nextMode) => {
-		const hash = nextMode === 'settings' ? '#settings' : '';
-		if (window.location.hash === hash) return;
-		window.history.replaceState(
-			null,
-			'',
-			window.location.pathname + window.location.search + hash
-		);
-		setMode(nextMode);
-	}, []);
+  const navigate = useCallback((nextMode) => {
+    const hash = nextMode === 'settings' ? '#settings' : '';
+    if (window.location.hash === hash) return;
+    window.history.replaceState(null, '', window.location.pathname + window.location.search + hash);
+    setMode(nextMode);
+  }, []);
 
-	const openSettings = useCallback(() => {
-		const hash = '#settings';
-		if (window.location.hash === hash) return;
-		window.history.pushState(null, '', window.location.pathname + window.location.search + hash);
-		setMode('settings');
-	}, []);
+  const openSettings = useCallback(() => {
+    const hash = '#settings';
+    if (window.location.hash === hash) return;
+    window.history.pushState(null, '', window.location.pathname + window.location.search + hash);
+    setMode('settings');
+  }, []);
 
-	// `luciTranslate` is LuCI's server-side `_` (compiled .lmo). It may be
-	// undefined in a test harness; createTranslator tolerates that.
-	const luciTranslate = services.t;
+  // `luciTranslate` is LuCI's server-side `_` (compiled .lmo). It may be
+  // undefined in a test harness; createTranslator tolerates that.
+  const luciTranslate = services.t;
 
-	// The language preference lives in localStorage (airconnect.lang) and is
-	// independent of LuCI's global language, so a switch is instant and
-	// pure-frontend. The translator falls back to LuCI's `_` for strings the
-	// built-in table does not cover.
-	const [lang, setLang] = useState(readLanguage);
-	const t = useMemo(
-		() => createTranslator(lang, luciTranslate),
-		[lang, luciTranslate]
-	);
+  // The language preference lives in localStorage (airconnect.lang) and is
+  // independent of LuCI's global language, so a switch is instant and
+  // pure-frontend. The translator falls back to LuCI's `_` for strings the
+  // built-in table does not cover.
+  const [lang, setLang] = useState(readLanguage);
+  const t = useMemo(() => createTranslator(lang, luciTranslate), [lang, luciTranslate]);
 
-	// The theme is a pure-frontend preference as well. It is applied to the
-	// `.ac-root` element, which the LuCI view creates outside the React tree,
-	// so the host element comes in through the context.
-	const themeHost = context.themeHost || null;
-	const [theme, setTheme] = useState(detectTheme);
+  // The theme is a pure-frontend preference as well. It is applied to the
+  // `.ac-root` element, which the LuCI view creates outside the React tree,
+  // so the host element comes in through the context.
+  const themeHost = context.themeHost || null;
+  const [theme, setTheme] = useState(detectTheme);
 
-	const setLanguage = useCallback((next) => {
-		writeLanguage(next);
-		setLang(next);
-	}, []);
+  const setLanguage = useCallback((next) => {
+    writeLanguage(next);
+    setLang(next);
+  }, []);
 
-	const setThemePreference = useCallback((next) => {
-		writeTheme(next);
-		setTheme(next);
-	}, []);
+  const setThemePreference = useCallback((next) => {
+    writeTheme(next);
+    setTheme(next);
+  }, []);
 
-	useEffect(() => {
-		applyTheme(themeHost, theme);
-	}, [themeHost, theme]);
+  useEffect(() => {
+    applyTheme(themeHost, theme);
+  }, [themeHost, theme]);
 
-	const rules = useMemo(() => createRules(t), [t]);
-	const fields = useMemo(() => createFields(t), [t]);
-	const presentation = useMemo(() => createPresentation(t), [t]);
-	const inheritLabel = useMemo(() => t('Inherit global setting'), [t]);
+  const rules = useMemo(() => createRules(t), [t]);
+  const fields = useMemo(() => createFields(t), [t]);
+  const presentation = useMemo(() => createPresentation(t), [t]);
+  const inheritLabel = useMemo(() => t('Inherit global setting'), [t]);
 
-	const [ready, setReady] = useState(false);
-	const [fatal, setFatal] = useState(null);
-	const [status, setStatus] = useState(null);
-	const [statusError, setStatusError] = useState(null);
-	const [scan, setScan] = useState({
-		running: false,
-		error: null,
-		last_scan: null,
-		disabled: true
-	});
-	const [mainValues, setMainValues] = useState({});
-	const [deviceValues, setDeviceValues] = useState({});
-	const [interfaceOptions, setInterfaceOptions] = useState(null);
-	const [configured, setConfigured] = useState([]);
-	const [saveState, setSaveState] = useState({
-		text: t('No unsaved changes'),
-		tone: 'idle'
-	});
-	const [busy, setBusy] = useState(false);
-	const [logs, setLogs] = useState(null);
-	const [selectedKey, setSelectedKey] = useState(null);
-	const [settingsOpen, setSettingsOpen] = useState(false);
+  const [ready, setReady] = useState(false);
+  const [fatal, setFatal] = useState(null);
+  const [status, setStatus] = useState(null);
+  const [statusError, setStatusError] = useState(null);
+  const [scan, setScan] = useState({
+    running: false,
+    error: null,
+    last_scan: null,
+    disabled: true,
+  });
+  const [mainValues, setMainValues] = useState({});
+  const [deviceValues, setDeviceValues] = useState({});
+  const [interfaceOptions, setInterfaceOptions] = useState(null);
+  const [configured, setConfigured] = useState([]);
+  const [saveState, setSaveState] = useState({
+    text: t('No unsaved changes'),
+    tone: 'idle',
+  });
+  const [busy, setBusy] = useState(false);
+  const [logs, setLogs] = useState(null);
+  const [selectedKey, setSelectedKey] = useState(null);
+  const [settingsOpen, setSettingsOpen] = useState(false);
 
-	// The poller owns the four polling promises (interval, hidden tab, one
-	// request in flight, backoff). It only ever touches the live snapshot and
-	// the scan state - never the form, which belongs to the user until they
-	// save.
-	const poller = useMemo(
-		() =>
-			createPoller({
-				fetch: () => services.status(),
-				onSnapshot: (data) => {
-					const snapshot = applySnapshot(data);
-					setStatus(snapshot.status);
-					setScan(snapshot.scan);
-					setStatusError(null);
-				},
-				onError: (error) => {
-					setStatusError(
-						t('Status unavailable. Displayed information may be stale. ') +
-							message(error)
-					);
-				},
-				isHidden: () =>
-					typeof document !== 'undefined' && document.hidden === true
-			}),
-		[services, t]
-	);
+  // The poller owns the four polling promises (interval, hidden tab, one
+  // request in flight, backoff). It only ever touches the live snapshot and
+  // the scan state - never the form, which belongs to the user until they
+  // save.
+  const poller = useMemo(
+    () =>
+      createPoller({
+        fetch: () => services.status(),
+        onSnapshot: (data) => {
+          const snapshot = applySnapshot(data);
+          setStatus(snapshot.status);
+          setScan(snapshot.scan);
+          setStatusError(null);
+        },
+        onError: (error) => {
+          setStatusError(
+            t('Status unavailable. Displayed information may be stale. ') + message(error),
+          );
+        },
+        isHidden: () => typeof document !== 'undefined' && document.hidden === true,
+      }),
+    [services, t],
+  );
 
-	const refresh = useCallback(() => poller.tick(), [poller]);
+  const refresh = useCallback(() => poller.tick(), [poller]);
 
-	const reload = useCallback(async () => {
-		await services.loadConfig();
-		const state = readState({
-			get: (section, option) => services.get(section, option),
-			sections: (type, callback) => services.sections(type, callback)
-		});
-		// uci may not hold an interface yet; show the one the service will
-		// actually bind to (config.uc's default) rather than an empty select.
-		state.main.interface = interfaceValue(state.main.interface);
-		setMainValues(state.main);
-		setDeviceValues(state.devices);
-		setConfigured(state.sections);
-		try {
-			setInterfaceOptions(
-				interfaceOptionsFrom(await services.interfaces(), state.main.interface)
-			);
-		} catch (error) {
-			setInterfaceOptions(null);
-		}
-	}, [services]);
+  const reload = useCallback(async () => {
+    await services.loadConfig();
+    const state = readState({
+      get: (section, option) => services.get(section, option),
+      sections: (type, callback) => services.sections(type, callback),
+    });
+    // uci may not hold an interface yet; show the one the service will
+    // actually bind to (config.uc's default) rather than an empty select.
+    state.main.interface = interfaceValue(state.main.interface);
+    setMainValues(state.main);
+    setDeviceValues(state.devices);
+    setConfigured(state.sections);
+    try {
+      setInterfaceOptions(interfaceOptionsFrom(await services.interfaces(), state.main.interface));
+    } catch (error) {
+      setInterfaceOptions(null);
+    }
+  }, [services]);
 
-	useEffect(() => {
-		let cancelled = false;
-		(async () => {
-			try {
-				await reload();
-				await refresh();
-				if (!cancelled) setReady(true);
-			} catch (error) {
-				if (!cancelled) setFatal(message(error));
-			}
-		})();
-		const tick = () => {
-			refresh();
-		};
-		services.pollAdd(tick, POLL_SECONDS);
-		return () => {
-			cancelled = true;
-			services.pollRemove(tick);
-		};
-	}, [services, reload, refresh]);
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        await reload();
+        await refresh();
+        if (!cancelled) setReady(true);
+      } catch (error) {
+        if (!cancelled) setFatal(message(error));
+      }
+    })();
+    const tick = () => {
+      refresh();
+    };
+    services.pollAdd(tick, POLL_SECONDS);
+    return () => {
+      cancelled = true;
+      services.pollRemove(tick);
+    };
+  }, [services, reload, refresh]);
 
-	const dirty = useCallback(() => {
-		setSaveState({ text: t('Unsaved changes'), tone: 'warning' });
-	}, [t]);
+  const dirty = useCallback(() => {
+    setSaveState({ text: t('Unsaved changes'), tone: 'warning' });
+  }, [t]);
 
-	const setMain = useCallback(
-		(field, value) => {
-			setMainValues((previous) =>
-				Object.assign({}, previous, { [field]: value })
-			);
-			services.set('main', field, value);
-			dirty();
-		},
-		[services, dirty]
-	);
+  const setMain = useCallback(
+    (field, value) => {
+      setMainValues((previous) => Object.assign({}, previous, { [field]: value }));
+      services.set('main', field, value);
+      dirty();
+    },
+    [services, dirty],
+  );
 
-	const setDevice = useCallback(
-		(section, field, value) => {
-			if (section == null) return;
-			setDeviceValues((previous) =>
-				Object.assign({}, previous, {
-					[section]: Object.assign({}, previous[section] || {}, {
-						[field]: value
-					})
-				})
-			);
-			services.set(section, field, value);
-			dirty();
-		},
-		[services, dirty]
-	);
+  const setDevice = useCallback(
+    (section, field, value) => {
+      if (section == null) return;
+      setDeviceValues((previous) =>
+        Object.assign({}, previous, {
+          [section]: Object.assign({}, previous[section] || {}, {
+            [field]: value,
+          }),
+        }),
+      );
+      services.set(section, field, value);
+      dirty();
+    },
+    [services, dirty],
+  );
 
-	const configure = useCallback(
-		(device) => {
-			const sid = services.add('device');
-			services.set(sid, 'engine', device.engine);
-			services.set(sid, 'udn', device.udn);
-			services.set(sid, 'enabled', '1');
-			setDeviceValues((previous) =>
-				Object.assign({}, previous, {
-					[sid]: { engine: device.engine, udn: device.udn, enabled: '1' }
-				})
-			);
-			setConfigured((previous) =>
-				previous.concat([
-					{
-						name: sid,
-						engine: device.engine,
-						udn: device.udn,
-						removed: false
-					}
-				])
-			);
-			dirty();
-		},
-		[services, dirty]
-	);
+  const configure = useCallback(
+    (device) => {
+      const sid = services.add('device');
+      services.set(sid, 'engine', device.engine);
+      services.set(sid, 'udn', device.udn);
+      services.set(sid, 'enabled', '1');
+      setDeviceValues((previous) =>
+        Object.assign({}, previous, {
+          [sid]: { engine: device.engine, udn: device.udn, enabled: '1' },
+        }),
+      );
+      setConfigured((previous) =>
+        previous.concat([
+          {
+            name: sid,
+            engine: device.engine,
+            udn: device.udn,
+            removed: false,
+          },
+        ]),
+      );
+      dirty();
+    },
+    [services, dirty],
+  );
 
-	// The canonical payload the manager validates: the main section from uci,
-	// and every device section - including ones added in this session, which
-	// some LuCI versions only expose through uci.sections after a save.
-	const buildConfig = useCallback(() => {
-		const seen = new Set();
-		return buildCanonicalConfig({
-			get: (pkg, section, option) => services.get(section, option),
-			sections: (pkg, type, callback) => {
-				services.sections(type, (section) => {
-					seen.add(section['.name']);
-					callback(section);
-				});
-				for (const item of configured) {
-					if (type !== 'device' || seen.has(item.name) || item.removed)
-						continue;
-					callback(
-						Object.assign({}, deviceValues[item.name] || {}, {
-							'.name': item.name,
-							'.type': type
-						})
-					);
-				}
-			}
-		});
-	}, [services, configured, deviceValues]);
+  // The canonical payload the manager validates: the main section from uci,
+  // and every device section - including ones added in this session, which
+  // some LuCI versions only expose through uci.sections after a save.
+  const buildConfig = useCallback(() => {
+    const seen = new Set();
+    return buildCanonicalConfig({
+      get: (pkg, section, option) => services.get(section, option),
+      sections: (pkg, type, callback) => {
+        services.sections(type, (section) => {
+          seen.add(section['.name']);
+          callback(section);
+        });
+        for (const item of configured) {
+          if (type !== 'device' || seen.has(item.name) || item.removed) continue;
+          callback(
+            Object.assign({}, deviceValues[item.name] || {}, {
+              '.name': item.name,
+              '.type': type,
+            }),
+          );
+        }
+      },
+    });
+  }, [services, configured, deviceValues]);
 
-	const handleSave = useCallback(async () => {
-		setSaveState({ text: t('Validating…'), tone: 'idle' });
-		try {
-			const result = await services.validate(buildConfig());
-			if (!result || !result.ok) {
-				const errors = (result && result.errors) || [
-					t('Configuration validation failed.')
-				];
-				throw new Error(errors.join('\n'));
-			}
-			await services.save();
-			setSaveState({ text: t('Saved; pending apply'), tone: 'idle' });
-			await services.changesInit();
-		} catch (error) {
-			setSaveState({ text: t('Not saved — check settings'), tone: 'warning' });
-			services.notify(message(error), 'danger');
-			throw error;
-		}
-	}, [services, buildConfig, t]);
+  const handleSave = useCallback(async () => {
+    setSaveState({ text: t('Validating…'), tone: 'idle' });
+    try {
+      const result = await services.validate(buildConfig());
+      if (!result || !result.ok) {
+        const errors = (result && result.errors) || [t('Configuration validation failed.')];
+        throw new Error(errors.join('\n'));
+      }
+      await services.save();
+      setSaveState({ text: t('Saved; pending apply'), tone: 'idle' });
+      await services.changesInit();
+    } catch (error) {
+      setSaveState({ text: t('Not saved — check settings'), tone: 'warning' });
+      services.notify(message(error), 'danger');
+      throw error;
+    }
+  }, [services, buildConfig, t]);
 
-	const handleSaveApply = useCallback(
-		async (rollback) => {
-			await handleSave();
-			try {
-				setSaveState({ text: t('Applying…'), tone: 'idle' });
-				await services.changesApply(rollback);
-				// LuCI owns apply/rollback notifications; a status read only
-				// reports processes.
-				setSaveState({
-					text: t('Apply requested — check LuCI confirmation'),
-					tone: 'idle'
-				});
-				await refresh();
-			} catch (error) {
-				setSaveState({
-					text: t('Apply failed — changes remain pending'),
-					tone: 'warning'
-				});
-				throw error;
-			}
-		},
-		[handleSave, services, refresh, t]
-	);
+  const handleSaveApply = useCallback(
+    async (rollback) => {
+      await handleSave();
+      try {
+        setSaveState({ text: t('Applying…'), tone: 'idle' });
+        await services.changesApply(rollback);
+        // LuCI owns apply/rollback notifications; a status read only
+        // reports processes.
+        setSaveState({
+          text: t('Apply requested — check LuCI confirmation'),
+          tone: 'idle',
+        });
+        await refresh();
+      } catch (error) {
+        setSaveState({
+          text: t('Apply failed — changes remain pending'),
+          tone: 'warning',
+        });
+        throw error;
+      }
+    },
+    [handleSave, services, refresh, t],
+  );
 
-	const runAction = useCallback(
-		async (action) => {
-			setBusy(true);
-			try {
-				const result = await services.action(action);
-				if (!result || !result.ok)
-					throw new Error(
-						(result && result.error) || t('Service action failed.')
-					);
-				await refresh();
-			} catch (error) {
-				services.notify(message(error), 'danger');
-			} finally {
-				setBusy(false);
-			}
-		},
-		[services, refresh, t]
-	);
+  const runAction = useCallback(
+    async (action) => {
+      setBusy(true);
+      try {
+        const result = await services.action(action);
+        if (!result || !result.ok)
+          throw new Error((result && result.error) || t('Service action failed.'));
+        await refresh();
+      } catch (error) {
+        services.notify(message(error), 'danger');
+      } finally {
+        setBusy(false);
+      }
+    },
+    [services, refresh, t],
+  );
 
-	const runScan = useCallback(async () => {
-		setBusy(true);
-		try {
-			const result = await services.scan();
-			if (!result || !result.ok)
-				throw new Error(
-					(result && result.error) || t('Could not start discovery.')
-				);
-			await refresh();
-		} catch (error) {
-			services.notify(message(error), 'danger');
-		} finally {
-			setBusy(false);
-		}
-	}, [services, refresh, t]);
+  const runScan = useCallback(async () => {
+    setBusy(true);
+    try {
+      const result = await services.scan();
+      if (!result || !result.ok)
+        throw new Error((result && result.error) || t('Could not start discovery.'));
+      await refresh();
+    } catch (error) {
+      services.notify(message(error), 'danger');
+    } finally {
+      setBusy(false);
+    }
+  }, [services, refresh, t]);
 
-	const loadLogs = useCallback(async () => {
-		const result = await services.logs();
-		if (!Array.isArray(result.lines))
-			throw new Error(t('The log response was invalid.'));
-		return { lines: result.lines, truncated: !!result.truncated };
-	}, [services, t]);
+  const loadLogs = useCallback(async () => {
+    const result = await services.logs();
+    if (!Array.isArray(result.lines)) throw new Error(t('The log response was invalid.'));
+    return { lines: result.lines, truncated: !!result.truncated };
+  }, [services, t]);
 
-	const model = useMemo(
-		() => ({ status, configured, deviceValues }),
-		[status, configured, deviceValues]
-	);
-	const devices = useMemo(() => mergeDevices(model), [model]);
-	const duplicates = useMemo(() => duplicateNames(model), [model]);
+  const model = useMemo(
+    () => ({ status, configured, deviceValues }),
+    [status, configured, deviceValues],
+  );
+  const devices = useMemo(() => mergeDevices(model), [model]);
+  const duplicates = useMemo(() => duplicateNames(model), [model]);
 
-	const mainFields = useMemo(
-		() => withInterfaceSelect(fields.main, interfaceOptions),
-		[fields, interfaceOptions]
-	);
+  const mainFields = useMemo(
+    () => withInterfaceSelect(fields.main, interfaceOptions),
+    [fields, interfaceOptions],
+  );
 
-	useEffect(() => {
-		if (!selectedKey && devices.length > 0)
-			setSelectedKey(devices[0].engine + '\n' + devices[0].udn);
-		if (
-			selectedKey &&
-			!devices.some(
-				(device) => device.engine + '\n' + device.udn === selectedKey
-			)
-		)
-			setSelectedKey(
-				devices.length ? devices[0].engine + '\n' + devices[0].udn : null
-			);
-	}, [devices, selectedKey]);
+  useEffect(() => {
+    if (!selectedKey && devices.length > 0)
+      setSelectedKey(devices[0].engine + '\n' + devices[0].udn);
+    if (selectedKey && !devices.some((device) => device.engine + '\n' + device.udn === selectedKey))
+      setSelectedKey(devices.length ? devices[0].engine + '\n' + devices[0].udn : null);
+  }, [devices, selectedKey]);
 
-	const selectedDevice =
-		devices.find(
-			(device) => device.engine + '\n' + device.udn === selectedKey
-		) || null;
+  const selectedDevice =
+    devices.find((device) => device.engine + '\n' + device.udn === selectedKey) || null;
 
-	const handleDeviceChange = useCallback(
-		(section, field, value) => {
-			if (field === '__configure__') {
-				configure(value);
-				setSelectedKey(value.engine + '\n' + value.udn);
-				return;
-			}
-			setDevice(section, field, value);
-		},
-		[configure, setDevice]
-	);
+  const handleDeviceChange = useCallback(
+    (section, field, value) => {
+      if (field === '__configure__') {
+        configure(value);
+        setSelectedKey(value.engine + '\n' + value.udn);
+        return;
+      }
+      setDevice(section, field, value);
+    },
+    [configure, setDevice],
+  );
 
-	const withBusy = (task) => {
-		setBusy(true);
-		task()
-			.catch(() => {})
-			.finally(() => setBusy(false));
-	};
+  const withBusy = (task) => {
+    setBusy(true);
+    task()
+      .catch(() => {})
+      .finally(() => setBusy(false));
+  };
 
-	if (fatal) {
-		return (
-			<Alert tone="destructive">
-				{t('Could not load settings. ')}
-				{fatal}
-			</Alert>
-		);
-	}
+  if (fatal) {
+    return (
+      <Alert tone="destructive">
+        {t('Could not load settings. ')}
+        {fatal}
+      </Alert>
+    );
+  }
 
-	if (!ready) {
-		return (
-			<div className="ac-loading-state">
-				<div className="ac-loading-line ac-loading-line-wide" />
-				<div className="ac-loading-line" />
-				<div className="ac-loading-block" />
-				<span>{t('Loading speakers and status…')}</span>
-			</div>
-		);
-	}
+  if (!ready) {
+    return (
+      <div className="ac-loading-state">
+        <div className="ac-loading-line ac-loading-line-wide" />
+        <div className="ac-loading-line" />
+        <div className="ac-loading-block" />
+        <span>{t('Loading speakers and status…')}</span>
+      </div>
+    );
+  }
 
-	// The provider is what lets portalled content (the drawer, the select menu)
-	// pick the same palette as the card it belongs to.
-	const chrome = (body) => (
-		<ThemeContext.Provider value={theme}>
-			<PageChrome
-				themeHost={themeHost}
-				theme={theme}
-				lang={lang}
-				onLanguageChange={setLanguage}
-				onThemeChange={setThemePreference}
-				t={t}
-				status={status}
-				saveState={saveState}
-				busy={busy}
-				onSave={() => withBusy(handleSave)}
-				onSaveApply={() => withBusy(() => handleSaveApply(false))}
-				onReset={() => window.location.reload()}
-				onRefresh={mode === 'overview' ? () => refresh() : null}
-				onBack={mode === 'settings' ? () => navigate('overview') : null}
-			>
-				{body}
-			</PageChrome>
-		</ThemeContext.Provider>
-	);
+  // The provider is what lets portalled content (the drawer, the select menu)
+  // pick the same palette as the card it belongs to.
+  const chrome = (body) => (
+    <ThemeContext.Provider value={theme}>
+      <PageChrome
+        themeHost={themeHost}
+        theme={theme}
+        lang={lang}
+        onLanguageChange={setLanguage}
+        onThemeChange={setThemePreference}
+        t={t}
+        status={status}
+        saveState={saveState}
+        busy={busy}
+        onSave={() => withBusy(handleSave)}
+        onSaveApply={() => withBusy(() => handleSaveApply(false))}
+        onReset={() => window.location.reload()}
+        onRefresh={mode === 'overview' ? () => refresh() : null}
+        onBack={mode === 'settings' ? () => navigate('overview') : null}
+      >
+        {body}
+      </PageChrome>
+    </ThemeContext.Provider>
+  );
 
-	if (mode === 'settings') {
-		return chrome(
-			<SettingsPage
-				fields={mainFields}
-				model={mainValues}
-				set={setMain}
-				rules={rules}
-				t={t}
-				inheritLabel={inheritLabel}
-			/>
-		);
-	}
+  if (mode === 'settings') {
+    return chrome(
+      <SettingsPage
+        fields={mainFields}
+        model={mainValues}
+        set={setMain}
+        rules={rules}
+        t={t}
+        inheritLabel={inheritLabel}
+      />,
+    );
+  }
 
-	return chrome(
-		<Workspace
-			status={status}
-			presentation={presentation}
-			devices={devices}
-			selectedKey={selectedKey}
-			selectedDevice={selectedDevice}
-			deviceValues={deviceValues}
-			fields={fields}
-			rules={rules}
-			scanState={scan}
-			saveState={saveState}
-			busy={busy}
-			conflicts={(status && status.conflicts) || []}
-			logs={logs}
-			onSelect={(key) => setSelectedKey(key)}
-			onDeviceChange={handleDeviceChange}
-			onScan={runScan}
-			onAction={runAction}
-			onLoadLogs={async () => {
-				try {
-					setLogs(await loadLogs());
-				} catch (error) {
-					services.notify(message(error), 'danger');
-				}
-			}}
-			onOpenSettings={openSettings}
-			t={t}
-			inheritLabel={inheritLabel}
-		/>
-	);
+  return chrome(
+    <Workspace
+      status={status}
+      presentation={presentation}
+      devices={devices}
+      selectedKey={selectedKey}
+      selectedDevice={selectedDevice}
+      deviceValues={deviceValues}
+      fields={fields}
+      rules={rules}
+      scanState={scan}
+      saveState={saveState}
+      busy={busy}
+      conflicts={(status && status.conflicts) || []}
+      logs={logs}
+      onSelect={(key) => setSelectedKey(key)}
+      onDeviceChange={handleDeviceChange}
+      onScan={runScan}
+      onAction={runAction}
+      onLoadLogs={async () => {
+        try {
+          setLogs(await loadLogs());
+        } catch (error) {
+          services.notify(message(error), 'danger');
+        }
+      }}
+      onOpenSettings={openSettings}
+      t={t}
+      inheritLabel={inheritLabel}
+    />,
+  );
 }

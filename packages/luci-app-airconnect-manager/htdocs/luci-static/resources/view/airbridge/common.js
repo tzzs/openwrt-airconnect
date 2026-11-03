@@ -21,61 +21,61 @@
 var appPromise = null;
 
 function loadApp() {
-	if (appPromise) return appPromise;
-	appPromise = new Promise(function (resolve, reject) {
-		if (window.AirBridgeApp && typeof window.AirBridgeApp.mount === 'function') {
-			resolve(window.AirBridgeApp);
-			return;
-		}
-		var url = L.resource('airbridge/app.js');
-		var script = document.createElement('script');
-		script.src = url;
-		script.async = true;
-		script.onload = function () {
-			if (window.AirBridgeApp && typeof window.AirBridgeApp.mount === 'function')
-				resolve(window.AirBridgeApp);
-			else
-				reject(new Error('app.js loaded but did not define AirBridgeApp'));
-		};
-		script.onerror = function () {
-			reject(new Error('could not load ' + url));
-		};
-		document.head.appendChild(script);
-	});
-	return appPromise;
+  if (appPromise) return appPromise;
+  appPromise = new Promise(function (resolve, reject) {
+    if (window.AirBridgeApp && typeof window.AirBridgeApp.mount === 'function') {
+      resolve(window.AirBridgeApp);
+      return;
+    }
+    var url = L.resource('airbridge/app.js');
+    var script = document.createElement('script');
+    script.src = url;
+    script.async = true;
+    script.onload = function () {
+      if (window.AirBridgeApp && typeof window.AirBridgeApp.mount === 'function')
+        resolve(window.AirBridgeApp);
+      else reject(new Error('app.js loaded but did not define AirBridgeApp'));
+    };
+    script.onerror = function () {
+      reject(new Error('could not load ' + url));
+    };
+    document.head.appendChild(script);
+  });
+  return appPromise;
 }
 
 function createRoot(mode) {
-	var root = E('div', { 'class': 'ac-root' });
-	root.appendChild(
-		E('link', { rel: 'stylesheet', href: L.resource('airbridge/app.css') })
-	);
-	var mountNode = E('div', { 'class': 'ac-app' });
-	root.appendChild(mountNode);
+  var root = E('div', { class: 'ac-root' });
+  root.appendChild(E('link', { rel: 'stylesheet', href: L.resource('airbridge/app.css') }));
+  var mountNode = E('div', { class: 'ac-app' });
+  root.appendChild(mountNode);
 
-	loadApp()
-		.then(function (app) {
-			root.app = app.mount(mountNode, {
-				uci: uci,
-				rpc: rpc,
-				ui: ui,
-				poll: poll,
-				translate: _,
-				mode: mode
-			});
-		})
-		.catch(function (error) {
-			mountNode.appendChild(
-				E('p', { 'class': 'ac-load-error' },
-					'Failed to load the AirBridge UI: ' +
-					(error && error.message ? error.message : String(error)))
-			);
-		});
+  loadApp()
+    .then(function (app) {
+      root.app = app.mount(mountNode, {
+        uci: uci,
+        rpc: rpc,
+        ui: ui,
+        poll: poll,
+        translate: _,
+        mode: mode,
+      });
+    })
+    .catch(function (error) {
+      mountNode.appendChild(
+        E(
+          'p',
+          { class: 'ac-load-error' },
+          'Failed to load the AirBridge UI: ' +
+            (error && error.message ? error.message : String(error)),
+        ),
+      );
+    });
 
-	return root;
+  return root;
 }
 
 return view.extend({
-	loadApp: loadApp,
-	createRoot: createRoot
+  loadApp: loadApp,
+  createRoot: createRoot,
 });

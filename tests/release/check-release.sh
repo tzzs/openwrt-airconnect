@@ -18,8 +18,14 @@ cd "$root"
 pass=0
 fail=0
 
-ok() { pass=$((pass + 1)); printf 'ok   - %s\n' "$1"; }
-no() { fail=$((fail + 1)); printf 'FAIL - %s\n       %s\n' "$1" "${2:-}"; }
+ok() {
+	pass=$((pass + 1))
+	printf 'ok   - %s\n' "$1"
+}
+no() {
+	fail=$((fail + 1))
+	printf 'FAIL - %s\n       %s\n' "$1" "${2:-}"
+}
 
 section() { printf '\n%s\n' "$1"; }
 
@@ -607,7 +613,7 @@ if [ -f "$local_script" ]; then
 	# that stamp -- with `cp -a` a package silently disappears from defconfig.
 	if grep -Eq '^[[:space:]]*cp -a ' "$local_script" ||
 		sed -n '/Link the packages into the SDK/,/Fetch the upstream/p' .github/workflows/release.yml |
-			grep -Eq '^[[:space:]]*cp -a '; then
+		grep -Eq '^[[:space:]]*cp -a '; then
 		no 'the package copy refreshes mtimes' 'cp -a keeps the checkout mtime; the scanner then skips the package'
 	else
 		ok 'the package copy refreshes mtimes'

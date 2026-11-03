@@ -12,15 +12,15 @@
 var configName = 'airconnect-manager';
 
 return view.extend({
-	load: function () {
-		return Promise.all([uci.load(configName), common.loadApp()]);
-	},
+  load: function () {
+    return Promise.all([uci.load(configName), common.loadApp()]);
+  },
 
-	handleSave: null,
-	handleSaveApply: null,
-	handleReset: null,
+  handleSave: null,
+  handleSaveApply: null,
+  handleReset: null,
 
-	render: function () {
-		return common.createRoot('overview');
-	}
+  render: function () {
+    return common.createRoot('overview');
+  },
 });

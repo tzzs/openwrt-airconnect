@@ -4,6 +4,7 @@
 *.zip
 *.tar.gz
 __pycache__/
+node_modules/
 .env
 .env.*
 sdk/

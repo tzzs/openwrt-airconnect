@@ -22,42 +22,39 @@ const DrawerTrigger = DialogPrimitive.Trigger;
 const DrawerClose = DialogPrimitive.Close;
 
 const DrawerContent = React.forwardRef(function DrawerContent(
-	{ className, children, ...props },
-	ref
+  { className, children, ...props },
+  ref,
 ) {
-	// Portalled to <body>, so the panel carries the palette and the button reset
-	// itself; see components/theme-context.jsx.
-	const themeClass = useThemeClass();
-	return (
-		<DialogPrimitive.Portal>
-			<DialogPrimitive.Overlay className="ac-drawer-overlay" />
-			<DialogPrimitive.Content
-				ref={ref}
-				className={cn('ac-drawer-panel ac-portal', themeClass, className)}
-				{...props}
-			>
-				{children}
-				<DialogPrimitive.Close
-					className="ac-drawer-close"
-					aria-label="Close"
-				>
-					<X />
-				</DialogPrimitive.Close>
-			</DialogPrimitive.Content>
-		</DialogPrimitive.Portal>
-	);
+  // Portalled to <body>, so the panel carries the palette and the button reset
+  // itself; see components/theme-context.jsx.
+  const themeClass = useThemeClass();
+  return (
+    <DialogPrimitive.Portal>
+      <DialogPrimitive.Overlay className="ac-drawer-overlay" />
+      <DialogPrimitive.Content
+        ref={ref}
+        className={cn('ac-drawer-panel ac-portal', themeClass, className)}
+        {...props}
+      >
+        {children}
+        <DialogPrimitive.Close className="ac-drawer-close" aria-label="Close">
+          <X />
+        </DialogPrimitive.Close>
+      </DialogPrimitive.Content>
+    </DialogPrimitive.Portal>
+  );
 });
 
 function DrawerHeader({ title, description, children }) {
-	return (
-		<div className="ac-drawer-header">
-			<div>
-				<h2>{title}</h2>
-				{description ? <p>{description}</p> : null}
-			</div>
-			{children}
-		</div>
-	);
+  return (
+    <div className="ac-drawer-header">
+      <div>
+        <h2>{title}</h2>
+        {description ? <p>{description}</p> : null}
+      </div>
+      {children}
+    </div>
+  );
 }
 
 export { Drawer, DrawerTrigger, DrawerClose, DrawerContent, DrawerHeader };

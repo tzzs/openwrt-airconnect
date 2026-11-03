@@ -16,37 +16,37 @@ const ENGINES = ['upnp', 'cast'];
 
 /** The engines strip trailing whitespace before publishing a name. */
 export function trimTrailing(value) {
-	return value == null ? '' : String(value).replace(/\s+$/, '');
+  return value == null ? '' : String(value).replace(/\s+$/, '');
 }
 
 /** Read the current main values and every device section from a uci-like handle. */
 export function readState(access) {
-	const main = {};
-	for (const key of MAIN_KEYS) {
-		const item = access.get('main', key);
-		if (item != null) main[key] = item;
-	}
-	const devices = {};
-	const sections = [];
-	access.sections('device', (section) => {
-		sections.push({
-			name: section['.name'],
-			engine: section.engine,
-			udn: section.udn,
-			removed: !!section['.removed']
-		});
-		const values = {};
-		for (const key of DEVICE_KEYS) {
-			if (section[key] != null) values[key] = section[key];
-		}
-		devices[section['.name']] = values;
-	});
-	return { main, devices, sections };
+  const main = {};
+  for (const key of MAIN_KEYS) {
+    const item = access.get('main', key);
+    if (item != null) main[key] = item;
+  }
+  const devices = {};
+  const sections = [];
+  access.sections('device', (section) => {
+    sections.push({
+      name: section['.name'],
+      engine: section.engine,
+      udn: section.udn,
+      removed: !!section['.removed'],
+    });
+    const values = {};
+    for (const key of DEVICE_KEYS) {
+      if (section[key] != null) values[key] = section[key];
+    }
+    devices[section['.name']] = values;
+  });
+  return { main, devices, sections };
 }
 
 /** engine + newline + udn, the identity a speaker keeps across a rename. */
 export function deviceKey(engine, udn) {
-	return engine + '\n' + udn;
+  return engine + '\n' + udn;
 }
 
 /**
@@ -55,19 +55,20 @@ export function deviceKey(engine, udn) {
  * collide on and is skipped.
  */
 export function effectiveNames(state) {
-	const discovered = Object.create(null);
-	for (const device of (state.status && state.status.devices) || []) {
-		if (device && device.udn) discovered[deviceKey(device.engine, device.udn)] = device.original_name;
-	}
-	const names = [];
-	for (const item of state.configured) {
-		if (item.removed) continue;
-		const values = state.deviceValues[item.name] || {};
-		const name = trimTrailing(values.name) ||
-			trimTrailing(discovered[deviceKey(item.engine, item.udn)]);
-		if (name !== '') names.push(name);
-	}
-	return names;
+  const discovered = Object.create(null);
+  for (const device of (state.status && state.status.devices) || []) {
+    if (device && device.udn)
+      discovered[deviceKey(device.engine, device.udn)] = device.original_name;
+  }
+  const names = [];
+  for (const item of state.configured) {
+    if (item.removed) continue;
+    const values = state.deviceValues[item.name] || {};
+    const name =
+      trimTrailing(values.name) || trimTrailing(discovered[deviceKey(item.engine, item.udn)]);
+    if (name !== '') names.push(name);
+  }
+  return names;
 }
 
 /**
@@ -76,21 +77,21 @@ export function effectiveNames(state) {
  * ordinary key instead of a prototype lookup.
  */
 export function duplicateNames(state) {
-	const counts = Object.create(null);
-	const order = [];
-	const duplicates = [];
-	for (const name of effectiveNames(state)) {
-		if (counts[name] === undefined) {
-			counts[name] = 1;
-			order.push(name);
-		} else {
-			counts[name] = counts[name] + 1;
-		}
-	}
-	for (const name of order) {
-		if (counts[name] > 1) duplicates.push(name);
-	}
-	return duplicates;
+  const counts = Object.create(null);
+  const order = [];
+  const duplicates = [];
+  for (const name of effectiveNames(state)) {
+    if (counts[name] === undefined) {
+      counts[name] = 1;
+      order.push(name);
+    } else {
+      counts[name] = counts[name] + 1;
+    }
+  }
+  for (const name of order) {
+    if (counts[name] > 1) duplicates.push(name);
+  }
+  return duplicates;
 }
 
 /**
@@ -98,31 +99,32 @@ export function duplicateNames(state) {
  * discovery has not (yet) reported, each carrying the section that overrides it.
  */
 export function mergeDevices(state) {
-	const list = [];
-	const seen = new Set();
-	for (const device of (state.status && state.status.devices) || []) {
-		if (!device || !device.udn) continue;
-		if (ENGINES.indexOf(device.engine) < 0) continue;
-		const section = state.configured.find(
-			(item) => item.engine === device.engine && item.udn === device.udn);
-		seen.add(deviceKey(device.engine, device.udn));
-		list.push(Object.assign({}, device, { section: section ? section.name : null }));
-	}
-	for (const item of state.configured) {
-		if (item.removed) continue;
-		if (!item.udn || ENGINES.indexOf(item.engine) < 0) continue;
-		const key = deviceKey(item.engine, item.udn);
-		if (seen.has(key)) continue;
-		const values = state.deviceValues[item.name] || {};
-		list.push({
-			engine: item.engine,
-			udn: item.udn,
-			name: values.name,
-			original_name: null,
-			online: false,
-			configured: true,
-			section: item.name
-		});
-	}
-	return list;
+  const list = [];
+  const seen = new Set();
+  for (const device of (state.status && state.status.devices) || []) {
+    if (!device || !device.udn) continue;
+    if (ENGINES.indexOf(device.engine) < 0) continue;
+    const section = state.configured.find(
+      (item) => item.engine === device.engine && item.udn === device.udn,
+    );
+    seen.add(deviceKey(device.engine, device.udn));
+    list.push(Object.assign({}, device, { section: section ? section.name : null }));
+  }
+  for (const item of state.configured) {
+    if (item.removed) continue;
+    if (!item.udn || ENGINES.indexOf(item.engine) < 0) continue;
+    const key = deviceKey(item.engine, item.udn);
+    if (seen.has(key)) continue;
+    const values = state.deviceValues[item.name] || {};
+    list.push({
+      engine: item.engine,
+      udn: item.udn,
+      name: values.name,
+      original_name: null,
+      online: false,
+      configured: true,
+      section: item.name,
+    });
+  }
+  return list;
 }

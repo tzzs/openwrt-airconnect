@@ -22,9 +22,9 @@
  *   `.ac-root` (no theme class) -> follow `prefers-color-scheme`
  */
 export const THEMES = [
-	{ value: 'system', label: 'System' },
-	{ value: 'light', label: 'Light' },
-	{ value: 'dark', label: 'Dark' }
+  { value: 'system', label: 'System' },
+  { value: 'light', label: 'Light' },
+  { value: 'dark', label: 'Dark' },
 ];
 
 /** localStorage key; kept in sync with the i18n preference key namespace. */
@@ -42,19 +42,19 @@ const VALID_THEMES = new Set(['system', 'light', 'dark']);
  * @returns {'system'|'light'|'dark'}
  */
 export function detectTheme() {
-	try {
-		if (typeof localStorage === 'undefined' || localStorage === null) {
-			return 'system';
-		}
-		const stored = localStorage.getItem(STORAGE_KEY);
-		if (stored && VALID_THEMES.has(stored)) {
-			return stored;
-		}
-	} catch {
-		// localStorage can throw in private mode or sandboxed iframes; the
-		// safe default is always `system`.
-	}
-	return 'system';
+  try {
+    if (typeof localStorage === 'undefined' || localStorage === null) {
+      return 'system';
+    }
+    const stored = localStorage.getItem(STORAGE_KEY);
+    if (stored && VALID_THEMES.has(stored)) {
+      return stored;
+    }
+  } catch {
+    // localStorage can throw in private mode or sandboxed iframes; the
+    // safe default is always `system`.
+  }
+  return 'system';
 }
 
 /**
@@ -65,17 +65,17 @@ export function detectTheme() {
  * @returns {void}
  */
 export function writeTheme(theme) {
-	try {
-		if (typeof localStorage === 'undefined' || localStorage === null) {
-			return;
-		}
-		if (!VALID_THEMES.has(theme)) {
-			return;
-		}
-		localStorage.setItem(STORAGE_KEY, theme);
-	} catch {
-		// Swallow: a write failure must not break the in-memory theme switch.
-	}
+  try {
+    if (typeof localStorage === 'undefined' || localStorage === null) {
+      return;
+    }
+    if (!VALID_THEMES.has(theme)) {
+      return;
+    }
+    localStorage.setItem(STORAGE_KEY, theme);
+  } catch {
+    // Swallow: a write failure must not break the in-memory theme switch.
+  }
 }
 
 /**
@@ -89,19 +89,22 @@ export function writeTheme(theme) {
  * @returns {'light'|'dark'}
  */
 export function resolveTheme(theme) {
-	if (theme !== 'system') {
-		return theme === 'dark' ? 'dark' : 'light';
-	}
-	try {
-		if (typeof window === 'undefined' || window === null ||
-			typeof window.matchMedia !== 'function') {
-			return 'light';
-		}
-		const mql = window.matchMedia('(prefers-color-scheme: dark)');
-		return mql && mql.matches ? 'dark' : 'light';
-	} catch {
-		return 'light';
-	}
+  if (theme !== 'system') {
+    return theme === 'dark' ? 'dark' : 'light';
+  }
+  try {
+    if (
+      typeof window === 'undefined' ||
+      window === null ||
+      typeof window.matchMedia !== 'function'
+    ) {
+      return 'light';
+    }
+    const mql = window.matchMedia('(prefers-color-scheme: dark)');
+    return mql && mql.matches ? 'dark' : 'light';
+  } catch {
+    return 'light';
+  }
 }
 
 /**
@@ -120,20 +123,20 @@ export function resolveTheme(theme) {
  * @returns {void}
  */
 export function applyTheme(root, theme) {
-	if (!root || typeof root.classList === 'undefined' || root.classList === null) {
-		return;
-	}
-	try {
-		root.classList.remove('ac-theme-light', 'ac-theme-dark');
-		if (theme === 'light') {
-			root.classList.add('ac-theme-light');
-		} else if (theme === 'dark') {
-			root.classList.add('ac-theme-dark');
-		}
-		// theme === 'system' -> add neither; CSS media query governs.
-	} catch {
-		// classList is read-only on some exotic elements; ignore safely.
-	}
+  if (!root || typeof root.classList === 'undefined' || root.classList === null) {
+    return;
+  }
+  try {
+    root.classList.remove('ac-theme-light', 'ac-theme-dark');
+    if (theme === 'light') {
+      root.classList.add('ac-theme-light');
+    } else if (theme === 'dark') {
+      root.classList.add('ac-theme-dark');
+    }
+    // theme === 'system' -> add neither; CSS media query governs.
+  } catch {
+    // classList is read-only on some exotic elements; ignore safely.
+  }
 }
 
 /**
@@ -153,48 +156,51 @@ export function applyTheme(root, theme) {
  * @returns {() => void}
  */
 export function watchSystemTheme(callback) {
-	if (typeof callback !== 'function') {
-		return () => {};
-	}
-	try {
-		if (typeof window === 'undefined' || window === null ||
-			typeof window.matchMedia !== 'function') {
-			return () => {};
-		}
-		const mql = window.matchMedia('(prefers-color-scheme: dark)');
-		if (!mql) {
-			return () => {};
-		}
-		const handler = () => {
-			try {
-				callback();
-			} catch {
-				// A failing callback must not break the media-query listener.
-			}
-		};
-		if (typeof mql.addEventListener === 'function') {
-			mql.addEventListener('change', handler);
-			return () => {
-				try {
-					mql.removeEventListener('change', handler);
-				} catch {
-					// Already detached or unavailable; nothing to undo.
-				}
-			};
-		}
-		// Legacy fallback: older browsers expose addListener/removeListener.
-		if (typeof mql.addListener === 'function') {
-			mql.addListener(handler);
-			return () => {
-				try {
-					mql.removeListener(handler);
-				} catch {
-					// Already detached or unavailable; nothing to undo.
-				}
-			};
-		}
-	} catch {
-		// matchMedia itself threw; nothing to subscribe to.
-	}
-	return () => {};
+  if (typeof callback !== 'function') {
+    return () => {};
+  }
+  try {
+    if (
+      typeof window === 'undefined' ||
+      window === null ||
+      typeof window.matchMedia !== 'function'
+    ) {
+      return () => {};
+    }
+    const mql = window.matchMedia('(prefers-color-scheme: dark)');
+    if (!mql) {
+      return () => {};
+    }
+    const handler = () => {
+      try {
+        callback();
+      } catch {
+        // A failing callback must not break the media-query listener.
+      }
+    };
+    if (typeof mql.addEventListener === 'function') {
+      mql.addEventListener('change', handler);
+      return () => {
+        try {
+          mql.removeEventListener('change', handler);
+        } catch {
+          // Already detached or unavailable; nothing to undo.
+        }
+      };
+    }
+    // Legacy fallback: older browsers expose addListener/removeListener.
+    if (typeof mql.addListener === 'function') {
+      mql.addListener(handler);
+      return () => {
+        try {
+          mql.removeListener(handler);
+        } catch {
+          // Already detached or unavailable; nothing to undo.
+        }
+      };
+    }
+  } catch {
+    // matchMedia itself threw; nothing to subscribe to.
+  }
+  return () => {};
 }

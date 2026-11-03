@@ -1,0 +1,17 @@
+# Dependencies and generated build output
+node_modules/
+packages/luci-app-airconnect-manager/frontend/node_modules/
+packages/luci-app-airconnect-manager/htdocs/luci-static/resources/airbridge/app.js
+packages/luci-app-airconnect-manager/htdocs/luci-static/resources/airbridge/app.css
+
+# Documents and workflows are maintained independently of the code formatter
+*.md
+.github/workflows/**
+dev/**
+
+# Generated translation template
+packages/luci-app-airconnect-manager/po/templates/airconnect-manager.pot
+
+# Lockfiles are machine-generated
+package-lock.json
+packages/luci-app-airconnect-manager/frontend/package-lock.json

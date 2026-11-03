@@ -69,17 +69,17 @@ tree_state() {
 		cd "$1" || exit 1
 		find . -type f | LC_ALL=C sort | while IFS= read -r f; do
 			printf '%s %s %s\n' "$f" "$(file_mode "$f")" \
-				"$(shasum < "$f" | awk '{print $1}')"
+				"$(shasum <"$f" | awk '{print $1}')"
 		done
 	)
 }
 
 digest() {
-	shasum < "$1" | awk '{print $1}'
+	shasum <"$1" | awk '{print $1}'
 }
 
 make_init() { # make_init <path> <name>
-	cat > "$1" <<EOF
+	cat >"$1" <<EOF
 #!/bin/sh
 # Fake init script for the migration test. Call logs go outside the sandbox
 # root, so an assertion about "the tree did not change" is not confused by the
@@ -104,7 +104,7 @@ EOF
 }
 
 make_uci_shim() {
-	cat > "$1" <<'EOF'
+	cat >"$1" <<'EOF'
 #!/bin/sh
 # Fake `uci` for the migration test: answers `-q get` and `-q show` for the
 # legacy package from the sandbox copy of the file, and nothing else.
@@ -161,7 +161,7 @@ EOF
 }
 
 make_docker_shim() {
-	cat > "$1" <<'EOF'
+	cat >"$1" <<'EOF'
 #!/bin/sh
 # Fake `docker` for the migration test. `stop` marks a container stopped but
 # keeps it, exactly like the real command: the test asserts it is never removed.
@@ -221,7 +221,7 @@ EOF
 # copied into a device section. All values are synthetic (RFC 5737 address,
 # uuid:demo-* UDN).
 write_legacy_config() {
-	cat > "$1" <<'EOF'
+	cat >"$1" <<'EOF'
 config airconnect 'main'
 	option enabled '1'
 	option iface 'br-lan'
@@ -245,10 +245,10 @@ make_sandbox() { # make_sandbox <name>
 	make_uci_shim "${SB}/bin/uci"
 	make_docker_shim "${SB}/bin/docker"
 	# The legacy service starts out enabled at boot and running.
-	: > "${SB}/var/state/airconnect.enabled"
-	: > "${SB}/var/state/airconnect.running"
+	: >"${SB}/var/state/airconnect.enabled"
+	: >"${SB}/var/state/airconnect.running"
 	# One legacy container plus an unrelated one that must be left alone.
-	cat > "${SB}/var/state/containers" <<'EOF'
+	cat >"${SB}/var/state/containers" <<'EOF'
 airconnect-legacy demo/airconnect:1.12.4 running
 unrelated-web demo/web:1.0 running
 EOF
@@ -379,8 +379,7 @@ for expected in \
 	'airconnect.main.iface=br-lan -> airconnect-manager.main.interface=br-lan' \
 	'airconnect.main.upnp=1 -> airconnect-manager.main.airupnp=1' \
 	'airconnect.main.cast=1 -> airconnect-manager.main.aircast=1' \
-	'airconnect.main.max_volume=30 -> airconnect-manager.device_legacy.max_volume=30'
-do
+	'airconnect.main.max_volume=30 -> airconnect-manager.device_legacy.max_volume=30'; do
 	if printf '%s' "${output}" | grep -Fq -- "${expected}"; then
 		ok "mapping line: ${expected}"
 	else
@@ -407,15 +406,14 @@ fi
 # the only thing the operator has to decide with, so leftovers must be named.
 section 'a key with no airconnect-manager equivalent is reported as skipped'
 make_sandbox leftover
-printf "\toption stream_type 'broadcast'\n" >> "${SB}/etc/config/airconnect"
+printf "\toption stream_type 'broadcast'\n" >>"${SB}/etc/config/airconnect"
 output=$(run_script "${SB}" --dry-run)
 status=$?
 check 'the leftover-key fixture exits 0' "${status}"
 for expected in \
 	'airconnect.main.stream_type=broadcast -> skipped (no equivalent option in airconnect-manager; not carried over)' \
 	'airconnect.main.name=Demo Speaker -> skipped (no equivalent option in airconnect-manager; not carried over)' \
-	'airconnect.main.address=192.0.2.10 -> skipped (no equivalent option in airconnect-manager; not carried over)'
-do
+	'airconnect.main.address=192.0.2.10 -> skipped (no equivalent option in airconnect-manager; not carried over)'; do
 	if printf '%s' "${output}" | grep -Fq -- "${expected}"; then
 		ok "leftover line: ${expected}"
 	else
@@ -471,7 +469,7 @@ fi
 
 section 'invalid legacy values are skipped, not guessed'
 make_sandbox skipvals
-cat > "${SB}/etc/config/airconnect" <<'EOF'
+cat >"${SB}/etc/config/airconnect" <<'EOF'
 config airconnect 'main'
 	option enabled '1'
 	option binding 'br-lan'
@@ -493,8 +491,7 @@ fi
 for expected in \
 	'airconnect.main.binding=br-lan -> airconnect-manager.main.interface=br-lan' \
 	'airconnect.main.max_volume=999 -> skipped (expected an integer 1..100)' \
-	'airconnect.main.udn=not-a-udn -> skipped (not a uuid: UDN of at most 255 bytes)'
-do
+	'airconnect.main.udn=not-a-udn -> skipped (not a uuid: UDN of at most 255 bytes)'; do
 	if printf '%s' "${output}" | grep -Fq -- "${expected}"; then
 		ok "skip line: ${expected}"
 	else
@@ -511,7 +508,7 @@ fi
 
 section 'a volume limit without a UDN becomes the global limit'
 make_sandbox noudn
-cat > "${SB}/etc/config/airconnect" <<'EOF'
+cat >"${SB}/etc/config/airconnect" <<'EOF'
 config airconnect 'main'
 	option enabled '1'
 	option upnp '1'
@@ -556,7 +553,7 @@ fi
 
 section 'a legacy file with almost every key absent'
 make_sandbox minimal
-cat > "${SB}/etc/config/airconnect" <<'EOF'
+cat >"${SB}/etc/config/airconnect" <<'EOF'
 config airconnect 'main'
 	option upnp '1'
 EOF
@@ -574,8 +571,7 @@ for expected in \
 	'airconnect.main.enabled=(absent) -> airconnect-manager.main.enabled=1 (the legacy service is enabled at boot or running)' \
 	'airconnect.main.interface=(absent) -> airconnect-manager.main.interface=br-lan (default)' \
 	'airconnect.main.aircast=(absent) -> airconnect-manager.main.aircast=0 (default)' \
-	'airconnect.main.max_volume=(absent) -> airconnect-manager.main.max_volume=100 (default)'
-do
+	'airconnect.main.max_volume=(absent) -> airconnect-manager.main.max_volume=100 (default)'; do
 	if printf '%s' "${output}" | grep -Fq -- "${expected}"; then
 		ok "absent-key line: ${expected}"
 	else
@@ -592,7 +588,7 @@ done
 
 section 'the shipped section name (config) is read, not assumed'
 make_sandbox shipped
-cat > "${SB}/etc/config/airconnect" <<'EOF'
+cat >"${SB}/etc/config/airconnect" <<'EOF'
 config airconnect 'config'
 	option enabled '1'
 	option interface 'br-lan'
@@ -609,8 +605,7 @@ for expected in \
 	'airconnect.config.interface=br-lan -> airconnect-manager.main.interface=br-lan' \
 	'airconnect.config.airupnp=1 -> airconnect-manager.main.airupnp=1' \
 	'airconnect.config.aircast=0 -> airconnect-manager.main.aircast=0' \
-	'airconnect.config.max_volume=30 -> airconnect-manager.main.max_volume=30'
-do
+	'airconnect.config.max_volume=30 -> airconnect-manager.main.max_volume=30'; do
 	if printf '%s' "${output}" | grep -Fq -- "${expected}"; then
 		ok "shipped-name line: ${expected}"
 	else
@@ -629,7 +624,7 @@ fi
 section 'a disabled legacy service is not silently enabled'
 make_sandbox disabled
 rm -f "${SB}/var/state/airconnect.enabled" "${SB}/var/state/airconnect.running"
-cat > "${SB}/etc/config/airconnect" <<'EOF'
+cat >"${SB}/etc/config/airconnect" <<'EOF'
 config airconnect 'main'
 	option upnp '1'
 EOF
@@ -696,7 +691,7 @@ make_sandbox oldbins
 rm -f "${SB}/etc/config/airconnect" "${SB}/etc/init.d/airconnect"
 # Isolate the third detection source: no container either.
 rm -f "${SB}/var/state/containers"
-: > "${SB}/usr/bin/airupnp"
+: >"${SB}/usr/bin/airupnp"
 before_binary=$(digest "${SB}/usr/bin/airupnp")
 output=$(run_script "${SB}" --apply)
 status=$?
@@ -726,7 +721,8 @@ output=$(run_script "${SB}" --apply)
 status=$?
 check '--apply exits 0' "${status}"
 
-expected_config="$(cat <<'EOF'
+expected_config="$(
+	cat <<'EOF'
 enabled=1
 interface=br-lan
 airupnp=1
@@ -1011,7 +1007,7 @@ fi
 
 section 'an existing backup directory is never overwritten'
 make_sandbox collide
-cat > "${SB}/bin/date" <<'EOF'
+cat >"${SB}/bin/date" <<'EOF'
 #!/bin/sh
 # Fixed clock so two runs in the same test land on the same backup name.
 printf '20260101T000000Z\n'
@@ -1024,7 +1020,7 @@ output=$(run_script "${SB}" --rollback)
 status=$?
 check 'the rollback with a fixed clock exits 0' "${status}"
 sentinel="${SB}/etc/airconnect-manager-backup/20260101T000000Z/sentinel"
-: > "${sentinel}"
+: >"${sentinel}"
 output=$(run_script "${SB}" --apply)
 status=$?
 if [ "${status}" -ne 0 ]; then
@@ -1047,7 +1043,7 @@ fi
 
 section 'a running new service is a hard stop unless --force-stop-new'
 make_sandbox running
-: > "${SB}/var/state/airconnect-manager.running"
+: >"${SB}/var/state/airconnect-manager.running"
 output=$(run_script "${SB}" --apply)
 status=$?
 if [ "${status}" -ne 0 ]; then

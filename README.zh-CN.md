@@ -59,13 +59,18 @@ bash scripts/build-local.sh
 
 产物写入 `packages/output/`。发布工作流只会在 release-please 发布 PR 合并并创建 tag 后，自动执行同一套 SDK 构建。
 
-### 本地运行测试
+### 本地质量检查与测试
+
+根目录 `npm` 开发依赖只用于代码检查，不会部署到路由器。首次安装工具依赖并运行检查：
 
 ```bash
-bash scripts/run-tests.sh
+npm ci
+npm run lint
+npm run format:check
+npm test
 ```
 
-所有主机测试套件都应通过。
+`npm run format` 会按配置自动整理格式。Shell 检查需要本机安装 `shellcheck` 和 `shfmt`；CI 会自动安装对应工具。
 
 ## 文档
 

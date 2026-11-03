@@ -7,6 +7,6 @@
  * failed tick. `failures` is the count of consecutive failures so far.
  */
 export function nextRetryDelayMs(failures) {
-	const count = Number.isFinite(failures) && failures > 0 ? failures : 0;
-	return Math.min(60000, 10000 * Math.pow(2, count - 1));
+  const count = Number.isFinite(failures) && failures > 0 ? failures : 0;
+  return Math.min(60000, 10000 * Math.pow(2, count - 1));
 }

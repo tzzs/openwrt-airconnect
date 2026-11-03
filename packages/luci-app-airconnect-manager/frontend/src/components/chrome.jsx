@@ -23,192 +23,173 @@ import { THEMES } from '../lib/theme.js';
  * page's appearance without any JavaScript running.
  */
 export function PageChrome({
-	themeHost,
-	theme,
-	lang,
-	onLanguageChange,
-	onThemeChange,
-	t,
-	children,
-	status,
-	saveState,
-	busy,
-	onSave,
-	onSaveApply,
-	onReset,
-	onRefresh,
-	onBack,
-	extraActions,
-	title,
-	subtitle
+  themeHost,
+  theme,
+  lang,
+  onLanguageChange,
+  onThemeChange,
+  t,
+  children,
+  status,
+  saveState,
+  busy,
+  onSave,
+  onSaveApply,
+  onReset,
+  onRefresh,
+  onBack,
+  extraActions,
+  title,
+  subtitle,
 }) {
-	const services = (status && status.services) || {};
-	const running =
-		(services.upnp && services.upnp.running) ||
-		(services.cast && services.cast.running);
+  const services = (status && status.services) || {};
+  const running =
+    (services.upnp && services.upnp.running) || (services.cast && services.cast.running);
 
-	return (
-		<div className="ac-chrome">
-			<div className="ac-chrome-bar">
-				<div className="ac-brand-lockup">
-					<div className="ac-brand-mark">
-						<Activity />
-					</div>
-					<div>
-						<strong>AirBridge · 隔空音箱</strong>
-						<span>{t('AirPlay bridge')}</span>
-					</div>
-				</div>
+  return (
+    <div className="ac-chrome">
+      <div className="ac-chrome-bar">
+        <div className="ac-brand-lockup">
+          <div className="ac-brand-mark">
+            <Activity />
+          </div>
+          <div>
+            <strong>AirBridge · 隔空音箱</strong>
+            <span>{t('AirPlay bridge')}</span>
+          </div>
+        </div>
 
-				<div className="ac-chrome-status">
-					<span
-						className={
-							'ac-service-indicator ' + (running ? 'is-running' : 'is-stopped')
-						}
-						role="status"
-						aria-live="polite"
-					>
-						<span className="ac-service-indicator-dot" />
-						{running ? t('Service running') : t('Service stopped')}
-					</span>
-					{saveState ? (
-						<span
-							className={'ac-save-state ac-save-' + saveState.tone}
-							role="status"
-							aria-live="polite"
-						>
-							{saveState.text}
-						</span>
-					) : null}
-				</div>
+        <div className="ac-chrome-status">
+          <span
+            className={'ac-service-indicator ' + (running ? 'is-running' : 'is-stopped')}
+            role="status"
+            aria-live="polite"
+          >
+            <span className="ac-service-indicator-dot" />
+            {running ? t('Service running') : t('Service stopped')}
+          </span>
+          {saveState ? (
+            <span
+              className={'ac-save-state ac-save-' + saveState.tone}
+              role="status"
+              aria-live="polite"
+            >
+              {saveState.text}
+            </span>
+          ) : null}
+        </div>
 
-				{/*
-				 * Every control is a shadcn Button with an explicit
-				 * type="button": the app is mounted inside a LuCI view, and a
-				 * button without a type defaults to submit. Icon-only buttons
-				 * carry both a title and an aria-label, because an icon alone
-				 * is not an accessible name.
-				 */}
-				<div className="ac-chrome-actions">
-					{/*
-					 * The settings page is a second LuCI view, not a panel over the
-					 * workspace, so it needs its own way back. It mirrors the
-					 * "Global settings" button in the workspace footer: same
-					 * variant, same size, the other direction.
-					 */}
-					{onBack ? (
-						<Button
-							variant="outline"
-							size="sm"
-							type="button"
-							className="ac-back-button"
-							onClick={onBack}
-						>
-							<ArrowLeft />
-							{t('Back to devices')}
-						</Button>
-					) : null}
-					{extraActions}
-					<div className="ac-preferences" role="group" aria-label="Language">
-						{LANGUAGES.map((entry) => (
-							<Button
-								key={entry.value}
-								variant="ghost"
-								size="sm"
-								type="button"
-								className="ac-lang-button"
-								aria-pressed={entry.value === lang}
-								title={entry.label}
-								aria-label={entry.label}
-								onClick={() => onLanguageChange(entry.value)}
-							>
-								{entry.value === 'zh' ? '中' : 'EN'}
-							</Button>
-						))}
-					</div>
-					<div className="ac-preferences" role="group" aria-label="Theme">
-						{THEMES.map((entry) => {
-							const Icon =
-								entry.value === 'light'
-									? Sun
-									: entry.value === 'dark'
-										? Moon
-										: Monitor;
-							return (
-								<Button
-									key={entry.value}
-									variant="ghost"
-									size="icon"
-									type="button"
-									className="ac-icon-button"
-									aria-pressed={entry.value === theme}
-									title={t(entry.label)}
-									aria-label={t(entry.label)}
-									onClick={() => onThemeChange(entry.value)}
-								>
-									<Icon />
-								</Button>
-							);
-						})}
-					</div>
-					{onRefresh ? (
-						<Button
-							variant="ghost"
-							size="icon"
-							type="button"
-							className="ac-icon-button"
-							disabled={busy}
-							onClick={onRefresh}
-							title={t('Refresh status')}
-							aria-label={t('Refresh status')}
-						>
-							<RefreshCw />
-						</Button>
-					) : null}
-					{onReset ? (
-						<Button
-							variant="ghost"
-							size="icon"
-							type="button"
-							className="ac-icon-button"
-							disabled={busy}
-							onClick={onReset}
-							title={t('Reset')}
-							aria-label={t('Reset')}
-						>
-							<RotateCcw />
-						</Button>
-					) : null}
-					{onSave ? (
-						<Button
-							variant="outline"
-							size="sm"
-							type="button"
-							disabled={busy}
-							onClick={onSave}
-						>
-							{t('Save')}
-						</Button>
-					) : null}
-					{onSaveApply ? (
-						<Button
-							size="sm"
-							type="button"
-							disabled={busy}
-							onClick={onSaveApply}
-						>
-							{t('Save and apply')}
-						</Button>
-					) : null}
-				</div>
-			</div>
-			{title ? (
-				<div className="ac-chrome-title">
-					<h1>{title}</h1>
-					{subtitle ? <p>{subtitle}</p> : null}
-				</div>
-			) : null}
-			{children}
-		</div>
-	);
+        {/*
+         * Every control is a shadcn Button with an explicit
+         * type="button": the app is mounted inside a LuCI view, and a
+         * button without a type defaults to submit. Icon-only buttons
+         * carry both a title and an aria-label, because an icon alone
+         * is not an accessible name.
+         */}
+        <div className="ac-chrome-actions">
+          {/*
+           * The settings page is a second LuCI view, not a panel over the
+           * workspace, so it needs its own way back. It mirrors the
+           * "Global settings" button in the workspace footer: same
+           * variant, same size, the other direction.
+           */}
+          {onBack ? (
+            <Button
+              variant="outline"
+              size="sm"
+              type="button"
+              className="ac-back-button"
+              onClick={onBack}
+            >
+              <ArrowLeft />
+              {t('Back to devices')}
+            </Button>
+          ) : null}
+          {extraActions}
+          <div className="ac-preferences" role="group" aria-label="Language">
+            {LANGUAGES.map((entry) => (
+              <Button
+                key={entry.value}
+                variant="ghost"
+                size="sm"
+                type="button"
+                className="ac-lang-button"
+                aria-pressed={entry.value === lang}
+                title={entry.label}
+                aria-label={entry.label}
+                onClick={() => onLanguageChange(entry.value)}
+              >
+                {entry.value === 'zh' ? '中' : 'EN'}
+              </Button>
+            ))}
+          </div>
+          <div className="ac-preferences" role="group" aria-label="Theme">
+            {THEMES.map((entry) => {
+              const Icon = entry.value === 'light' ? Sun : entry.value === 'dark' ? Moon : Monitor;
+              return (
+                <Button
+                  key={entry.value}
+                  variant="ghost"
+                  size="icon"
+                  type="button"
+                  className="ac-icon-button"
+                  aria-pressed={entry.value === theme}
+                  title={t(entry.label)}
+                  aria-label={t(entry.label)}
+                  onClick={() => onThemeChange(entry.value)}
+                >
+                  <Icon />
+                </Button>
+              );
+            })}
+          </div>
+          {onRefresh ? (
+            <Button
+              variant="ghost"
+              size="icon"
+              type="button"
+              className="ac-icon-button"
+              disabled={busy}
+              onClick={onRefresh}
+              title={t('Refresh status')}
+              aria-label={t('Refresh status')}
+            >
+              <RefreshCw />
+            </Button>
+          ) : null}
+          {onReset ? (
+            <Button
+              variant="ghost"
+              size="icon"
+              type="button"
+              className="ac-icon-button"
+              disabled={busy}
+              onClick={onReset}
+              title={t('Reset')}
+              aria-label={t('Reset')}
+            >
+              <RotateCcw />
+            </Button>
+          ) : null}
+          {onSave ? (
+            <Button variant="outline" size="sm" type="button" disabled={busy} onClick={onSave}>
+              {t('Save')}
+            </Button>
+          ) : null}
+          {onSaveApply ? (
+            <Button size="sm" type="button" disabled={busy} onClick={onSaveApply}>
+              {t('Save and apply')}
+            </Button>
+          ) : null}
+        </div>
+      </div>
+      {title ? (
+        <div className="ac-chrome-title">
+          <h1>{title}</h1>
+          {subtitle ? <p>{subtitle}</p> : null}
+        </div>
+      ) : null}
+      {children}
+    </div>
+  );
 }

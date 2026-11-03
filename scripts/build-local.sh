@@ -60,11 +60,21 @@ EOF
 
 while [ $# -gt 0 ]; do
 	case "$1" in
-		--output) shift; OUTPUT=${1:-} ;;
+		--output)
+			shift
+			OUTPUT=${1:-}
+			;;
 		--clean) CLEAN=1 ;;
 		--keep) KEEP=1 ;;
-		-h|--help) usage; exit 0 ;;
-		*) printf 'build-local: unknown argument: %s\n\n' "$1" >&2; usage >&2; exit 2 ;;
+		-h | --help)
+			usage
+			exit 0
+			;;
+		*)
+			printf 'build-local: unknown argument: %s\n\n' "$1" >&2
+			usage >&2
+			exit 2
+			;;
 	esac
 	shift
 done
@@ -87,8 +97,11 @@ ENGINE_ZIP_NAME='AirConnect-1.12.4.zip'
 ENGINE_SHA256='ae59d595be80db7f4e93c94c9029baff59dc7515ec03e44505ab2792bbcd1903'
 ENGINE_URL="https://github.com/philippe44/AirConnect/releases/download/1.12.4/${ENGINE_ZIP_NAME}"
 
-log()  { printf '\n=== %s ===\n' "$*"; }
-die()  { printf 'build-local: %s\n' "$*" >&2; exit 1; }
+log() { printf '\n=== %s ===\n' "$*"; }
+die() {
+	printf 'build-local: %s\n' "$*" >&2
+	exit 1
+}
 
 # --- preflight -------------------------------------------------------------
 
@@ -108,7 +121,7 @@ fi
 avail_kb=$(df -Pk "$HOME" | awk 'NR == 2 { print $4 }')
 if [ "${avail_kb}" -lt 10485760 ]; then
 	printf 'build-local: warning: only %s MB free in %s\n' \
-		"$(( avail_kb / 1024 ))" "$HOME" >&2
+		"$((avail_kb / 1024))" "$HOME" >&2
 	printf 'A full build needs about 10 GB. Continuing anyway.\n\n' >&2
 fi
 
@@ -128,7 +141,7 @@ else
 		die "SDK download failed: $SDK_URL"
 
 	# A truncated download otherwise fails deep inside tar with a confusing error.
-	tarball_size=$(wc -c < "$SDK_TARBALL")
+	tarball_size=$(wc -c <"$SDK_TARBALL")
 	if [ "$tarball_size" -lt 100000000 ]; then
 		rm -f "$SDK_TARBALL"
 		die "the SDK tarball is only ${tarball_size} bytes; the download was truncated"
@@ -162,7 +175,7 @@ log 'installing feeds'
 # deep inside the SDK build with a "no app.js" copy.
 log 'building the React frontend'
 command -v node >/dev/null 2>&1 || die 'node is required to build the frontend'
-command -v npm  >/dev/null 2>&1 || die 'npm is required to build the frontend'
+command -v npm >/dev/null 2>&1 || die 'npm is required to build the frontend'
 FRONTEND_DIR="${root}/packages/luci-app-airconnect-manager/frontend"
 [ -d "$FRONTEND_DIR" ] || die "missing $FRONTEND_DIR"
 (
@@ -171,7 +184,7 @@ FRONTEND_DIR="${root}/packages/luci-app-airconnect-manager/frontend"
 	npm run build
 )
 BUNDLE_DIR="${root}/packages/luci-app-airconnect-manager/htdocs/luci-static/resources/airbridge"
-[ -f "$BUNDLE_DIR/app.js" ]  || die "frontend build did not produce app.js"
+[ -f "$BUNDLE_DIR/app.js" ] || die "frontend build did not produce app.js"
 [ -f "$BUNDLE_DIR/app.css" ] || die "frontend build did not produce app.css"
 
 # --- link the packages -----------------------------------------------------
@@ -223,7 +236,7 @@ log 'configuring'
 # CONFIG_LIBCURL_OPENSSL=y selects the TLS backend. Without it curl's configure
 # fails with "TLS not detected" and the whole manager build stops on a dependency
 # that is not the manager's fault.
-cat >> .config <<EOF
+cat >>.config <<EOF
 CONFIG_PACKAGE_airconnect-engine=m
 CONFIG_PACKAGE_airconnect-manager=m
 CONFIG_PACKAGE_luci-app-airconnect-manager=m
@@ -239,10 +252,10 @@ EOF
 # re-enabling a default.
 for symbol in CONFIG_PACKAGE_libopenssl-afalg CONFIG_PACKAGE_libopenssl-devcrypto; do
 	if grep -q "^${symbol}=" .config; then
-		sed "s|^${symbol}=.*|# ${symbol} is not set|" .config > .config.tmp
+		sed "s|^${symbol}=.*|# ${symbol} is not set|" .config >.config.tmp
 		mv .config.tmp .config
 	elif ! grep -q "^# ${symbol} is not set$" .config; then
-		printf '# %s is not set\n' "${symbol}" >> .config
+		printf '# %s is not set\n' "${symbol}" >>.config
 	fi
 done
 

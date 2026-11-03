@@ -13,8 +13,14 @@ pot="${app}/po/templates/airconnect-manager.pot"
 po="${app}/po/zh_Hans/airconnect-manager.po"
 passed=0
 failed=0
-ok() { passed=$((passed + 1)); printf 'ok   - %s\n' "$1"; }
-no() { failed=$((failed + 1)); printf 'FAIL - %s\n       %s\n' "$1" "${2:-}"; }
+ok() {
+	passed=$((passed + 1))
+	printf 'ok   - %s\n' "$1"
+}
+no() {
+	failed=$((failed + 1))
+	printf 'FAIL - %s\n       %s\n' "$1" "${2:-}"
+}
 
 if [ -f "${pot}" ]; then ok 'translation template exists'; else no 'translation template exists' 'missing POT'; fi
 if [ -f "${po}" ]; then ok 'Simplified Chinese translation exists'; else no 'Simplified Chinese translation exists' 'missing PO'; fi

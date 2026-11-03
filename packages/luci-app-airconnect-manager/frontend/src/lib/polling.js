@@ -22,20 +22,19 @@ export const POLL_SECONDS = 10;
  * they typed.
  */
 export function applySnapshot(data) {
-	const scan = (data && data.scan) || {};
-	const services = (data && data.services) || {};
-	return {
-		status: data,
-		scan: {
-			running: !!scan.running,
-			error: scan.error || null,
-			last_scan: scan.last_scan || null,
-			disabled: !!scan.running || !(
-				(services.upnp && services.upnp.enabled) ||
-				(services.cast && services.cast.enabled)
-			)
-		}
-	};
+  const scan = (data && data.scan) || {};
+  const services = (data && data.services) || {};
+  return {
+    status: data,
+    scan: {
+      running: !!scan.running,
+      error: scan.error || null,
+      last_scan: scan.last_scan || null,
+      disabled:
+        !!scan.running ||
+        !((services.upnp && services.upnp.enabled) || (services.cast && services.cast.enabled)),
+    },
+  };
 }
 
 /**
@@ -47,38 +46,52 @@ export function applySnapshot(data) {
  * @param {() => boolean} [options.isHidden]  Injectable tab visibility.
  */
 export function createPoller(options) {
-	const fetch = options.fetch;
-	const onSnapshot = options.onSnapshot;
-	const onError = options.onError;
-	const now = options.now || function () { return Date.now(); };
-	const isHidden = options.isHidden || function () { return false; };
+  const fetch = options.fetch;
+  const onSnapshot = options.onSnapshot;
+  const onError = options.onError;
+  const now =
+    options.now ||
+    function () {
+      return Date.now();
+    };
+  const isHidden =
+    options.isHidden ||
+    function () {
+      return false;
+    };
 
-	let failures = 0;
-	let nextRetry = 0;
-	let inflight = false;
+  let failures = 0;
+  let nextRetry = 0;
+  let inflight = false;
 
-	return {
-		/** One poll. Returns when the request settles, or immediately if skipped. */
-		async tick() {
-			if (isHidden()) return;
-			if (inflight) return;
-			if (now() < nextRetry) return;
-			inflight = true;
-			try {
-				const data = await fetch();
-				failures = 0;
-				nextRetry = 0;
-				onSnapshot(data);
-			} catch (error) {
-				failures += 1;
-				nextRetry = now() + nextRetryDelayMs(failures);
-				onError(error);
-			} finally {
-				inflight = false;
-			}
-		},
-		get failures() { return failures; },
-		get nextRetry() { return nextRetry; },
-		get inflight() { return inflight; }
-	};
+  return {
+    /** One poll. Returns when the request settles, or immediately if skipped. */
+    async tick() {
+      if (isHidden()) return;
+      if (inflight) return;
+      if (now() < nextRetry) return;
+      inflight = true;
+      try {
+        const data = await fetch();
+        failures = 0;
+        nextRetry = 0;
+        onSnapshot(data);
+      } catch (error) {
+        failures += 1;
+        nextRetry = now() + nextRetryDelayMs(failures);
+        onError(error);
+      } finally {
+        inflight = false;
+      }
+    },
+    get failures() {
+      return failures;
+    },
+    get nextRetry() {
+      return nextRetry;
+    },
+    get inflight() {
+      return inflight;
+    },
+  };
 }

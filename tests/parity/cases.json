@@ -5,19 +5,44 @@
   { "field": "interface", "value": "wlan0", "expect": "accept" },
   { "field": "interface", "value": "demo_01", "expect": "accept" },
   { "field": "interface", "value": "A1", "expect": "accept" },
-  { "field": "interface", "value": "aaaaaaaaaaaaaaa", "expect": "accept", "note": "15 bytes is the maximum" },
+  {
+    "field": "interface",
+    "value": "aaaaaaaaaaaaaaa",
+    "expect": "accept",
+    "note": "15 bytes is the maximum"
+  },
   { "field": "interface", "value": "aaaaaaaaaaaaaaaa", "expect": "reject", "note": "16 bytes" },
   { "field": "interface", "value": "", "expect": "reject" },
   { "field": "interface", "value": ".", "expect": "reject" },
   { "field": "interface", "value": "..", "expect": "reject" },
-  { "field": "interface", "value": ".x", "expect": "reject", "note": "must start with a letter, digit or underscore" },
+  {
+    "field": "interface",
+    "value": ".x",
+    "expect": "reject",
+    "note": "must start with a letter, digit or underscore"
+  },
   { "field": "interface", "value": "-bad", "expect": "reject" },
-  { "field": "interface", "value": "_bad", "expect": "accept", "note": "underscore is an allowed first byte" },
-  { "field": "interface", "value": "eth0:1", "expect": "reject", "note": "colon is not an interface token byte" },
+  {
+    "field": "interface",
+    "value": "_bad",
+    "expect": "accept",
+    "note": "underscore is an allowed first byte"
+  },
+  {
+    "field": "interface",
+    "value": "eth0:1",
+    "expect": "reject",
+    "note": "colon is not an interface token byte"
+  },
   { "field": "interface", "value": "br lan", "expect": "reject" },
   { "field": "interface", "value": "eth0;id", "expect": "reject" },
   { "field": "interface", "value": "eth0/1", "expect": "reject" },
-  { "field": "interface", "value": "eth0\n", "expect": "reject", "note": "anchored patterns must not accept a trailing newline" },
+  {
+    "field": "interface",
+    "value": "eth0\n",
+    "expect": "reject",
+    "note": "anchored patterns must not accept a trailing newline"
+  },
   { "field": "interface", "value": "eth0\r", "expect": "reject" },
   { "field": "interface", "value": "eth0 ", "expect": "reject" },
   { "field": "interface", "value": "音箱", "expect": "reject", "note": "ASCII only" },
@@ -34,7 +59,12 @@
   { "field": "latency", "value": "0:0", "expect": "accept" },
   { "field": "latency", "value": "1:9999", "expect": "accept" },
   { "field": "latency", "value": "1000:2000", "expect": "accept" },
-  { "field": "latency", "value": "10000:10000", "expect": "accept", "note": "upper bound is inclusive" },
+  {
+    "field": "latency",
+    "value": "10000:10000",
+    "expect": "accept",
+    "note": "upper bound is inclusive"
+  },
   { "field": "latency", "value": "0999:1", "expect": "reject", "note": "leading zeros" },
   { "field": "latency", "value": "0:0999", "expect": "reject" },
   { "field": "latency", "value": "10001:0", "expect": "reject" },
@@ -44,7 +74,13 @@
   { "field": "latency", "value": "1000:2000:3000", "expect": "reject" },
   { "field": "latency", "value": ":2000", "expect": "reject" },
   { "field": "latency", "value": "1000:", "expect": "reject" },
-  { "field": "latency", "value": "", "expect": "reject", "scope": "main", "note": "an empty device override inherits instead" },
+  {
+    "field": "latency",
+    "value": "",
+    "expect": "reject",
+    "scope": "main",
+    "note": "an empty device override inherits instead"
+  },
   { "field": "latency", "value": "1000:2000\n", "expect": "reject" },
   { "field": "latency", "value": " 1000:2000", "expect": "reject" },
   { "field": "latency", "value": "1000 :2000", "expect": "reject" },
@@ -69,7 +105,13 @@
   { "field": "max_volume", "value": " 50", "expect": "reject" },
   { "field": "max_volume", "value": "50 ", "expect": "reject" },
   { "field": "max_volume", "value": "50\n", "expect": "reject" },
-  { "field": "max_volume", "value": "", "expect": "reject", "scope": "main", "note": "an empty device override inherits instead" },
+  {
+    "field": "max_volume",
+    "value": "",
+    "expect": "reject",
+    "scope": "main",
+    "note": "an empty device override inherits instead"
+  },
   { "field": "max_volume", "value": 1.5, "expect": "reject", "note": "numeric UCI value" },
   { "field": "max_volume", "value": 0, "expect": "reject" },
   { "field": "max_volume", "value": 101, "expect": "reject" },
@@ -77,7 +119,12 @@
   { "field": "media_volume", "value": "0", "expect": "accept", "note": "lower bound" },
   { "field": "media_volume", "value": "0.5", "expect": "accept" },
   { "field": "media_volume", "value": "1", "expect": "accept", "note": "upper bound" },
-  { "field": "media_volume", "value": "1.000", "expect": "accept", "note": "trailing fraction zeros are valid" },
+  {
+    "field": "media_volume",
+    "value": "1.000",
+    "expect": "accept",
+    "note": "trailing fraction zeros are valid"
+  },
   { "field": "media_volume", "value": "0.000", "expect": "accept" },
   { "field": "media_volume", "value": "0.125", "expect": "accept" },
   { "field": "media_volume", "value": 0.5, "expect": "accept", "note": "numeric UCI value" },
@@ -86,7 +133,12 @@
   { "field": "media_volume", "value": "1.0001", "expect": "reject", "note": "above 1" },
   { "field": "media_volume", "value": "1.1", "expect": "reject" },
   { "field": "media_volume", "value": "-0.1", "expect": "reject" },
-  { "field": "media_volume", "value": ".5", "expect": "reject", "note": "a leading digit is required" },
+  {
+    "field": "media_volume",
+    "value": ".5",
+    "expect": "reject",
+    "note": "a leading digit is required"
+  },
   { "field": "media_volume", "value": "01", "expect": "reject", "note": "no leading zeros" },
   { "field": "media_volume", "value": "1e0", "expect": "reject", "note": "no exponent" },
   { "field": "media_volume", "value": "0x1", "expect": "reject" },
@@ -95,56 +147,174 @@
   { "field": "media_volume", "value": "0.5 ", "expect": "reject" },
   { "field": "media_volume", "value": "0.5\n", "expect": "reject" },
   { "field": "media_volume", "value": "NaN", "expect": "reject" },
-  { "field": "media_volume", "value": "", "expect": "reject", "scope": "main", "note": "an empty device override inherits instead" },
+  {
+    "field": "media_volume",
+    "value": "",
+    "expect": "reject",
+    "scope": "main",
+    "note": "an empty device override inherits instead"
+  },
   { "field": "media_volume", "value": 1.5, "expect": "reject", "note": "numeric UCI value" },
 
-  { "field": "name", "value": "", "expect": "accept", "note": "empty inherits the discovered name" },
+  {
+    "field": "name",
+    "value": "",
+    "expect": "accept",
+    "note": "empty inherits the discovered name"
+  },
   { "field": "name", "value": "Demo speaker", "expect": "accept" },
-  { "field": "name", "value": "Demo speaker ", "expect": "accept", "note": "trailing space is allowed" },
-  { "field": "name", "value": "  Demo speaker", "expect": "accept", "note": "leading space is allowed" },
-  { "field": "name", "value": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "expect": "accept", "note": "63 ASCII bytes" },
-  { "field": "name", "value": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "expect": "reject", "note": "64 ASCII bytes" },
-  { "field": "name", "value": "ééééééééééééééééééééééééééééééé", "expect": "accept", "note": "31 two-byte characters = 62 bytes" },
-  { "field": "name", "value": "éééééééééééééééééééééééééééééééé", "expect": "reject", "note": "32 two-byte characters = 64 bytes" },
-  { "field": "name", "value": "éééééééééééééééééééééééééééééééa", "expect": "accept", "note": "31 two-byte characters + 1 byte = 63 bytes" },
+  {
+    "field": "name",
+    "value": "Demo speaker ",
+    "expect": "accept",
+    "note": "trailing space is allowed"
+  },
+  {
+    "field": "name",
+    "value": "  Demo speaker",
+    "expect": "accept",
+    "note": "leading space is allowed"
+  },
+  {
+    "field": "name",
+    "value": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "expect": "accept",
+    "note": "63 ASCII bytes"
+  },
+  {
+    "field": "name",
+    "value": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "expect": "reject",
+    "note": "64 ASCII bytes"
+  },
+  {
+    "field": "name",
+    "value": "ééééééééééééééééééééééééééééééé",
+    "expect": "accept",
+    "note": "31 two-byte characters = 62 bytes"
+  },
+  {
+    "field": "name",
+    "value": "éééééééééééééééééééééééééééééééé",
+    "expect": "reject",
+    "note": "32 two-byte characters = 64 bytes"
+  },
+  {
+    "field": "name",
+    "value": "éééééééééééééééééééééééééééééééa",
+    "expect": "accept",
+    "note": "31 two-byte characters + 1 byte = 63 bytes"
+  },
   { "field": "name", "value": "示例音箱", "expect": "accept" },
   { "field": "name", "value": "   ", "expect": "reject", "note": "whitespace only" },
   { "field": "name", "value": " ", "expect": "reject" },
   { "field": "name", "value": "\t", "expect": "reject", "note": "control character" },
   { "field": "name", "value": " \t ", "expect": "reject" },
-  { "field": "name", "value": "\u00a0", "expect": "reject", "note": "no-break space is whitespace" },
-  { "field": "name", "value": "\u1680", "expect": "reject", "note": "ogham space mark is whitespace" },
+  {
+    "field": "name",
+    "value": "\u00a0",
+    "expect": "reject",
+    "note": "no-break space is whitespace"
+  },
+  {
+    "field": "name",
+    "value": "\u1680",
+    "expect": "reject",
+    "note": "ogham space mark is whitespace"
+  },
   { "field": "name", "value": "\u2000", "expect": "reject", "note": "en quad is whitespace" },
   { "field": "name", "value": "\u200a", "expect": "reject", "note": "hair space is whitespace" },
-  { "field": "name", "value": "\u2028", "expect": "reject", "note": "line separator is whitespace" },
-  { "field": "name", "value": "\u2029", "expect": "reject", "note": "paragraph separator is whitespace" },
-  { "field": "name", "value": "\u202f", "expect": "reject", "note": "narrow no-break space is whitespace" },
-  { "field": "name", "value": "\u205f", "expect": "reject", "note": "medium mathematical space is whitespace" },
-  { "field": "name", "value": "\u3000", "expect": "reject", "note": "ideographic space is whitespace" },
-  { "field": "name", "value": "\ufeff", "expect": "reject", "note": "byte order mark is whitespace" },
-  { "field": "name", "value": "\u200b", "expect": "accept", "note": "zero width space is not whitespace in config.uc" },
+  {
+    "field": "name",
+    "value": "\u2028",
+    "expect": "reject",
+    "note": "line separator is whitespace"
+  },
+  {
+    "field": "name",
+    "value": "\u2029",
+    "expect": "reject",
+    "note": "paragraph separator is whitespace"
+  },
+  {
+    "field": "name",
+    "value": "\u202f",
+    "expect": "reject",
+    "note": "narrow no-break space is whitespace"
+  },
+  {
+    "field": "name",
+    "value": "\u205f",
+    "expect": "reject",
+    "note": "medium mathematical space is whitespace"
+  },
+  {
+    "field": "name",
+    "value": "\u3000",
+    "expect": "reject",
+    "note": "ideographic space is whitespace"
+  },
+  {
+    "field": "name",
+    "value": "\ufeff",
+    "expect": "reject",
+    "note": "byte order mark is whitespace"
+  },
+  {
+    "field": "name",
+    "value": "\u200b",
+    "expect": "accept",
+    "note": "zero width space is not whitespace in config.uc"
+  },
   { "field": "name", "value": "Demo\u0001speaker", "expect": "reject", "note": "C0 control" },
   { "field": "name", "value": "Demo\u0000speaker", "expect": "reject", "note": "NUL" },
   { "field": "name", "value": "Demo\t speaker", "expect": "reject", "note": "tab is a C0 control" },
   { "field": "name", "value": "Demo\u007fspeaker", "expect": "reject", "note": "DEL" },
   { "field": "name", "value": "Demo\u009fspeaker", "expect": "reject", "note": "C1 control" },
-  { "field": "name", "value": "Demo\ufffespeaker", "expect": "reject", "note": "non-character U+FFFE" },
-  { "field": "name", "value": "Demo\uffffspeaker", "expect": "reject", "note": "non-character U+FFFF" },
+  {
+    "field": "name",
+    "value": "Demo\ufffespeaker",
+    "expect": "reject",
+    "note": "non-character U+FFFE"
+  },
+  {
+    "field": "name",
+    "value": "Demo\uffffspeaker",
+    "expect": "reject",
+    "note": "non-character U+FFFF"
+  },
   { "field": "name", "value": "😀", "expect": "accept", "note": "4-byte UTF-8 sequence" },
 
   { "field": "metadata", "value": "0", "expect": "accept" },
   { "field": "metadata", "value": "1", "expect": "accept" },
   { "field": "metadata", "value": 1, "expect": "accept", "note": "numeric UCI value" },
   { "field": "metadata", "value": "true", "expect": "reject" },
-  { "field": "metadata", "value": "", "expect": "reject", "scope": "main", "note": "an empty device override inherits instead" },
+  {
+    "field": "metadata",
+    "value": "",
+    "expect": "reject",
+    "scope": "main",
+    "note": "an empty device override inherits instead"
+  },
   { "field": "metadata", "value": "2", "expect": "reject" },
-  { "field": "metadata", "value": "1\n", "expect": "reject", "note": "anchored patterns must not accept a trailing newline" },
+  {
+    "field": "metadata",
+    "value": "1\n",
+    "expect": "reject",
+    "note": "anchored patterns must not accept a trailing newline"
+  },
 
   { "field": "flush", "value": "0", "expect": "accept" },
   { "field": "flush", "value": "1", "expect": "accept" },
   { "field": "flush", "value": 0, "expect": "accept" },
   { "field": "flush", "value": "yes", "expect": "reject" },
-  { "field": "flush", "value": "", "expect": "reject", "scope": "main", "note": "an empty device override inherits instead" },
+  {
+    "field": "flush",
+    "value": "",
+    "expect": "reject",
+    "scope": "main",
+    "note": "an empty device override inherits instead"
+  },
   { "field": "flush", "value": "-1", "expect": "reject" },
   { "field": "flush", "value": " 1", "expect": "reject" },
 
@@ -152,55 +322,123 @@
   { "field": "drift", "value": "1", "expect": "accept" },
   { "field": "drift", "value": 1, "expect": "accept" },
   { "field": "drift", "value": "on", "expect": "reject" },
-  { "field": "drift", "value": "", "expect": "reject", "scope": "main", "note": "an empty device override inherits instead" },
+  {
+    "field": "drift",
+    "value": "",
+    "expect": "reject",
+    "scope": "main",
+    "note": "an empty device override inherits instead"
+  },
   { "field": "drift", "value": "01", "expect": "reject" },
 
   { "field": "stop_receiver", "value": "0", "expect": "accept" },
   { "field": "stop_receiver", "value": "1", "expect": "accept" },
   { "field": "stop_receiver", "value": "2", "expect": "reject" },
-  { "field": "stop_receiver", "value": "", "expect": "reject", "scope": "main", "note": "an empty device override inherits instead" },
+  {
+    "field": "stop_receiver",
+    "value": "",
+    "expect": "reject",
+    "scope": "main",
+    "note": "an empty device override inherits instead"
+  },
   { "field": "stop_receiver", "value": "false", "expect": "reject" },
 
   { "field": "http_length", "value": "-3", "expect": "accept", "note": "chunked encoding" },
-  { "field": "http_length", "value": "-1", "expect": "accept", "note": "no content-length, the upstream default" },
-  { "field": "http_length", "value": "0", "expect": "accept", "note": "fixed dummy content-length" },
+  {
+    "field": "http_length",
+    "value": "-1",
+    "expect": "accept",
+    "note": "no content-length, the upstream default"
+  },
+  {
+    "field": "http_length",
+    "value": "0",
+    "expect": "accept",
+    "note": "fixed dummy content-length"
+  },
   { "field": "http_length", "value": -3, "expect": "accept", "note": "numeric UCI value" },
   { "field": "http_length", "value": 0, "expect": "accept" },
-  { "field": "http_length", "value": "-2", "expect": "reject", "note": "not a documented transfer mode" },
+  {
+    "field": "http_length",
+    "value": "-2",
+    "expect": "reject",
+    "note": "not a documented transfer mode"
+  },
   { "field": "http_length", "value": "1", "expect": "reject" },
   { "field": "http_length", "value": "4096", "expect": "reject" },
   { "field": "http_length", "value": "chunked", "expect": "reject" },
   { "field": "http_length", "value": "-1 ", "expect": "reject" },
   { "field": "http_length", "value": " -1", "expect": "reject" },
   { "field": "http_length", "value": "-1\n", "expect": "reject" },
-  { "field": "http_length", "value": "", "expect": "reject", "scope": "main", "note": "an empty device override inherits instead" },
+  {
+    "field": "http_length",
+    "value": "",
+    "expect": "reject",
+    "scope": "main",
+    "note": "an empty device override inherits instead"
+  },
 
   { "field": "upnp_max", "value": "1", "expect": "accept", "note": "upstream default" },
   { "field": "upnp_max", "value": "3", "expect": "accept" },
-  { "field": "upnp_max", "value": "9", "expect": "accept", "note": "one digit fits the search-topic buffer" },
+  {
+    "field": "upnp_max",
+    "value": "9",
+    "expect": "accept",
+    "note": "one digit fits the search-topic buffer"
+  },
   { "field": "upnp_max", "value": 2, "expect": "accept" },
   { "field": "upnp_max", "value": "0", "expect": "reject" },
-  { "field": "upnp_max", "value": "10", "expect": "reject", "note": "two digits would be truncated by snprintf" },
+  {
+    "field": "upnp_max",
+    "value": "10",
+    "expect": "reject",
+    "note": "two digits would be truncated by snprintf"
+  },
   { "field": "upnp_max", "value": "01", "expect": "reject" },
   { "field": "upnp_max", "value": "1.0", "expect": "reject" },
   { "field": "upnp_max", "value": "1\n", "expect": "reject" },
 
   { "field": "artwork", "value": "", "expect": "accept", "note": "empty means no artwork" },
-  { "field": "artwork", "value": "http://192.0.2.10/cover.png", "expect": "accept", "note": "RFC 5737 address" },
+  {
+    "field": "artwork",
+    "value": "http://192.0.2.10/cover.png",
+    "expect": "accept",
+    "note": "RFC 5737 address"
+  },
   { "field": "artwork", "value": "https://example.com/a/b.jpg?x=1&y=2#frag", "expect": "accept" },
-  { "field": "artwork", "value": "http://[::1]:8080/a.png", "expect": "accept", "note": "brackets are legal URL bytes" },
-  { "field": "artwork", "value": "HTTP://example.com/a.png", "expect": "reject", "note": "lowercase scheme only" },
+  {
+    "field": "artwork",
+    "value": "http://[::1]:8080/a.png",
+    "expect": "accept",
+    "note": "brackets are legal URL bytes"
+  },
+  {
+    "field": "artwork",
+    "value": "HTTP://example.com/a.png",
+    "expect": "reject",
+    "note": "lowercase scheme only"
+  },
   { "field": "artwork", "value": "ftp://example.com/a.png", "expect": "reject" },
   { "field": "artwork", "value": "//example.com/a.png", "expect": "reject" },
   { "field": "artwork", "value": "example.com/a.png", "expect": "reject" },
   { "field": "artwork", "value": "http://", "expect": "reject", "note": "a scheme with no host" },
   { "field": "artwork", "value": "http://example.com/a b.png", "expect": "reject" },
   { "field": "artwork", "value": "http://example.com/a\tb.png", "expect": "reject", "note": "tab" },
-  { "field": "artwork", "value": "http://example.com/a\nb.png", "expect": "reject", "note": "trailing newline must not pass an anchored match" },
+  {
+    "field": "artwork",
+    "value": "http://example.com/a\nb.png",
+    "expect": "reject",
+    "note": "trailing newline must not pass an anchored match"
+  },
   { "field": "artwork", "value": "http://example.com/<x>.png", "expect": "reject" },
   { "field": "artwork", "value": "http://example.com/\"x\".png", "expect": "reject" },
   { "field": "artwork", "value": "http://example.com/a\\b.png", "expect": "reject" },
-  { "field": "artwork", "value": "http://example.com/音.png", "expect": "reject", "note": "non-ASCII bytes are not allowed" },
+  {
+    "field": "artwork",
+    "value": "http://example.com/音.png",
+    "expect": "reject",
+    "note": "non-ASCII bytes are not allowed"
+  },
   { "field": "artwork", "value": " http://example.com/a.png", "expect": "reject" },
   { "field": "artwork", "value": "http://example.com/a.png ", "expect": "reject" }
 ]

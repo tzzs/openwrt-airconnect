@@ -148,9 +148,9 @@ while IFS='|' read -r arch expected; do
 		printf 'ARCH := %s\n\n' "${arch}"
 		printf '%s\n\n' "${block}"
 		printf 'all:\n\t@echo "$(AIRCONNECT_ARCH)"\n'
-	} > "${frag}"
+	} >"${frag}"
 
-	out=$(make -f "${frag}" 2>"${tmp}/err" all || true)
+	out=$(make -f "${frag}" all 2>"${tmp}/err" || true)
 	if [ "${expected}" = ERROR ]; then
 		if [ -s "${tmp}/err" ] && grep -q 'unsupported ARCH' "${tmp}/err"; then
 			ok "ARCH=${arch} correctly refuses to build"
@@ -177,11 +177,11 @@ mkdir -p "${work}/dl" "${work}/build"
 # Build an archive that mirrors the upstream layout: the two normalized
 # aarch64 binaries plus a couple of unrelated files, each with an ELF magic
 # header so the later ELF check would accept them.
-printf '\x7fELF\xff\x00aarch64-upnp' > "${work}/dl/airupnp-linux-aarch64-static"
-printf '\x7fELF\xff\x00aarch64-cast' > "${work}/dl/aircast-linux-aarch64-static"
-printf 'not a binary' > "${work}/dl/README.txt"
-( cd "${work}/dl" && zip -q "${work}/AirConnect-1.12.4.zip" \
-	airupnp-linux-aarch64-static aircast-linux-aarch64-static README.txt )
+printf '\x7fELF\xff\x00aarch64-upnp' >"${work}/dl/airupnp-linux-aarch64-static"
+printf '\x7fELF\xff\x00aarch64-cast' >"${work}/dl/aircast-linux-aarch64-static"
+printf 'not a binary' >"${work}/dl/README.txt"
+(cd "${work}/dl" && zip -q "${work}/AirConnect-1.12.4.zip" \
+	airupnp-linux-aarch64-static aircast-linux-aarch64-static README.txt)
 
 if [ -f "${work}/AirConnect-1.12.4.zip" ]; then
 	ok 'synthetic AirConnect-1.12.4.zip built'
@@ -195,8 +195,8 @@ else
 	no 'extract-engines.sh places both aarch64 binaries' 'extraction failed'
 fi
 if [ -f "${work}/build/airupnp-linux-aarch64-static" ] &&
-   [ -f "${work}/build/aircast-linux-aarch64-static" ] &&
-   [ ! -f "${work}/build/README.txt" ]; then
+	[ -f "${work}/build/aircast-linux-aarch64-static" ] &&
+	[ ! -f "${work}/build/README.txt" ]; then
 	ok 'exactly the two expected binaries land in the build dir'
 else
 	no 'exactly the two expected binaries land in the build dir' 'wrong files extracted'
