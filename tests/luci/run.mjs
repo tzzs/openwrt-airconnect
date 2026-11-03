@@ -252,8 +252,12 @@ function navigationSection() {
 		menu['admin/services/airconnect-manager']?.action?.path === 'admin/services/airbridge',
 		'old workspace URL aliases to the AirBridge workspace');
 	check(menu['admin/services/airconnect-manager/settings']?.action?.type === 'alias' &&
-		menu['admin/services/airconnect-manager/settings']?.action?.path === 'admin/services/airbridge/settings',
-		'old settings URL aliases to the AirBridge settings page');
+		menu['admin/services/airconnect-manager/settings']?.action?.path === 'admin/services/airbridge',
+		'old settings URL aliases to the AirBridge app shell');
+	check(readFileSync(join(ROOT,
+		'packages/luci-app-airconnect-manager/htdocs/luci-static/resources/view/airbridge/settings.js'), 'utf8')
+		.includes("common.createRoot('overview')"),
+		'the legacy settings view mounts the shared app shell');
 
 	// The section headings are plain literals in the component rather than
 	// `_('...')` calls, so scripts/update-i18n.mjs never extracts them and the
